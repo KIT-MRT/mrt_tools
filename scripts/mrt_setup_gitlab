@@ -1,0 +1,37 @@
+#!/bin/bash
+
+MRTGITLABDIR=~/.mrtgitlab
+
+echo "###############################"
+echo "# GitLab Client Setup Utility #"
+echo "###############################"
+
+echo "This tool interactively runs you through the GitLab client setup of your computer." 
+echo "Note: Security critical input is not echoed on the command-line for your safety." 
+
+echo "GitLab Private Access Token"
+echo "---------------------------"
+echo "The GitLab private access token is available in GitLab from 'Profile Settings' -> 'Account'"
+echo "Or you can STRG+Click here: $(tput setab 1)https://gitlab.mrt.uni-karlsruhe.de/profile/account$(tput sgr0)"
+echo
+echo "Please enter the GitLab private access token (token is not echo'ed): "
+read -s PRIVATETOKEN
+
+if [ -z "$PRIVATETOKEN" ]; then
+  echo "$(tput setaf 1)Error: Private access token is empty$(tput sgr0)"
+fi
+
+if [ ! -d "$MRTGITLABDIR" ]; then
+    mkdir $MRTGITLABDIR > /dev/null
+    chmod 700 $MRTGITLABDIR > /dev/null
+else
+  if [ -f "$MRTGITLABDIR" ]; then
+    echo "$(tput setaf 1)Error: $MRTGITLABDIR is not a directory$(tput sgr0)"
+  fi
+fi
+
+TOKENFILE="$MRTGITLABDIR/.token"
+echo $PRIVATETOKEN > $TOKENFILE
+chmod 700 $TOKENFILE
+
+echo "$(tput setaf 4)Setup of GitLab client is successful$(tput sgr0)"

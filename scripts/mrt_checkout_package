@@ -1,0 +1,46 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ] && [ "$#" -ne 2 ]; then
+	echo "mrt_checkout_packge <package name> [git uri]"
+fi
+
+if [ -z "$ROS_ROOT" ]; then
+	echo "ROS_ROOT not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
+	exit 1
+fi
+
+if ! [ -d "src" ]; then
+    echo "No source folder found. This must be run in a standard catkin workspace (where you ran catkin_make)"
+    exit 1
+fi
+
+if ! [ -f "src/.rosinstall" ]; then
+    echo "Initializing wstool in ./src"
+	wstool init ./src > /dev/null
+fi
+
+PACKAGE_NAME=$1
+
+if [ "$#" -eq 1 ]; then
+	GIT_REPOSITORY="git@gitlab.mrt.uni-karlsruhe.de:MRT/$PACKAGE_NAME.git"
+else
+	GIT_REPOSITORY=$2
+fi
+
+GIT_ERROR="$(git ls-remote $GIT_REPOSITORY 2>&1 > /dev/null)"
+
+if ! [ -z "$GIT_ERROR" ]; then
+	echo "Git repository not found: $GIT_REPOSITORY"
+	exit 1
+fi
+
+#checkout repository
+
+wstool set $PACKAGE_NAME --git $GIT_REPOSITORY --confirm -t ./src 2>/dev/null > /dev/null
+echo "$(tput setaf 1)Search for package $PACKAGE_NAME $(tput sgr0)"
+echo "$(tput setaf 2)Found in $GIT_REPOSITORY. Cloning.$(tput sgr0)"
+wstool update $PACKAGE_NAME -t ./src > /dev/null
+
+#resolve deps
+mrt_resolve_deps
+

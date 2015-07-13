@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#search for help
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+MRT_RESOLVE_DEPS=true
+CATKIN_OPTIONS="$@"
+
+while :; do
+	case $1 in
+		-h|-\?|--help)
+			MRT_RESOLVE_DEPS=false
+			break
+			;;
+		-nd|--no-resolve-deps)
+			MRT_RESOLVE_DEPS=false
+			CATKIN_OPTIONS=${CATKIN_OPTIONS/\-\-no\-resolve\-deps/}
+			CATKIN_OPTIONS=${CATKIN_OPTIONS/\-nd/}
+			break
+			;;
+		--) # End of all options.
+			shift
+			break
+			;;
+		*) # Default case: If no more options then break out of the loop.
+			break
+	esac
+		
+	shift
+done
+
+if [ "$MRT_RESOLVE_DEPS" = true ]; then
+	$DIR/mrt_resolve_deps
+fi
+
+catkin_make $CATKIN_OPTIONS
+

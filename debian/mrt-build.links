@@ -1,0 +1,8 @@
+/mrtsoftware/scripts/mrt_checkout_package /usr/bin/mrt_checkout_package
+/mrtsoftware/scripts/mrt_create_pkg /usr/bin/mrt_create_pkg
+/mrtsoftware/scripts/mrt_init_workspace /usr/bin/mrt_init_workspace
+/mrtsoftware/scripts/mrt_make /usr/bin/mrt_make
+/mrtsoftware/scripts/mrt_make_eclipse /usr/bin/mrt_make_eclipse
+/mrtsoftware/scripts/mrt_resolve_deps /usr/bin/mrt_resolve_deps
+/mrtsoftware/scripts/mrt_setup_gitlab /usr/bin/mrt_setup_gitlab
+/mrtsoftware/scripts/mrt_wstool_update /usr/bin/mrt_wstool_update

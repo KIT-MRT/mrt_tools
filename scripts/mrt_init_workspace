@@ -1,0 +1,16 @@
+#!/bin/bash
+
+DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+
+if [ -z "$ROS_ROOT" ]; then
+	echo "ROS_ROOT not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
+	exit 1
+fi
+
+mkdir src
+cd src
+catkin_init_workspace
+wstool init
+cd ..
+$DIR/mrt_make
+$DIR/mrt_make install

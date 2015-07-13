@@ -1,0 +1,13 @@
+Source: mrt-build
+Section: main
+Priority: optional
+Maintainer: Johannes Beck <johannes.beck@kit.edu>
+Build-Depends: debhelper (>= 9.0.0)
+Standards-Version: 3.9.5
+#Vcs-Git: git://git.debian.org/collab-maint/mrt-build.git
+#Vcs-Browser: http://git.debian.org/?p=collab-maint/mrt-build.git;a=summary
+
+Package: mrt-build
+Architecture: amd64
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description: mrt build utilities

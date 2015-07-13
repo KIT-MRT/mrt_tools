@@ -1,0 +1,85 @@
+#!/bin/bash
+
+if [ -z "$ROS_ROOT" ]; then
+	echo "ROS_ROOT not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
+	exit 1
+fi
+
+if ! [ -d "src" ]; then
+    echo "No source folder found. This must be run in a standard catkin workspace (where you ran catkin_make)"
+    exit 1
+fi
+
+if ! [ -f "src/.rosinstall" ]; then
+    echo "Initializing wstool in ./src"
+	wstool init ./src > /dev/null
+fi
+
+while true; do
+    #check dependencies with rosdep
+    ERROR_STRING="$(rosdep check --from-paths src --ignore-src 2>&1 > /dev/null)"
+    if [ -z "$ERROR_STRING" ]; then
+        #all packages found
+        break
+    fi
+
+    #Extract missing packages from output
+    MISSING_PACKAGES=`echo "$ERROR_STRING" | sed -n "s/ERROR\[\(.*\)\]: Cannot locate rosdep definition for \[\(.*\)\]/\2/p"`
+    
+    if [ -z "$MISSING_PACKAGES" ]; then
+        #there is another error. Just print it and exit.
+        echo "$ERROR_STRING"
+        exit 1
+    fi
+    
+    #remove duplicated packages
+    MISSING_PACKAGES=$(echo "$MISSING_PACKAGES" | sort | uniq)
+    
+    #try to locate the missing packages
+    for MISSING_PACKAGE in $MISSING_PACKAGES; do
+        echo "$(tput setaf 1)Search for package $MISSING_PACKAGE $(tput sgr0)"
+        
+        #check in default git repository
+        GIT_REPOSITORY="git@gitlab.mrt.uni-karlsruhe.de:MRT/$MISSING_PACKAGE.git"
+        GIT_ERROR="$(git ls-remote $GIT_REPOSITORY 2>&1 > /dev/null)"
+                
+        #led used enter valid git repository (only if the repository is not found)
+        while ! [ -z "$GIT_ERROR" ]; do
+        
+        	#if first run and repository not found update apt-get and rosdep
+			if [ -z "$FIRST_MISSING_PACKAGE" ]; then
+				echo "$(tput setaf 2)Updating mrt apt-get and rosdep and resolve again. This might take a while ...$(tput sgr0)"
+				sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/mrt.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" > /dev/null
+				sudo apt-get install --only-upgrade mrt-cmake-modules --yes > /dev/null
+				rosdep update > /dev/null
+			
+				FIRST_MISSING_PACKAGE="updated deps"
+				break
+			fi
+        
+            echo "Enter git repository uri: "
+            read -i "$GIT_REPOSITORY" -e GIT_REPOSITORY
+            GIT_ERROR="$(git ls-remote $GIT_REPOSITORY 2>&1 > /dev/null)"
+            if ! [ -z "$GIT_ERROR" ]; then
+                echo "Invalid git repository specified. Try again."
+            fi
+        done
+        
+        if [ "$FIRST_MISSING_PACKAGE" == "updated deps" ]; then
+        	FIRST_MISSING_PACKAGE="done"
+        	break
+        fi
+        
+        #add specified git repository (ignore errors because repository could be added but not
+        #checked out)
+        echo "$(tput setaf 2)Found in $GIT_REPOSITORY. Cloning.$(tput sgr0)"
+        wstool set $MISSING_PACKAGE --git $GIT_REPOSITORY --confirm -t ./src 2>/dev/null > /dev/null
+        
+        #checkout repository
+        wstool update $MISSING_PACKAGE -t ./src > /dev/null
+    done
+done
+
+#install missing system dependencies
+rosdep install --from-paths src --ignore-src
+

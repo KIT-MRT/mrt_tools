@@ -1,0 +1,34 @@
+#!/bin/bash
+
+if [ ! -d "src" ]; then
+    echo "No source folder found. This must be run in a standard catkin workspace (where you ran catkin_make)"
+    exit 1
+fi
+
+if [[ -f "src/.rosinstall" && "$#" -gt "0" && "$1" == "init" ]]; then
+   echo "$(tput setaf 4)Removing wstool database src/.rosinstall$(tput sgr0)"
+   rm -f src/.rosinstall
+fi 
+if [ ! -f "src/.rosinstall" ]; then 
+    echo "Initializing wstool in ./src"
+    wstool init ./src > /dev/null
+fi
+
+# find all git directories
+GIT_DIRECTORIES=$(find src -type d -name '.git')
+for var in ${GIT_DIRECTORIES}
+do
+    GIT_DIR_BASE_NAME=$(dirname ${var})
+    GIT_REPO_NAME=$(basename ${GIT_DIR_BASE_NAME})
+    GIT_REPO_PATH=$(cat "${var}/config" | egrep '^[[:space:]]url' | awk '{print $3}')
+
+    echo -n "Found GIT repository '${GIT_DIR_BASE_NAME}': "
+    FIND_REPO_IN_DB=$(cat src/.rosinstall | grep ${GIT_REPO_PATH}) 
+    if [[ -z ${FIND_REPO_IN_DB} ]]; then
+        wstool set ${GIT_REPO_NAME} --git ${GIT_REPO_PATH} --confirm -t ./src > /dev/null 2>&1
+        echo "$(tput setaf 2)repository added$(tput sgr0)"
+    else
+        echo "$(tput setaf 1)repository already available$(tput sgr0)"
+    fi
+done
+exit 0
