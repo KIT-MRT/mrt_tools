@@ -68,11 +68,11 @@ func_create_directories() {
 	cd src/$PKG_NAME
 	mkdir -p src include/$PKG_NAME/internal test 
 	if $USE_ROS && [ $TYPE = "exec" ]; then
-		mkdir -p res launch;
+		mkdir -p res launch/params;
 	fi
 	
 	# Readme
-	cp $SELF_DIR/data/template/README.md .
+	cp $SELF_DIR/../templates/README.md .
 	
 	# Library Header
 	touch include/$PKG_NAME/$PKG_NAME.h
@@ -83,9 +83,9 @@ func_create_files() {
 	# Create files and replace with user info
 	# Package.xml
 	if $USE_ROS; then
-		cp $SELF_DIR/ros/template_package_ros.xml package.xml
+		cp $SELF_DIR/../templates/package_ros.xml package.xml
 	else
-		cp $SELF_DIR/ros/template_package.xml package.xml
+		cp $SELF_DIR/../templates/package.xml package.xml
 	fi
 	
 	sed -i -e "s/\${PACKAGE_NAME}/$PKG_NAME/g" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME^^}/g" -e "s/\${USER_NAME}/$USR_NAME/g" -e "s/\${USER_EMAIL}/$USR_EMAIL/g" package.xml
@@ -117,7 +117,7 @@ func_create_files() {
 		*) echo "$(tput setaf 1)ERROR:$(tput sgr0) Option for type not valid."; func_exit;;       
 	esac
 	
-	cp $SELF_DIR/data/template/CMakeLists.txt CMakeLists.txt
+	cp $SELF_DIR/../templates/CMakeLists.txt CMakeLists.txt
 	sed -i -e "s/^$PATTERN //g" -e "/^@.....@/d" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME}/g" CMakeLists.txt
 }
 
