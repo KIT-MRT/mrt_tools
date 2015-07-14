@@ -99,20 +99,20 @@ func_create_files() {
 	#pos5: executable
 	PATTERN="@"
 	if $USE_ROS; then
-		PATTERN="${PATTERN}x "
+		PATTERN="${PATTERN}x."
 	else
-		PATTERN="${PATTERN} x"
+		PATTERN="${PATTERN}.x"
 	fi
 	
 	case $TYPE in
 		lib)
-			PATTERN="${PATTERN}x  @"
+			PATTERN="${PATTERN}x..@"
 			;;
 		hlib) 
-			PATTERN="${PATTERN} x @"
+			PATTERN="${PATTERN}.x.@"
 			;;
 		exec) 
-			PATTERN="${PATTERN}  x@"
+			PATTERN="${PATTERN}..x@"
 			;;
 		*) echo "$(tput setaf 1)ERROR:$(tput sgr0) Option for type not valid."; func_exit;;       
 	esac
