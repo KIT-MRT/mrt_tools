@@ -47,12 +47,6 @@ if [ -z "$(apt-cache policy | grep -F http://packages.ros.org/ros/ubuntu)" ]; th
 	sudo apt-get update
 fi
 
-#install ros repository
-if [ -z $(apt-cache policy | grep http://packages.ros.org/ros/ubuntu) ]; then
-	sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
-	sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0xB01FA116
-fi
-
 #install rosdep for dependency management
 ROS_PACKAGE_FILE_NAME="/etc/ros/rosdep/sources.list.d/20-default.list"
 if ! [ -f "$ROS_PACKAGE_FILE_NAME" ]; then
