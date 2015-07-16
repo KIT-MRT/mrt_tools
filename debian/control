@@ -1,5 +1,5 @@
 Source: mrt-build
-Section: main
+Section: libs
 Priority: optional
 Maintainer: Johannes Beck <johannes.beck@kit.edu>
 Build-Depends: debhelper (>= 9.0.0)
@@ -9,5 +9,5 @@ Standards-Version: 3.9.5
 
 Package: mrt-build
 Architecture: amd64
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, python
 Description: mrt build utilities

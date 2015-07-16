@@ -1,9 +1,8 @@
-mrt-build (1.0.0-ubuntu3) UNRELEASED; urgency=medium
+mrt-build (1.0.0-ubuntu3) trusty; urgency=low
 
   * Changed the resolve stript from bash to python
   * Added support for gitlab. Downloads all project names
   * so that the all reachable gitlab projects can be
-  * resolved
 
  -- Johannes Beck <johannes.beck@kit.edu>  Mon, 13 Jul 2015 13:57:30 +0200
 

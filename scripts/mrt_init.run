@@ -73,7 +73,7 @@ sudo apt-get install mrt-cmake-modules mrt-build python-rosinstall python-catkin
 
 #install pip python modules
 #pyapi-gitlab: Used to communicate with the gitlab server (e.g. creating a project)
-sudo pip install pyapi-gitlab
+sudo pip install pyapi-gitlab colorama
 
 #install gitlab private token
 mrt_setup_gitlab
