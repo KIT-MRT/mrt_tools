@@ -6,11 +6,6 @@ if [ "$EUID" -eq 0 ]; then
     exit 1
 fi
 
-if [ -z "$ROS_ROOT" ]; then
-	echo "ROS_ROOT not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
-	exit 1
-fi
-
 #install gcc 4.9 and g++ 4.9
 sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
@@ -25,13 +20,13 @@ sudo apt-get install cmake cmake-curses-gui cmake-qt-gui
 #install cuda
 CUDA_DIR=$(ls -l /usr/local/cuda | awk '{print $11}')
 if [ "$CUDA_DIR" != "cuda-7.0/" ]; then
-    cd /tmp
-    mkdir cuda
-    cd cuda
-    wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_7.0-28_amd64.deb
-    sudo dpkg -i cuda-repo-ubuntu1404_7.0-28_amd64.deb
-    sudo apt-get update
-    sudo apt-get install cuda-toolkit-7.0
+	cd /tmp
+	mkdir cuda
+	cd cuda
+	wget http://developer.download.nvidia.com/compute/cuda/repos/ubuntu1404/x86_64/cuda-repo-ubuntu1404_7.0-28_amd64.deb
+	sudo dpkg -i cuda-repo-ubuntu1404_7.0-28_amd64.deb
+	sudo apt-get update
+	sudo apt-get install cuda-toolkit-7.0
 fi
 
 MRT_PACKAGE_PATH="/mrtsoftware/pkg"
@@ -43,6 +38,19 @@ if ! grep -q -F "deb [arch=amd64] $PPA_URL trusty main" "$APT_PACKAGE_FILE_NAME"
 	sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0x66FF02D7
 	echo "deb [arch=amd64] $PPA_URL trusty main" | sudo tee "$APT_PACKAGE_FILE_NAME" > /dev/null
 	sudo apt-get update -o Dir::Etc::sourcelist="sources.list.d/mrt.list" -o Dir::Etc::sourceparts="-" -o APT::Get::List-Cleanup="0" 
+fi
+
+#add ros repository
+if [ -z "$(apt-cache policy | grep -F http://packages.ros.org/ros/ubuntu)" ]; then
+	sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+	sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0xB01FA116
+	sudo apt-get update
+fi
+
+#install ros repository
+if [ -z $(apt-cache policy | grep http://packages.ros.org/ros/ubuntu) ]; then
+	sudo sh -c 'echo "deb http://packages.ros.org/ros/ubuntu $(lsb_release -sc) main" > /etc/apt/sources.list.d/ros-latest.list'
+	sudo apt-key adv --keyserver hkp://pool.sks-keyservers.net --recv-key 0xB01FA116
 fi
 
 #install rosdep for dependency management
@@ -77,3 +85,4 @@ sudo pip install pyapi-gitlab colorama
 
 #install gitlab private token
 mrt_setup_gitlab
+

@@ -1,0 +1,22 @@
+#!/bin/bash
+
+SCRIPT_DIR="$(cd $(dirname $([ -L $0 ] && readlink -f $0 || echo $0)) && pwd)"
+
+cd build
+for PROJECT in `find $PWD -name .project`; do
+    DIR=`dirname $PROJECT`
+    cd $DIR
+    #set environment variables
+    awk -f $(rospack find mk)/eclipse.awk .project > .project_with_env && mv .project_with_env .project
+    
+    #add support for indexing
+	if ! [ -f ./.settings/language.settings.xml ]; then
+		if ! [ -d ./.settings ]; then
+			mkdir ./.settings
+		fi
+		
+		cp "$SCRIPT_DIR/templates/language.settings.xml" ./.settings
+	fi
+done
+
+

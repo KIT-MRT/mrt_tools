@@ -1,0 +1,59 @@
+#!/usr/bin/python
+
+import os
+import subprocess
+import sys
+import glob
+
+if not os.environ["ROS_ROOT"]:
+    print "ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash"
+    sys.exit(1)
+
+script_root = os.path.dirname(os.path.realpath(__file__))
+
+resolve_deps = True
+arguments = sys.argv[1:]
+
+if "-h" in arguments or "--help" in arguments:
+    print "mrt_catkin [-nd|--no-resolve-deps] <catkin parameters>\n"
+    print "Additional catkin parameters:"
+    subprocess.check_call(["catkin", "--help"])
+    sys.exit()
+
+if "-nd" in arguments:
+    resolve_deps = False
+    arguments.remove("-nd")
+    
+if "--no-resolve-deps" in arguments:
+    resolve_deps = False
+    arguments.remove("--no-resolve-deps")
+    
+if "--debug" in arguments: 
+    arguments.remove("--debug")
+    arguments.append("-DCMAKE_BUILD_TYPE=Debug")
+    
+if "--release" in arguments: 
+    arguments.remove("--release")
+    arguments.append("-DCMAKE_BUILD_TYPE=RelWithDebInfo")
+    
+
+build_eclipse = False
+if "--eclipse" in arguments:
+    arguments.remove("--eclipse")
+    build_eclipse = True
+    arguments.append("--force-cmake")
+    arguments.append("-GEclipse CDT4 - Unix Makefiles")
+
+if resolve_deps:
+    subprocess.check_call([os.path.join(script_root, "mrt_resolve_deps")])
+    
+subprocess.call(["catkin"] + arguments)
+
+if build_eclipse:
+    subprocess.check_call([os.path.join(script_root, "mrt_set_eclipse_project_setting")])
+    
+    
+    
+    
+    
+    

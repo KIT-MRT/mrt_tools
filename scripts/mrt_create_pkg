@@ -19,7 +19,8 @@
 
 OPTIONS="$@" # Optionen für zweiten getopts-Aufruf sichern
 SELF="$(readlink /proc/$$/fd/255)" || SELF="$0" # Eigener Pfad (besseres $0)
-SELF_DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
+SELF_DIR="$(cd $(dirname $([ -L $0 ] && readlink -f $0 || echo $0)) && pwd)"
+
 TYPE=""
 USE_ROS=false
 CREATE_REPO=false
@@ -72,26 +73,25 @@ func_create_directories() {
 	fi
 	
 	# Readme
-	cp $SELF_DIR/../templates/README.md .
+	cp $SELF_DIR/templates/README.md .
 	
-	# Library Header
-	touch include/$PKG_NAME/$PKG_NAME.h
-	
+	# Copy test file
+	cp $SELF_DIR/templates/test.cpp "./test/test_$PKG_NAME.cpp"
 }
 
 func_create_files() {
 	# Create files and replace with user info
 	# Package.xml
 	if $USE_ROS; then
-		cp $SELF_DIR/../templates/package_ros.xml package.xml
+		cp $SELF_DIR/templates/package_ros.xml package.xml
 	else
-		cp $SELF_DIR/../templates/package.xml package.xml
+		cp $SELF_DIR/templates/package.xml package.xml
 	fi
 	
 	sed -i -e "s/\${PACKAGE_NAME}/$PKG_NAME/g" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME^^}/g" -e "s/\${USER_NAME}/$USR_NAME/g" -e "s/\${USER_EMAIL}/$USR_EMAIL/g" package.xml
 	
 	# CMakeLists.txt
-	#build mask @12345@
+	#build mask @12|345@
 	#pos1: non ros package
 	#pos2: ros package
 	#pos3: header only library
@@ -99,16 +99,18 @@ func_create_files() {
 	#pos5: executable
 	PATTERN="@"
 	if $USE_ROS; then
-		PATTERN="${PATTERN}x."
-	else
 		PATTERN="${PATTERN}.x"
+	else
+		PATTERN="${PATTERN}x."
 	fi
 	
+	PATTERN="$PATTERN|"
+	
 	case $TYPE in
-		lib)
+		hlib)
 			PATTERN="${PATTERN}x..@"
 			;;
-		hlib) 
+		lib) 
 			PATTERN="${PATTERN}.x.@"
 			;;
 		exec) 
@@ -117,8 +119,8 @@ func_create_files() {
 		*) echo "$(tput setaf 1)ERROR:$(tput sgr0) Option for type not valid."; func_exit;;       
 	esac
 	
-	cp $SELF_DIR/../templates/CMakeLists.txt CMakeLists.txt
-	sed -i -e "s/^$PATTERN //g" -e "/^@.....@/d" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME}/g" CMakeLists.txt
+	cp $SELF_DIR/templates/CMakeLists.txt CMakeLists.txt
+	sed -i -e "s/^$PATTERN //g" -e "/^@..|...@/d" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME}/g" CMakeLists.txt
 }
 
 
@@ -247,15 +249,20 @@ fi
 		
 # Adjust package name
 func_check_naming
-if [ $TYPE = "exec" ]; then
-	PKG_NAME=$PKG_NAME"_tool";
-fi
+
+#delete ros and tool if specified
+PKG_NAME=${PKG_NAME%_ros}
+PKG_NAME=${PKG_NAME%_tool}
+PKG_NAME=${PKG_NAME%_ros} #delete ros again because of ordering (e.g. <name>_ros_tool)
+
+#append _ros and _tool if necessary
 if $USE_ROS; then
 	PKG_NAME=$PKG_NAME"_ros";
 fi
+if [ $TYPE = "exec" ]; then
+	PKG_NAME=$PKG_NAME"_tool";
+fi
 
-
-echo $PKG_NAME  
 ######################################### START #########################################
 
 func_get_userinfo

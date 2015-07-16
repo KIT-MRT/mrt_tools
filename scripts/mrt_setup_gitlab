@@ -1,37 +1,34 @@
-#!/bin/bash
+#!/usr/bin/python
+import getpass
+import gitlab
+import os
 
-MRTGITLABDIR=~/.mrtgitlab
+# ###############################
+# # GitLab Client Setup Utility #
+# ###############################
+# This tool interactively runs you through the GitLab client setup of your computer. 
 
-echo "###############################"
-echo "# GitLab Client Setup Utility #"
-echo "###############################"
+# Define paths
+token_dir = os.path.expanduser("~/.mrtgitlab")
+token_file = token_dir+"/.token"
+host = "https://gitlab.mrt.uni-karlsruhe.de"
 
-echo "This tool interactively runs you through the GitLab client setup of your computer." 
-echo "Note: Security critical input is not echoed on the command-line for your safety." 
-
-echo "GitLab Private Access Token"
-echo "---------------------------"
-echo "The GitLab private access token is available in GitLab from 'Profile Settings' -> 'Account'"
-echo "Or you can STRG+Click here: $(tput setab 1)https://gitlab.mrt.uni-karlsruhe.de/profile/account$(tput sgr0)"
-echo
-echo "Please enter the GitLab private access token (token is not echo'ed): "
-read -s PRIVATETOKEN
-
-if [ -z "$PRIVATETOKEN" ]; then
-  echo "$(tput setaf 1)Error: Private access token is empty$(tput sgr0)"
-fi
-
-if [ ! -d "$MRTGITLABDIR" ]; then
-    mkdir $MRTGITLABDIR > /dev/null
-    chmod 700 $MRTGITLABDIR > /dev/null
-else
-  if [ -f "$MRTGITLABDIR" ]; then
-    echo "$(tput setaf 1)Error: $MRTGITLABDIR is not a directory$(tput sgr0)"
-  fi
-fi
-
-TOKENFILE="$MRTGITLABDIR/.token"
-echo $PRIVATETOKEN > $TOKENFILE
-chmod 700 $TOKENFILE
-
-echo "$(tput setaf 4)Setup of GitLab client is successful$(tput sgr0)"
+# Check for token file
+if os.path.isfile(token_file):
+	print("Private token file exists already.")
+	token = os.read(os.open(token_file,0),20)
+	git = gitlab.Gitlab(host, token=token)
+else:
+	print("No token file found. Fetching token from gitlab")
+	username = raw_input("Gitlab user name: ")
+	password = getpass.getpass()
+	git = gitlab.Gitlab(host)
+	git.login(username, password)
+	gitlabuser = git.currentuser()
+	token = gitlabuser['private_token']
+	# Write to file
+	if not os.path.exists(token_dir):
+		os.mkdir(token_dir)
+	os.mknod(token_file)
+	os.write(os.open(token_file,1),token)
+	print("Wrote token to file")

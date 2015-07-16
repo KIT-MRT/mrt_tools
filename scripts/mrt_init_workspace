@@ -8,9 +8,9 @@ if [ -z "$ROS_ROOT" ]; then
 fi
 
 mkdir src
+catkin init
 cd src
-catkin_init_workspace
 wstool init
 cd ..
-$DIR/mrt_make
-$DIR/mrt_make install
+$DIR/mrt_catkin build
+
