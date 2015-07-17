@@ -1,3 +1,9 @@
+mrt-build (1.0.0-ubuntu5) trusty; urgency=low
+
+  * Added correct symlinks
+
+ -- Johannes Beck <johannes.beck@kit.edu>  Thu, 16 Jul 2015 12:45:15 +0200
+
 mrt-build (1.0.0-ubuntu4) trusty; urgency=low
 
   * Major bugfix and release of packages

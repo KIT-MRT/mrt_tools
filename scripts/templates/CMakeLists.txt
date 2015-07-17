@@ -90,7 +90,8 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include ${mrt_EXPORT_INCLUDE_DIRS}
-  LIBRARIES ${PROJECT_NAME} ${mrt_EXPORT_LIBRARIES}
+@xx| xx@  LIBRARIES ${PROJECT_NAME} ${mrt_EXPORT_LIBRARIES}
+@xx|x  @  LIBRARIES ${mrt_EXPORT_LIBRARIES}
   CATKIN_DEPENDS ${catkin_EXPORT_DEPENDS}
 )
 
