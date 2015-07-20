@@ -9,6 +9,21 @@ import colorama
 import gitlab
 colorama.init()
 
+def getWorkspaceRootFolder(currentDir):
+    curDir = currentDir
+    found = False
+    while (curDir != "/" and curDir != ""):
+        if ".catkin_tools" in os.listdir(curDir):
+            found = True
+            break
+        
+        curDir = os.path.dirname(curDir)
+    
+    if not found:
+        raise Exception("No catkin workspace root found.")
+        
+    return curDir
+
 def getGitlabProjects():
     #define paths
     token_dir = os.path.expanduser("~/.mrtgitlab")
@@ -34,20 +49,18 @@ def updateAptAndRosPackages():
     subprocess.check_call(["rosdep", "update"], stdout=FNULL)
 
 def main():
-    if "ROS_ROOT" not in os.environ:
-        print "ROS_ROOT not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
+    if not "LD_LIBRARY_PATH" in os.environ or not "/opt/ros" in os.environ["LD_LIBRARY_PATH"]:
+        print "ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash"
         sys.exit(1)
 
-
-    if os.path.exists("./src") is False:
-        print "No source folder found. This must be run in a standard catkin workspace (where you ran catkin_make)"
-        sys.exit(1)
-
-    regexRosdepResolve = re.compile("ERROR\[[^\]]*\]: Cannot locate rosdep definition for \[([^\]]*)\]")
+    regexRosdepResolve = re.compile("ERROR\[([^\]]*)\]: Cannot locate rosdep definition for \[([^\]]*)\]")
 
     gitlabProjectDownloaded = False
     firstMissingDep = True
     projects = None
+    
+    workspaceFolder = getWorkspaceRootFolder(os.getcwd())
+    workspaceFolderSrc = os.path.join(workspaceFolder, "src")
 
     while True:
         rosdepProcess = Popen(['rosdep', 'check', '--from-paths', 'src', '--ignore-src'], stdout=PIPE, stderr=PIPE)
@@ -56,17 +69,22 @@ def main():
         if not rosdepErr:
             break
 
-        missing_packages = set()
+        missing_packages = dict()
         for match in regexRosdepResolve.finditer(rosdepErr):
-            missing_packages.add(match.group(1))
+            missing_packages[match.group(2)] = match.group(1)
 
-        for missing_package in missing_packages:
+        if not missing_packages:
+            print rosdepOutput
+            print rosdepErr
+            sys.exit(1)
+
+        for missing_package, package_dep_specified in missing_packages.iteritems():
             if not gitlabProjectDownloaded:
                 print "Retriving gitlab projects"
                 projects = getGitlabProjects()
                 gitlabProjectDownloaded = True
             
-            print colorama.Fore.RED + "Search for package " + missing_package + colorama.Fore.RESET
+            print colorama.Fore.RED + "Search for package " + missing_package + " (requested from: " + package_dep_specified + ")" + colorama.Fore.RESET
             
             #search for a gitlab projects
             gitlabProjects = list()
@@ -125,11 +143,11 @@ def main():
             #add specified git repository (ignore errors because repository could be added but not checked out)
             FNULL = open(os.devnull, 'w')
             print colorama.Fore.GREEN + "Found in " + sshUrl + ". Cloning." + colorama.Fore.RESET
-            subprocess.call(["wstool", "set", missing_package, "--git",  sshUrl, "--confirm", "-t", "./src"], stdout=FNULL, stderr=FNULL)
-            subprocess.call(["wstool", "update", missing_package, "-t", "./src"], stdout=FNULL)
+            subprocess.call(["wstool", "set", missing_package, "--git",  sshUrl, "--confirm", "-t", workspaceFolderSrc], stdout=FNULL, stderr=FNULL)
+            subprocess.call(["wstool", "update", missing_package, "-t", workspaceFolderSrc], stdout=FNULL)
 
     #install missing system dependencies
-    subprocess.check_call(["rosdep", "install", "--from-paths", "src", "--ignore-src"])
+    subprocess.check_call(["rosdep", "install", "--from-paths", workspaceFolderSrc, "--ignore-src"])
 
 if __name__ == "__main__":
     main()

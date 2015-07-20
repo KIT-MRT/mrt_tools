@@ -88,7 +88,7 @@ func_create_files() {
 		cp $SELF_DIR/templates/package.xml package.xml
 	fi
 	
-	sed -i -e "s/\${PACKAGE_NAME}/$PKG_NAME/g" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME^^}/g" -e "s/\${USER_NAME}/$USR_NAME/g" -e "s/\${USER_EMAIL}/$USR_EMAIL/g" package.xml
+	sed -i -e "s/\${PACKAGE_NAME}/$PKG_NAME/g" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME^^}/g" -e "s/\${USER_NAME}/$USR_NAME/g" -e "s/\${USER_EMAIL}/$USR_EMAIL/g" -e "/  <url/d" package.xml
 	
 	# CMakeLists.txt
 	#build mask @12|345@
@@ -174,8 +174,29 @@ where:
 func_exit
 }
 
+function get_workspace_root_folder {
+	x=$1; 
+	while [[ "$x" != "/" ]]; do 		
+		p=$(find "$x" -maxdepth 1 -type d -name ".catkin_tools")
+        if [[ $p != "" ]]; then
+			echo "$p"
+			return
+		fi
+		x=`dirname "$x"`
+	done
+}
+
 ##################################### KONFIG LADEN ######################################
 # Handle option flags
+
+WORKSPACE_ROOT_FOLDER=$(get_workspace_root_folder $PWD)
+if [[ "$WORKSPACE_ROOT_FOLDER" == "" ]]; then
+	echo "Cannot find workspace root folder."
+	exit 1
+fi
+
+cd "$WORKSPACE_ROOT_FOLDER"
+
 OPTIND=1
 while getopts "ht:rg" opt; do # set $opt to the next passed option
   case $opt in

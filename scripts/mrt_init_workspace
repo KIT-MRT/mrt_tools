@@ -2,8 +2,8 @@
 
 DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
 
-if [ -z "$ROS_ROOT" ]; then
-	echo "ROS_ROOT not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
+if [ -z "$LD_LIBRARY_PATH" ] || ! [[ $LD_LIBRARY_PATH =~ .*\/opt\/ros\/[^\/]+\/lib.* ]]; then
+	echo "ROS not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
 	exit 1
 fi
 

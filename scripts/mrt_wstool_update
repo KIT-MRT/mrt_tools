@@ -1,5 +1,26 @@
 #!/bin/bash
 
+#search for catkin root workspace dir and change folder
+function get_workspace_root_folder {
+	x=$1; 
+	while [[ "$x" != "/" ]]; do 		
+		p=$(find "$x" -maxdepth 1 -type d -name ".catkin_tools")
+        if [[ $p != "" ]]; then
+			echo "$p"
+			return
+		fi
+		x=`dirname "$x"`
+	done
+}
+
+WORKSPACE_ROOT_FOLDER=$(get_workspace_root_folder $PWD)
+if [[ "$WORKSPACE_ROOT_FOLDER" == "" ]]; then
+	echo "Cannot find workspace root folder."
+	exit 1
+fi
+
+cd "$WORKSPACE_ROOT_FOLDER"
+
 if [ ! -d "src" ]; then
     echo "No source folder found. This must be run in a standard catkin workspace (where you ran catkin_make)"
     exit 1
@@ -9,6 +30,7 @@ if [[ -f "src/.rosinstall" && "$#" -gt "0" && "$1" == "init" ]]; then
    echo "$(tput setaf 4)Removing wstool database src/.rosinstall$(tput sgr0)"
    rm -f src/.rosinstall
 fi 
+
 if [ ! -f "src/.rosinstall" ]; then 
     echo "Initializing wstool in ./src"
     wstool init ./src > /dev/null

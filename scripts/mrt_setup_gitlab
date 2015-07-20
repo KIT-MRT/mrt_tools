@@ -2,6 +2,7 @@
 import getpass
 import gitlab
 import os
+import distutils.util
 
 # ###############################
 # # GitLab Client Setup Utility #
@@ -13,22 +14,37 @@ token_dir = os.path.expanduser("~/.mrtgitlab")
 token_file = token_dir+"/.token"
 host = "https://gitlab.mrt.uni-karlsruhe.de"
 
+def createGitlabTokenFile():
+    username = raw_input("Gitlab user name: ")
+    password = getpass.getpass()
+    git = gitlab.Gitlab(host)
+    git.login(username, password)
+    gitlabuser = git.currentuser()
+    token = gitlabuser['private_token']
+    
+    # Write to file
+    if not os.path.exists(token_dir):
+        os.mkdir(token_dir)
+    
+    if not os.path.isfile(token_file):
+        os.mknod(token_file)
+    os.write(os.open(token_file,1), token)
+
 # Check for token file
+create_new_token = True
 if os.path.isfile(token_file):
-	print("Private token file exists already.")
-	token = os.read(os.open(token_file,0),20)
-	git = gitlab.Gitlab(host, token=token)
-else:
-	print("No token file found. Fetching token from gitlab")
-	username = raw_input("Gitlab user name: ")
-	password = getpass.getpass()
-	git = gitlab.Gitlab(host)
-	git.login(username, password)
-	gitlabuser = git.currentuser()
-	token = gitlabuser['private_token']
-	# Write to file
-	if not os.path.exists(token_dir):
-		os.mkdir(token_dir)
-	os.mknod(token_file)
-	os.write(os.open(token_file,1),token)
-	print("Wrote token to file")
+    print("Private token file exists already.")
+    choiceStr = raw_input("Would you like to recreate it [y/N]? ")
+    if choiceStr == "":
+        choiceStr = "n"
+    
+    create_new_token = distutils.util.strtobool(choiceStr)
+
+if create_new_token:
+    for i in range(0, 3):
+        try:
+            createGitlabTokenFile()
+            break
+        except:
+            print("Cannot connect to gitlab server. Try again")
+

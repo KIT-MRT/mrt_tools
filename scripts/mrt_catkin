@@ -5,28 +5,28 @@ import subprocess
 import sys
 import glob
 
-if not os.environ["ROS_ROOT"]:
+if not "LD_LIBRARY_PATH" in os.environ or not "/opt/ros" in os.environ["LD_LIBRARY_PATH"]:
     print "ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash"
     sys.exit(1)
 
-script_root = os.path.dirname(os.path.realpath(__file__))
+scriptRoot = os.path.dirname(os.path.realpath(__file__))
 
-resolve_deps = True
+resolve_deps = False
 arguments = sys.argv[1:]
 
 if "-h" in arguments or "--help" in arguments:
-    print "mrt_catkin [-nd|--no-resolve-deps] <catkin parameters>\n"
+    print "mrt_catkin [-rd|--resolve-deps] <catkin parameters>\n"
     print "Additional catkin parameters:"
     subprocess.check_call(["catkin", "--help"])
     sys.exit()
 
 if "-nd" in arguments:
-    resolve_deps = False
-    arguments.remove("-nd")
+    resolve_deps = True
+    arguments.remove("-rd")
     
 if "--no-resolve-deps" in arguments:
-    resolve_deps = False
-    arguments.remove("--no-resolve-deps")
+    resolve_deps = True
+    arguments.remove("--resolve-deps")
     
 if "--debug" in arguments: 
     arguments.remove("--debug")
@@ -45,7 +45,7 @@ if "--eclipse" in arguments:
     arguments.append("-GEclipse CDT4 - Unix Makefiles")
 
 if resolve_deps:
-    subprocess.check_call([os.path.join(script_root, "mrt_resolve_deps")])
+    subprocess.check_call([os.path.join(scriptRoot, "mrt_resolve_deps")])
     
 subprocess.call(["catkin"] + arguments)
 

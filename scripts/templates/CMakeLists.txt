@@ -19,6 +19,7 @@ project(${CMAKE_PACKAGE_NAME})
 ###################
 include(UseMrtModules)
 include(UseMrtStdCompilerFlags)
+@xx| xx@ include(UseMrtAutoTarget)
 
 include(GatherDeps)
 #remove libs, which cannot be find automatically
@@ -32,25 +33,25 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xxx@ ## Declare ROS messages, services and actions ##
 @ x|xxx@ ################################################
 @ x|xxx@ 
-@ x|xxx@ ## To declare and build messages, services or actions from within this
-@ x|xxx@ ## package, follow these steps:
-@ x|xxx@ ## * Let MSG_DEP_SET be the set of packages whose message types you use in
-@ x|xxx@ ##   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
-@ x|xxx@ ## * In the file package.xml:
-@ x|xxx@ ##   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
-@ x|xxx@ ##   * If MSG_DEP_SET isn't empty the following dependencies might have been
-@ x|xxx@ ##     pulled in transitively but can be declared for certainty nonetheless:
-@ x|xxx@ ##     * add a build_depend tag for "message_generation"
-@ x|xxx@ ##     * add a run_depend tag for "message_runtime"
-@ x|xxx@ ## * In this file (CMakeLists.txt):
-@ x|xxx@ ##   * add "message_generation" and every package in MSG_DEP_SET to
-@ x|xxx@ ##     find_package(catkin REQUIRED COMPONENTS ...)
-@ x|xxx@ ##   * add "message_runtime" and every package in MSG_DEP_SET to
-@ x|xxx@ ##     catkin_package(CATKIN_DEPENDS ...)
-@ x|xxx@ ##   * uncomment the add_*_files sections below as needed
-@ x|xxx@ ##     and list every .msg/.srv/.action file to be processed
-@ x|xxx@ ##   * uncomment the generate_messages entry below
-@ x|xxx@ ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
+@ x|xxx@ # To declare and build messages, services or actions from within this
+@ x|xxx@ # package, follow these steps:
+@ x|xxx@ # * Let MSG_DEP_SET be the set of packages whose message types you use in
+@ x|xxx@ #   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
+@ x|xxx@ # * In the file package.xml:
+@ x|xxx@ #   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
+@ x|xxx@ #   * If MSG_DEP_SET isn't empty the following dependencies might have been
+@ x|xxx@ #     pulled in transitively but can be declared for certainty nonetheless:
+@ x|xxx@ #     * add a build_depend tag for "message_generation"
+@ x|xxx@ #     * add a run_depend tag for "message_runtime"
+@ x|xxx@ # * In this file (CMakeLists.txt):
+@ x|xxx@ #   * add "message_generation" and every package in MSG_DEP_SET to
+@ x|xxx@ #     find_package(catkin REQUIRED COMPONENTS ...)
+@ x|xxx@ #   * add "message_runtime" and every package in MSG_DEP_SET to
+@ x|xxx@ #     catkin_package(CATKIN_DEPENDS ...)
+@ x|xxx@ #   * uncomment the add_*_files sections below as needed
+@ x|xxx@ #     and list every .msg/.srv/.action file to be processed
+@ x|xxx@ #   * uncomment the generate_messages entry below
+@ x|xxx@ #   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 @ x|xxx@ 
 @ x|xxx@ ## Generate messages in the 'msg' folder
 @ x|xxx@ #file(GLOB_RECURSE ROS_MESSAGE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "msg/*.msg")
@@ -82,16 +83,16 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 ###################################
 ## catkin specific configuration ##
 ###################################
-## The catkin_package macro generates cmake config files for your package
-## Declare things to be passed to dependent projects
-## INCLUDE_DIRS: uncomment this if you package contains header files
-## LIBRARIES: libraries you create in this project that dependent projects also need
-## CATKIN_DEPENDS: catkin_packages dependent projects also need
-## DEPENDS: system dependencies of this project that dependent projects also need
+# The catkin_package macro generates cmake config files for your package
+# Declare things to be passed to dependent projects
+# INCLUDE_DIRS: uncomment this if you package contains header files
+# LIBRARIES: libraries you create in this project that dependent projects also need
+# CATKIN_DEPENDS: catkin_packages dependent projects also need
+# DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
   INCLUDE_DIRS include ${mrt_EXPORT_INCLUDE_DIRS}
-@xx| xx@  LIBRARIES ${PROJECT_NAME} ${mrt_EXPORT_LIBRARIES}
-@xx|x  @  LIBRARIES ${mrt_EXPORT_LIBRARIES}
+@xx| xx@   LIBRARIES ${PROJECT_NAME} ${mrt_EXPORT_LIBRARIES}
+@xx|x  @   LIBRARIES ${mrt_EXPORT_LIBRARIES}
   CATKIN_DEPENDS ${catkin_EXPORT_DEPENDS}
 )
 
@@ -114,14 +115,14 @@ catkin_package(
 @xx| xx@ file(GLOB_RECURSE PROJECT_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "src/*.cpp")
 @xx| xx@ 
 @xx|  x@ # Declare a cpp executable
-@xx|  x@ add_executable(${PROJECT_NAME}
+@xx|  x@ add_executable_auto(${PROJECT_NAME}
 @xx|  x@   ${PROJECT_HEADER_FILES_INC}
 @xx|  x@   ${PROJECT_SOURCE_FILES_INC}
 @xx|  x@   ${PROJECT_SOURCE_FILES_SRC}
 @xx|  x@ )
 @xx|  x@ 
 @xx| x @ # Declare a cpp library
-@xx| x @ add_library(${PROJECT_NAME}
+@xx| x @ add_library_auto(${PROJECT_NAME}
 @xx| x @   ${PROJECT_HEADER_FILES_INC}
 @xx| x @   ${PROJECT_SOURCE_FILES_INC}
 @xx| x @   ${PROJECT_SOURCE_FILES_SRC}
