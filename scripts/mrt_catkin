@@ -50,5 +50,5 @@ if resolve_deps:
 subprocess.call(["catkin"] + arguments)
 
 if build_eclipse:
-    subprocess.check_call([os.path.join(script_root, "mrt_set_eclipse_project_setting")])
+    subprocess.check_call([os.path.join(scriptRoot, "mrt_set_eclipse_project_setting")])
     

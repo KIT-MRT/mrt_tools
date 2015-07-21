@@ -1,5 +1,25 @@
 #!/bin/bash
 
+function get_workspace_root_folder {
+	x=$1; 
+	while [[ "$x" != "/" ]]; do 		
+		p=$(find "$x" -maxdepth 1 -type d -name ".catkin_tools")
+        if [[ $p != "" ]]; then
+			echo $(dirname "$p")
+			return
+		fi
+		x=`dirname "$x"`
+	done
+}
+
+WORKSPACE_ROOT_FOLDER=$(get_workspace_root_folder $PWD)
+if [[ "$WORKSPACE_ROOT_FOLDER" == "" ]]; then
+	echo "Cannot find workspace root folder."
+	exit 1
+fi
+
+cd "$WORKSPACE_ROOT_FOLDER"
+
 SCRIPT_DIR="$(cd $(dirname $([ -L $0 ] && readlink -f $0 || echo $0)) && pwd)"
 
 cd build
