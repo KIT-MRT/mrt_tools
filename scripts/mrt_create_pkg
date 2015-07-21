@@ -15,6 +15,26 @@
 #
 #
 
+function get_workspace_root_folder {
+	x=$1; 
+	while [[ "$x" != "/" ]]; do 		
+		p=$(find "$x" -maxdepth 1 -type d -name ".catkin_tools")
+        if [[ $p != "" ]]; then
+			echo $(dirname "$p")
+			return
+		fi
+		x=`dirname "$x"`
+	done
+}
+
+WORKSPACE_ROOT_FOLDER=$(get_workspace_root_folder $PWD)
+if [[ "$WORKSPACE_ROOT_FOLDER" == "" ]]; then
+	echo "Cannot find workspace root folder."
+	exit 1
+fi
+
+cd "$WORKSPACE_ROOT_FOLDER"
+
 ################################## INTERNE VARIABLEN ####################################
 
 OPTIONS="$@" # Optionen für zweiten getopts-Aufruf sichern
@@ -67,7 +87,12 @@ func_create_directories() {
 	# Create folders
 	mkdir -p src/$PKG_NAME
 	cd src/$PKG_NAME
-	mkdir -p src include/$PKG_NAME/internal test 
+	mkdir -p include/$PKG_NAME/internal test 
+	
+	if [[ "$TYPE" != "hlib" ]]; then
+		mkdir src
+	fi
+	
 	if $USE_ROS && [ $TYPE = "exec" ]; then
 		mkdir -p res launch/params;
 	fi
@@ -88,7 +113,11 @@ func_create_files() {
 		cp $SELF_DIR/templates/package.xml package.xml
 	fi
 	
-	sed -i -e "s/\${PACKAGE_NAME}/$PKG_NAME/g" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME^^}/g" -e "s/\${USER_NAME}/$USR_NAME/g" -e "s/\${USER_EMAIL}/$USR_EMAIL/g" -e "/  <url/d" package.xml
+	sed -i -e "s/\${PACKAGE_NAME}/$PKG_NAME/g" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME^^}/g" -e "s/\${USER_NAME}/$USR_NAME/g" -e "s/\${USER_EMAIL}/$USR_EMAIL/g" package.xml
+	
+	if [ $CREATE_REPO == false ]; then
+		sed -i -e "/  <url/d" package.xml
+	fi
 	
 	# CMakeLists.txt
 	#build mask @12|345@
@@ -125,7 +154,7 @@ func_create_files() {
 
 
 func_create_repository() {
-	if $CREATE_REPO; then
+	if [ $CREATE_REPO == true ]; then
 		# API call is handled by python script
 		REPO_URL=$(python $SELF_DIR/mrt_create_repo.py $PKG_NAME) 
 		if [ -z "$REPO_URL" ]; then
@@ -141,14 +170,16 @@ func_create_repository() {
 		git commit -m "Initial commit" >/dev/null 2>&1
 		git push -u origin master >/dev/null 2>&1
 		
+		cd $BASE_PATH/src
+		
 		# Register with rosdep
 		if [ ! -f "$BASE_PATH/src/.rosinstall" ]; then
-			echo "Initializing wstool in ./src"
+			echo "Initializing wstool"
 			wstool init $BASE_PATH/src >/dev/null 2>&1
 		fi
-		wstool set $PKG_NAME --git $REPO_URL --confirm -t $BASE_PATH/src >/dev/null 
-	fi
-	if $USE_ROS; then # no package.xml otherwise
+		
+		wstool set $PKG_NAME --git $REPO_URL --confirm -t $BASE_PATH/src >/dev/null
+		
 		sed -i -e "s#\${PACKAGE_REPOSITORY_URL}#$REPO_URL#g" $BASE_PATH/src/$PKG_NAME/package.xml # Using hashtag instead of / because REPO_URL contains them aswell
 	fi
 }
@@ -174,28 +205,8 @@ where:
 func_exit
 }
 
-function get_workspace_root_folder {
-	x=$1; 
-	while [[ "$x" != "/" ]]; do 		
-		p=$(find "$x" -maxdepth 1 -type d -name ".catkin_tools")
-        if [[ $p != "" ]]; then
-			echo "$p"
-			return
-		fi
-		x=`dirname "$x"`
-	done
-}
-
 ##################################### KONFIG LADEN ######################################
 # Handle option flags
-
-WORKSPACE_ROOT_FOLDER=$(get_workspace_root_folder $PWD)
-if [[ "$WORKSPACE_ROOT_FOLDER" == "" ]]; then
-	echo "Cannot find workspace root folder."
-	exit 1
-fi
-
-cd "$WORKSPACE_ROOT_FOLDER"
 
 OPTIND=1
 while getopts "ht:rg" opt; do # set $opt to the next passed option
@@ -223,16 +234,13 @@ PKG_NAME=$1
 # Check wether no arguments were passed
 if [ $OPTIND -eq 1 ] || [ -z "$TYPE" ]; then 
 	#clear;
-	echo $(basename "$0")
-	echo
 	echo "Not all options were passed, starting interactive mode."; 
-	echo
 	# PKG_NAME
 	func_check_naming
 	
 	# CREATE_REPO
 	while true; do     
-       read -p "Do you want to create a gitlab repository?: [y/N]" yn 
+       read -p "Do you want to create a gitlab repository?: [y/N] " yn 
 	   yn="${yn:=n}" # Default answer
        case ${yn^^} in      
             [Y]* ) CREATE_REPO=true; break;;   
@@ -243,7 +251,7 @@ if [ $OPTIND -eq 1 ] || [ -z "$TYPE" ]; then
 	
 	# USE_ROS
 	while true; do    
-		read -p "Do you want to create a ROS Package?: [y/N]" yn
+		read -p "Do you want to create a ROS Package?: [y/N] " yn
 		yn="${yn:=n}"
 		case ${yn^^} in 
 			[Y]* ) USE_ROS=true; break;;

@@ -15,7 +15,7 @@ function get_workspace_root_folder {
 	while [[ "$x" != "/" ]]; do 		
 		p=$(find "$x" -maxdepth 1 -type d -name ".catkin_tools")
         if [[ $p != "" ]]; then
-			echo "$p"
+			echo $(dirname "$p")
 			return
 		fi
 		x=`dirname "$x"`

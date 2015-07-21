@@ -20,11 +20,11 @@ if "-h" in arguments or "--help" in arguments:
     subprocess.check_call(["catkin", "--help"])
     sys.exit()
 
-if "-nd" in arguments:
+if "-rd" in arguments:
     resolve_deps = True
     arguments.remove("-rd")
     
-if "--no-resolve-deps" in arguments:
+if "--resolve-deps" in arguments:
     resolve_deps = True
     arguments.remove("--resolve-deps")
     
@@ -51,9 +51,4 @@ subprocess.call(["catkin"] + arguments)
 
 if build_eclipse:
     subprocess.check_call([os.path.join(script_root, "mrt_set_eclipse_project_setting")])
-    
-    
-    
-    
-    
     

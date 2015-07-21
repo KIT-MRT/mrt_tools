@@ -32,7 +32,7 @@ def getGitlabProjects():
 
     #check for token file
     if not os.path.isfile(token_file):
-        import mrt_setup_gitlab # path to script?
+        subprocess.check_call(["mrt_setup_gitlab"])
 
     #connect
     token = os.read(os.open(token_file,0),20)
@@ -60,7 +60,7 @@ def main():
     projects = None
     
     workspaceFolder = getWorkspaceRootFolder(os.getcwd())
-    workspaceFolderSrc = os.path.join(workspaceFolder, "src")
+    os.chdir(workspaceFolder)
 
     while True:
         rosdepProcess = Popen(['rosdep', 'check', '--from-paths', 'src', '--ignore-src'], stdout=PIPE, stderr=PIPE)
@@ -143,11 +143,11 @@ def main():
             #add specified git repository (ignore errors because repository could be added but not checked out)
             FNULL = open(os.devnull, 'w')
             print colorama.Fore.GREEN + "Found in " + sshUrl + ". Cloning." + colorama.Fore.RESET
-            subprocess.call(["wstool", "set", missing_package, "--git",  sshUrl, "--confirm", "-t", workspaceFolderSrc], stdout=FNULL, stderr=FNULL)
-            subprocess.call(["wstool", "update", missing_package, "-t", workspaceFolderSrc], stdout=FNULL)
+            subprocess.call(["wstool", "set", missing_package, "--git",  sshUrl, "--confirm", "-t", "src"], stdout=FNULL, stderr=FNULL)
+            subprocess.call(["wstool", "update", missing_package, "-t", "src"], stdout=FNULL)
 
     #install missing system dependencies
-    subprocess.check_call(["rosdep", "install", "--from-paths", workspaceFolderSrc, "--ignore-src"])
+    subprocess.check_call(["rosdep", "install", "--from-paths", "src", "--ignore-src"])
 
 if __name__ == "__main__":
     main()
