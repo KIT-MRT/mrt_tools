@@ -9,19 +9,19 @@ import os
 # ###################################
 # This tool creates a new GitLab repository on the server
 
-def main(repo_name): 
-	# Define paths
-	token_dir = os.path.expanduser("~/.mrtgitlab")
-	token_file = token_dir+"/.token"
-	host = "https://gitlab.mrt.uni-karlsruhe.de"
+def main(repo_name):
+    # Define paths
+    token_dir = os.path.expanduser("~/.mrtgitlab")
+    token_file = token_dir + "/.token"
+    host = "https://gitlab.mrt.uni-karlsruhe.de"
 
-	# Check for token file
-	if not os.path.isfile(token_file):
+    # Check for token file
+    if not os.path.isfile(token_file):
         os.system("mrt_setup_gitlab")
 
-	# Connect
-	token = os.read(os.open(token_file,0),20)
-	git = gitlab.Gitlab(host, token=token)
+    # Connect
+    token = os.read(os.open(token_file, 0), 20)
+    git = gitlab.Gitlab(host, token=token)
 
     # Check namespaces
     namespaces = {project['namespace']['name']: project['namespace']['id'] for project in git.getall(git.getprojects)}
@@ -57,11 +57,11 @@ def main(repo_name):
         print >> sys.stderr, "There was a problem with creating the repo."
         print ""
         exit()
-	
-	# Return URL
-	print request['ssh_url_to_repo']
 
-	
+    # Return URL
+    print request['ssh_url_to_repo']
+
+
 if __name__ == '__main__':
     repo_name = sys.argv[1]
-    main(repo_name) 
+    main(repo_name)
