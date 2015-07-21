@@ -17,7 +17,7 @@ def main(repo_name):
 
 	# Check for token file
 	if not os.path.isfile(token_file):
-		import mrt_setup_gitlab # path to script?
+        os.system("mrt_setup_gitlab")
 
 	# Connect
 	token = os.read(os.open(token_file,0),20)
