@@ -156,7 +156,12 @@ func_create_files() {
 func_create_repository() {
 	if [ $CREATE_REPO == true ]; then
 		# API call is handled by python script
-		REPO_URL=$(python $SELF_DIR/mrt_create_repo.py $PKG_NAME) 
+		TMP_FILE="~/.mrtgitlab/tmp"
+		eval TMP_FILE=$TMP_FILE
+		cp /dev/null $TMP_FILE
+		python $SELF_DIR/mrt_create_repo.py $PKG_NAME $TMP_FILE
+		REPO_URL=$(cat $TMP_FILE)
+		#rm $TMP_FILE
 		if [ -z "$REPO_URL" ]; then
 			echo "$(tput setaf 1)ERROR$(tput sgr0) could not create gitlab repository. Skipping repo setup"
 			return

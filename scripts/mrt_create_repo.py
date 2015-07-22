@@ -9,7 +9,7 @@ import os
 # ###################################
 # This tool creates a new GitLab repository on the server
 
-def main(repo_name):
+def main(repo_name, output):
     # Define paths
     token_dir = os.path.expanduser("~/.mrtgitlab")
     token_file = token_dir + "/.token"
@@ -59,9 +59,12 @@ def main(repo_name):
         exit()
 
     # Return URL
-    print request['ssh_url_to_repo']
-
+    print "Repository URL is: "+request['ssh_url_to_repo']
+    f = open(output, 'w')
+    f.write(request['ssh_url_to_repo'])
+    f.close()
 
 if __name__ == '__main__':
     repo_name = sys.argv[1]
-    main(repo_name)
+    output = sys.argv[2]
+    main(repo_name, output)
