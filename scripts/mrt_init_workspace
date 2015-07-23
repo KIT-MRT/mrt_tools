@@ -9,7 +9,7 @@ fi
 
 INIT_REPO=true
 
-if [ "$(ls -A $DIR" ]; then
+if [[ -n "$(ls -A $PWD)" ]]; then
    read -p "The repository folder is not empty. Would you like to continue? [y/N] " yn 
    yn="${yn:=n}" # Default answer
    case ${yn^^} in      
@@ -18,7 +18,7 @@ if [ "$(ls -A $DIR" ]; then
    esac
 fi
 
-fi [ $INIT_REPO == true ]; then
+if [ $INIT_REPO == true ]; then
 	mkdir src
 	catkin init
 	cd src
