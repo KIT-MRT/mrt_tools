@@ -7,10 +7,23 @@ if [ -z "$LD_LIBRARY_PATH" ] || ! [[ $LD_LIBRARY_PATH =~ .*\/opt\/ros\/[^\/]+\/l
 	exit 1
 fi
 
-mkdir src
-catkin init
-cd src
-wstool init
-cd ..
-$DIR/mrt_catkin build
+INIT_REPO=true
+
+if [ "$(ls -A $DIR" ]; then
+   read -p "The repository folder is not empty. Would you like to continue? [y/N] " yn 
+   yn="${yn:=n}" # Default answer
+   case ${yn^^} in      
+        [Y]* ) INIT_REPO=true; break;;
+        * ) INIT_REPO=false;;
+   esac
+fi
+
+fi [ $INIT_REPO == true ]; then
+	mkdir src
+	catkin init
+	cd src
+	wstool init
+	cd ..
+	$DIR/mrt_catkin build
+fi
 

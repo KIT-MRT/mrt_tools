@@ -7,7 +7,7 @@ if [ "$EUID" -eq 0 ]; then
 fi
 
 function package_installed {
-	if dpkg -s $1 | grep -q 'Status: install ok installed'; then
+	if dpkg -s $1 2> /dev/null | grep -q 'Status: install ok installed'; then
 		echo "1"
 		return
 	fi
@@ -70,7 +70,6 @@ ROS_REPOSITORY_ENTRY="yaml file://$MRT_PACKAGE_PATH/share/ros/base.yaml"
 #gather information
 #check g++ version
 GPP_FOUND=$(package_installed "g++-4.9")
-echo "$GPP_FOUND"
 
 #check cuda version
 CUDA_FOUND=0
@@ -135,6 +134,9 @@ if [ -z "$(apt-cache policy | grep -F http://packages.ros.org/ros/ubuntu)" ]; th
 	ask_exit_on_error
 fi
 
+#install ros base
+check_output sudo apt-get install ros-jade-ros-base
+
 #install rosdep for dependency management
 
 if ! [ -f "$ROS_PACKAGE_FILE_NAME" ]; then
@@ -166,9 +168,6 @@ check_output sudo apt-get install mrt-build python-rosinstall python-catkin-tool
 #install pip python modules
 #pyapi-gitlab: Used to communicate with the gitlab server (e.g. creating a project)
 check_output sudo pip install pyapi-gitlab colorama 
-
-#install ros base
-check_output sudo apt-get install ros-jade-ros-base
 
 #install gitlab private token
 mrt_setup_gitlab

@@ -15,9 +15,14 @@ resolve_deps = False
 arguments = sys.argv[1:]
 
 if "-h" in arguments or "--help" in arguments:
-    print "mrt_catkin [-rd|--resolve-deps] <catkin parameters>\n"
-    print "Additional catkin parameters:"
-    subprocess.check_call(["catkin", "--help"])
+    print("mrt_catkin [-rd|--resolve-deps] [--eclipse] [--debug] [--release] <catkin parameters>\n")
+    print(" -rd, --resolve-deps     Check and resolve dependencies before building workspace.")
+    print(" --eclipse               Create a eclipse project.")
+    print(" --debug                 Build in debug mode.")
+    print(" --release               Build in release mode.")
+    print("")
+    print("Additional catkin parameters:")
+    subprocess.check_call(["catkin"] + arguments)
     sys.exit()
 
 if "-rd" in arguments:
