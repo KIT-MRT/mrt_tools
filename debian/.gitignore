@@ -1,4 +1,10 @@
-mrt-build/*
-mrt-build.debhelper.log
-mrt-build.substvars
-
+/*
+!/.gitignore
+!/changelog
+!/compat
+!/control
+!/copyright
+!/docs
+!/install
+!/rules
+!/source
