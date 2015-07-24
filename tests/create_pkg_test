@@ -1,0 +1,10 @@
+#!/bin/bash
+
+mrt_create_pkg -t lib pkg_a
+mrt_create_pkg -t hlib pkg_b
+mrt_create_pkg -t exec pkg_c
+
+mrt_create_pkg -t lib -g gitlab_test_a
+mrt_create_pkg -t hlib -g gitlab_test_b
+mrt_create_pkg -t exec -g gitlab_test_c
+

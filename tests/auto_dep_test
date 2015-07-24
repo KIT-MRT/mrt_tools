@@ -1,0 +1,222 @@
+#!/usr/bin/python3
+ 
+from enum import Enum
+import subprocess
+import os
+import xml.etree.ElementTree as ET
+import sys
+import string
+import random
+ 
+class DependType:
+    build_depend = False
+    build_export_depend = False
+    depend = False
+    
+    def __init__(self, build_depend, build_export_depend, depend):
+        self.build_depend = build_depend
+        self.build_export_depend = build_export_depend
+        self.depend = depend
+        
+        if self.build_export_depend == True:
+            self.build_depend = True
+        
+        if self.depend == True:
+            self.build_depend = True
+            self.build_export_depend = True
+        
+    
+class LibType(Enum):
+    hlib = 1
+    lib = 2
+    exe = 3
+    
+    def __str__(self):
+        if self == LibType.hlib:
+            return "hlib"
+        elif self == LibType.lib:
+            return "lib"
+        elif self == LibType.exe:
+            return "exec"
+        else:
+            raise Exception("Unknown enum type")
+ 
+class DependPackage:
+    name = ""
+    dependType = None
+    
+    def __init__(self, name, dependType):
+        self.name = name
+        self.dependType = dependType
+
+def indent(elem, level=0):
+    i = "\n" + level*"  "
+    if len(elem):
+        if not elem.text or not elem.text.strip():
+            elem.text = i + "  "
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+        for elem in elem:
+            indent(elem, level+1)
+        if not elem.tail or not elem.tail.strip():
+            elem.tail = i
+    else:
+        if level and (not elem.tail or not elem.tail.strip()):
+            elem.tail = i
+
+class Package:
+    name = ""
+    libType = None
+    dependendPackages = list()
+    
+    def create(self):
+        #create package
+        subprocess.check_call(["mrt_create_pkg", "-t", str(self.libType), self.name])
+        
+        #create xml (load template)
+        projectRootDir = None
+        if self.libType == LibType.exe:
+            projectRootDir = os.path.join("src", self.name + "_tool")
+        else:
+            projectRootDir = os.path.join("src", self.name)
+            
+        fileName = os.path.join(projectRootDir, "package.xml")
+        packageXml = ET.parse(fileName)
+        packageNode = packageXml.getroot()
+        if packageNode.tag != "package":
+            raise Exception("root is not package")
+        
+        for dependendPackage in self.dependendPackages:
+            if dependendPackage.dependType.depend == True:
+                packageElemNode = ET.SubElement(packageNode, "depend")
+                packageElemNode.text = dependendPackage.name
+            elif dependendPackage.dependType.build_export_depend == True:
+                packageElemNode = ET.SubElement(packageNode, "build_depend")
+                packageElemNode.text = dependendPackage.name
+                packageElemNode = ET.SubElement(packageNode, "build_export_depend")
+                packageElemNode.text = dependendPackage.name
+            else:
+                packageElemNode = ET.SubElement(packageNode, str("build_depend"))
+                packageElemNode.text = dependendPackage.name          
+        
+        indent(packageNode)
+        packageXml.write(fileName)
+        
+        #create header files (in header folder, which will be exported)
+        if self.libType in [LibType.hlib, LibType.lib]:
+            headerFileString = ""
+            
+            for dependendPackage in self.dependendPackages:
+                #can only be added, if it is a build export depend
+                if dependendPackage.dependType.build_export_depend == False:
+                    continue
+                
+                headerFileString += "#include \"" + dependendPackage.name + "/" + dependendPackage.name + "_header.h\"\n"
+            
+            if self.libType == LibType.hlib:
+                headerFileString += "#include <iostream>"
+                headerFileString += "\ninline void " + self.name + "_print() {\n"
+                headerFileString += "\tstd::cout << \"" + self.name + "\" << std::endl;\n"
+                headerFileString += "}\n"
+                pass
+            else:
+                headerFileString += "\nvoid " + self.name + "_print();\n"
+                
+            headerFile = open(os.path.join(projectRootDir, "include", self.name, self.name + "_header.h"), 'w')
+            headerFile.write("#pragma once\n")
+            headerFile.write(headerFileString)
+            headerFile.close()
+        
+        #create cpp file
+        if self.libType in [LibType.exe, LibType.lib]:
+            srcFileStringInc = ""
+            srcFileStringPrint = ""
+            for dependendPackage in self.dependendPackages:
+                srcFileStringInc += "#include \"" + dependendPackage.name + "/" + dependendPackage.name + "_header.h\"\n"
+                srcFileStringPrint += "\t" + dependendPackage.name + "_print();\n"
+            
+            srcFile = open(os.path.join(projectRootDir, "src", self.name + "_src.cpp"), 'w')
+            srcFile.write("#include <iostream>\n")
+            srcFile.write(srcFileStringInc)
+            srcFile.write("\nvoid " + self.name + "_print() {\n")
+            srcFile.write("\tstd::cout << \"" + self.name + "\" << std::endl;\n")
+            srcFile.write(srcFileStringPrint)
+            srcFile.write("}\n")
+ 
+            #if exe add main
+            if self.libType == LibType.exe:
+                srcFile.write("\nint main() {\n")
+                srcFile.write("\t" + self.name + "_print();\n")
+                srcFile.write("}\n")
+        
+            srcFile.close()
+
+def getPackageName(idx):
+    idxstr = str(idx)
+    s = "project_"
+    for c in idxstr:
+        s += chr(ord(c) + 49)
+    return s
+
+def createPackages(minNumPackages, maxNumPackages):
+    packages = list()
+    
+    numPackages = random.randint(minNumPackages, maxNumPackages)
+    
+    #generate depend type list
+    depTypes = set()
+    for i in range(0, 2):
+        for j in range(0, 2):
+           for k in range(0, 2):
+               if i == 0 and j == 0 and k == 0:
+                   continue
+               depTypes.add(DependType(i, j, k))
+               
+    #remove duplicates
+    depTypes = list(depTypes)
+    
+    for packageIdx in range(0, numPackages):
+        #create new package
+        package = Package()
+        package.dependendPackages = list()
+        package.name = getPackageName(packageIdx)
+        package.libType = LibType(random.randint(1, 3))
+        
+        #print("Createing package: " + package.name)
+        
+        #collect dependencies
+        #construct possible dep packages
+        possibleDepPackages = list()
+        for p in packages:
+            if p.libType == LibType.exe:
+                continue
+            
+            possibleDepPackages.append(p)
+            
+        #print("num dep packages: " + str(len(possibleDepPackages)))
+        if possibleDepPackages:
+            numDeps = random.randint(0, len(possibleDepPackages) - 1)
+            #print("Num selected deps: " + str(numDeps))
+            
+            if numDeps != 0:
+                deps = random.sample(possibleDepPackages, numDeps)
+                for dep in deps:
+                    package.dependendPackages.append(DependPackage(dep.name, random.choice(depTypes)))
+        
+        #add package
+        #print("Num added deps: " + str(len(package.dependendPackages)))
+        packages.append(package)
+    
+    for package in packages:
+        package.create()
+
+if __name__ == "__main__":
+    for numTest in range(1, 10000):
+	    subprocess.check_call(["catkin", "clean", "-a"])
+	    subprocess.check_call(["rm", "-r", "./src"])
+	    createPackages(5, 50)
+	    subprocess.check_call(["catkin", "build"])
+	    print("Test " + str(numTest) + " passed.")
+    
+    
+
