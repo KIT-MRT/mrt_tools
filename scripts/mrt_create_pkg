@@ -167,6 +167,8 @@ func_create_repository() {
 			return
 		fi
 		
+		sed -i -e "s#\${PACKAGE_REPOSITORY_URL}#$REPO_URL#g" $BASE_PATH/src/$PKG_NAME/package.xml # Using hashtag instead of / because REPO_URL contains them aswell
+		
 		# Initialize repository
 		cd $BASE_PATH/src/$PKG_NAME
 		git init 
@@ -185,7 +187,6 @@ func_create_repository() {
 		
 		wstool set $PKG_NAME --git $REPO_URL --confirm -t $BASE_PATH/src >/dev/null
 		
-		sed -i -e "s#\${PACKAGE_REPOSITORY_URL}#$REPO_URL#g" $BASE_PATH/src/$PKG_NAME/package.xml # Using hashtag instead of / because REPO_URL contains them aswell
 	fi
 }
 
