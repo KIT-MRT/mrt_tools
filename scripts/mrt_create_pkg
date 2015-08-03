@@ -173,6 +173,7 @@ func_create_repository() {
 		cd $BASE_PATH/src/$PKG_NAME
 		git init 
 		git remote add origin $REPO_URL >/dev/null 2>&1
+		echo "*~" > .gitignore
 		git add . >/dev/null 2>&1
 		git commit -m "Initial commit" >/dev/null 2>&1
 		git push -u origin master >/dev/null 2>&1
