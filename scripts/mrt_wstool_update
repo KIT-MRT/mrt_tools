@@ -50,7 +50,29 @@ do
         wstool set ${GIT_REPO_NAME} --git ${GIT_REPO_PATH} --confirm -t ./src > /dev/null 2>&1
         echo "$(tput setaf 2)repository added$(tput sgr0)"
     else
-        echo "$(tput setaf 1)repository already available$(tput sgr0)"
+        echo "$(tput setaf 3)repository already available$(tput sgr0)"
     fi
 done
+
+# Testing for old, non existent repos in .rosinstall
+# Gathering all package names
+for W in $(cat src/.rosinstall | cut -d ' ' -f 4); do
+	
+	# Removing trailing comma
+	pkg_name=${W%,} 
+	
+	# If package folder does not exist anymore
+	if ! [ -d src/$pkg_name ]; then
+	
+		# Remove corresponding line from .rosinstall
+		sed -i -e "/$W/d" src/.rosinstall
+		echo -n "Couldn't find GIT repository '${pkg_name}': "
+    	echo "$(tput setaf 1)Deleting entry from wstool$(tput sgr0)"
+		
+	fi;
+done;
+
+# Get updates
+cd src && wstool update
+
 exit 0
