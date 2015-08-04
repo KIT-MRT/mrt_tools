@@ -1,0 +1,84 @@
+#!/bin/bash
+
+function get_workspace_root_folder {
+	x=$1; 
+	while [[ "$x" != "/" ]]; do 		
+		p=$(find "$x" -maxdepth 1 -type d -name ".catkin_tools")
+        if [[ $p != "" ]]; then
+			echo $(dirname "$p")
+			return
+		fi
+		x=`dirname "$x"`
+	done
+}
+
+# Change to root of workspace
+WORKSPACE_ROOT_FOLDER=$(get_workspace_root_folder $PWD)
+if [[ "$WORKSPACE_ROOT_FOLDER" == "" ]]; then
+	echo "Cannot find workspace root folder."
+	exit 1
+fi
+if [ ! -d "$WORKSPACE_ROOT_FOLDER/src" ]; then
+    echo "No source folder found. This must be run in a standard catkin workspace (where you ran catkin_make)"
+    exit 1
+fi
+cd "$WORKSPACE_ROOT_FOLDER/src"
+
+# Run with "init?"
+if [[ -f ".rosinstall" && "$#" -gt "0" && "$2" == "init" ]]; then
+   echo "$(tput setaf 4)Removing wstool database src/.rosinstall$(tput sgr0)"
+   rm -f .rosinstall
+fi 
+
+# Need to init wstool?
+if [ ! -f ".rosinstall" ]; then 
+    echo "Initializing wstool"
+    wstool init . > /dev/null
+fi
+
+# Customize the update routine
+if [ "$1" == "update" ];then
+	# find all git directories
+	GIT_DIRECTORIES=$(find . -type d -name '.git')
+	for var in ${GIT_DIRECTORIES}
+	do
+		GIT_DIR_BASE_NAME=$(dirname ${var})
+		GIT_REPO_NAME=$(basename ${GIT_DIR_BASE_NAME})
+		GIT_REPO_PATH=$(cat "${var}/config" | egrep '^[[:space:]]url' | awk '{print $3}')
+
+		echo -n "Found GIT repository '${GIT_DIR_BASE_NAME}': "
+		FIND_REPO_IN_DB=$(cat .rosinstall | grep ${GIT_REPO_PATH}) 
+		if [[ -z ${FIND_REPO_IN_DB} ]]; then
+			wstool set ${GIT_REPO_NAME} --git ${GIT_REPO_PATH} --confirm -t . > /dev/null 2>&1
+			echo "$(tput setaf 2)repository added$(tput sgr0)"
+		else
+			echo "$(tput setaf 3)repository already available$(tput sgr0)"
+		fi
+	done
+
+	# Testing for old, non existent repos in .rosinstall
+	# Gathering all package names
+	for W in $(cat .rosinstall | cut -d ' ' -f 4); do
+
+		# Removing trailing comma
+		pkg_name=${W%,} 
+
+		# If package folder does not exist anymore
+		if ! [ -d $pkg_name ]; then
+
+			# Remove corresponding line from .rosinstall
+			sed -i -e "/$W/d" .rosinstall
+			echo -n "Couldn't find GIT repository '${pkg_name}': "
+			echo "$(tput setaf 1)Deleting entry from wstool$(tput sgr0)"
+
+		fi;
+	done;
+
+	echo -e "\n\nUpdating repositories.\n"
+
+fi
+
+# Now proceed with wstool
+wstool $1
+
+exit 0
