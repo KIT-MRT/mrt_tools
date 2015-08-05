@@ -146,7 +146,7 @@ func_create_files() {
 	esac
 	
 	cp $SELF_DIR/templates/CMakeLists.txt CMakeLists.txt
-	sed -i -e "s/^$PATTERN //g" -e "/^@..|...@/d" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME}/g" CMakeLists.txt
+	sed -i -e "s/^$PATTERN //g" -e "/^@..|..@/d" -e "s/\${CMAKE_PACKAGE_NAME}/${PKG_NAME}/g" CMakeLists.txt
 }
 
 
@@ -164,13 +164,10 @@ func_create_repository() {
 			return
 		fi
 		
-		sed -i -e "s#\${PACKAGE_REPOSITORY_URL}#$REPO_URL#g" $BASE_PATH/src/$PKG_NAME/package.xml # Using hashtag instead of / because REPO_URL contains them aswell
-		
 		# Initialize repository
 		cd $BASE_PATH/src/$PKG_NAME
 		git init 
 		git remote add origin $REPO_URL >/dev/null 2>&1
-		echo "*~" > .gitignore
 		git add . >/dev/null 2>&1
 		git commit -m "Initial commit" >/dev/null 2>&1
 		git push -u origin master >/dev/null 2>&1
@@ -185,6 +182,7 @@ func_create_repository() {
 		
 		wstool set $PKG_NAME --git $REPO_URL --confirm -t $BASE_PATH/src >/dev/null
 		
+		sed -i -e "s#\${PACKAGE_REPOSITORY_URL}#$REPO_URL#g" $BASE_PATH/src/$PKG_NAME/package.xml # Using hashtag instead of / because REPO_URL contains them aswell
 	fi
 }
 
@@ -266,8 +264,7 @@ if [ $OPTIND -eq 1 ] || [ -z "$TYPE" ]; then
 	# TYPE
 	echo "What kind of package do you want to create?"
 	echo "(1) library"
-	echo "(2) header-only library"
-	echo "(3) executable"
+	echo "(2) executable"
 	while true; do    
        read -p "Choose Number: " yn
        case ${yn} in 
