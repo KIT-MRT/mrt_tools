@@ -54,6 +54,14 @@ if [ "$1" == "update" ];then
 		else
 			echo "$(tput setaf 3)repository already available$(tput sgr0)"
 		fi
+		
+		# Push unpushed changes
+		if [ "$2" == "push" ]; then
+			cd $GIT_DIR_BASE_NAME
+			echo "$(tput setaf 2)Pushing repo $GIT_REPO_NAME: $(tput sgr0)"
+			git push
+			cd "$WORKSPACE_ROOT_FOLDER/src"
+		fi
 	done
 
 	# Testing for old, non existent repos in .rosinstall
