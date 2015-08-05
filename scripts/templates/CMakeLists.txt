@@ -10,6 +10,7 @@
 @  |  @ #
 @  |  @ #Put a "x" at the position to enable this line
 @  |  @ #E.g a non-ros library has the following mask: @x |x @
+#pkg_version=1.1
 cmake_minimum_required(VERSION 2.8.3)
 project(${CMAKE_PACKAGE_NAME})
 
