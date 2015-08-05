@@ -121,7 +121,7 @@ func_create_files() {
 	fi
 	
 	# CMakeLists.txt
-	#build mask @12|345@
+	#build mask @12|34@
 	#pos1: non ros package
 	#pos2: ros package
 	#pos3: library
