@@ -1,5 +1,5 @@
 /mrtsoftware/scripts/mrt_catkin /usr/bin/mrt_catkin
-/mrtsoftware/scripts/mrt_clone_package /usr/bin/mrt_clone_package
+/mrtsoftware/scripts/mrt_clone_pkg /usr/bin/mrt_clone_pkg
 /mrtsoftware/scripts/mrt_create_pkg /usr/bin/mrt_create_pkg
 /mrtsoftware/scripts/mrt_init_workspace /usr/bin/mrt_init_workspace
 /mrtsoftware/scripts/mrt_resolve_deps /usr/bin/mrt_resolve_deps

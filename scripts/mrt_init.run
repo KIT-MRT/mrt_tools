@@ -16,9 +16,8 @@ function package_installed {
 }
 
 function ask_continue {
-	read -r -p "$1" response
-	echo "Test: $responce"
-	if [ response == "" ]; then
+	read -r -p "Contiune [Y/n]? " response
+	if [[ "$response" == "" ]]; then
 		response="y"
 	fi
 	
@@ -32,9 +31,9 @@ function ask_continue {
 }
 
 function ask_continue_exit {
-	CO=$(ask_continue "$1")
-	if [ "$CO" == "0" ]; then
-		exit 1
+	CO=$(ask_continue)
+	if [[ $CO == "0" ]]; then
+		exit 0
 	fi
 }
 
@@ -50,15 +49,25 @@ function check_output {
 
 function ask_exit_on_error {
 	if [ $ERROR == true ]; then
-		echo "Error occured during installing g++."
-		CO=$(askContinue "Contiune [Y/n]? ")
-		if [ "$CO" == "0" ]; then
+		CO=$(ask_continue)
+		if [[ "$CO" == "0" ]]; then
+			echo "Exit"
 			exit 1
 		fi
 	fi
 	
 	ERROR=false
 }
+
+if ! [[ "$(uname -m)" == "x86_64" ]]; then
+	echo "Error: Only 64bit platforms are supported"
+	exit 1
+fi
+
+if ! [[ "$(lsb_release -r | awk '{print $2;}')" == "14.04" ]]; then
+	echo "Error: Unsupported ubuntu version. Only 14.04 is support up to now."
+	exit 1
+fi
 
 #define variables
 MRT_PACKAGE_PATH="/mrtsoftware/pkg"
