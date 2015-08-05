@@ -39,7 +39,7 @@ cd "$WORKSPACE_ROOT_FOLDER"
 
 OPTIONS="$@" # Optionen für zweiten getopts-Aufruf sichern
 SELF="$(readlink /proc/$$/fd/255)" || SELF="$0" # Eigener Pfad (besseres $0)
-SELF_DIR="$(cd $(dirname $([ -L $0 ] && readlink -f $0 || echo $0)) && pwd)"
+SELF_DIR=$(dirname "${SELF}")
 
 TYPE=""
 USE_ROS=false
@@ -90,12 +90,15 @@ func_create_directories() {
 	
 	if [[ "$TYPE" != "exec" ]]; then
 		mkdir -p include/$PKG_NAME/internal 
+		touch include/$PKG_NAME/internal/.gitignore
 	fi
 	
 	mkdir -p test src
+	touch src/.gitignore
 	
 	if $USE_ROS && [ $TYPE = "exec" ]; then
 		mkdir -p res launch/params;
+		touch launch/params/.gitignore
 	fi
 	
 	# Readme
