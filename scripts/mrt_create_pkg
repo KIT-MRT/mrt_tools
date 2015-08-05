@@ -87,11 +87,12 @@ func_create_directories() {
 	# Create folders
 	mkdir -p src/$PKG_NAME
 	cd src/$PKG_NAME
-	mkdir -p include/$PKG_NAME/internal test 
 	
-	if [[ "$TYPE" != "hlib" ]]; then
-		mkdir src
+	if [[ "$TYPE" != "exec" ]]; then
+		mkdir -p include/$PKG_NAME/internal 
 	fi
+	
+	mkdir -p test src
 	
 	if $USE_ROS && [ $TYPE = "exec" ]; then
 		mkdir -p res launch/params;
@@ -123,9 +124,8 @@ func_create_files() {
 	#build mask @12|345@
 	#pos1: non ros package
 	#pos2: ros package
-	#pos3: header only library
-	#pos4: library
-	#pos5: executable
+	#pos3: library
+	#pos4: executable
 	PATTERN="@"
 	if $USE_ROS; then
 		PATTERN="${PATTERN}.x"
@@ -136,14 +136,11 @@ func_create_files() {
 	PATTERN="$PATTERN|"
 	
 	case $TYPE in
-		hlib)
-			PATTERN="${PATTERN}x..@"
-			;;
 		lib) 
-			PATTERN="${PATTERN}.x.@"
+			PATTERN="${PATTERN}x.@"
 			;;
 		exec) 
-			PATTERN="${PATTERN}..x@"
+			PATTERN="${PATTERN}.x@"
 			;;
 		*) echo "$(tput setaf 1)ERROR:$(tput sgr0) Option for type not valid."; func_exit;;       
 	esac
@@ -202,7 +199,7 @@ Usage: $(basename "$0") [-t type] [-rg] [PACKAGE_NAME]-- script to create catkin
 
 where:
 	-h  show this help text
-	-t  Type of package {lib|hlib|exec}
+	-t  Type of package {lib|exec}
 	-g  Create gitlab repository (optional)
 	-r  Make ROS-Package (optional)
 "
@@ -221,7 +218,6 @@ while getopts "ht:rg" opt; do # set $opt to the next passed option
       TYPE=$OPTARG
       case $OPTARG in
 		  lib) ;;
-		  hlib) ;;
 		  exec) ;;
 		  *) echo "$(tput setaf 1)ERROR:$(tput sgr0) Option for type not valid."; func_exit;;       
       esac;;
@@ -274,8 +270,7 @@ if [ $OPTIND -eq 1 ] || [ -z "$TYPE" ]; then
        read -p "Choose Number: " yn
        case ${yn} in 
             [1]* ) TYPE="lib"; break;;
-            [2]* ) TYPE="hlib"; break;;
-            [3]* ) TYPE="exec"; break;;
+            [2]* ) TYPE="exec"; break;;
             * ) echo "$(tput setf 1)Please enter a number from 1-3.$(tput sgr0)";;   
         esac  
     done 

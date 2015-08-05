@@ -40,7 +40,6 @@ if "--debug" in arguments:
 if "--release" in arguments: 
     arguments.remove("--release")
     arguments.append("-DCMAKE_BUILD_TYPE=RelWithDebInfo")
-    
 
 build_eclipse = False
 if "--eclipse" in arguments:

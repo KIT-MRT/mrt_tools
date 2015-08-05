@@ -10,6 +10,7 @@
   <url type="repository">${PACKAGE_REPOSITORY_URL}</url>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <test_depend>gtest</test_depend>
   <!-- 
     Documentation for dependencies:
     <build_depend>            Build-time dependency required to build 
@@ -28,7 +29,7 @@
     Example:
     <depend>mrt_opencv</depend> 
   -->
-
+  
   <export>
     <!-- Other tools can request additional information be placed here -->
   </export>
