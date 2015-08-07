@@ -34,7 +34,7 @@ def main(repo_name, output):
         print "(" + str(index) + ") " + item
     valid_choices = {str(x) for x in range(0, len(namespaces))}
     while True:
-        user_choice = str(raw_input("Please select on of the above namespaces for your new project: "))
+        user_choice = str(raw_input("Please select one of the above namespaces for your new project: "))
         if user_choice in valid_choices:
             break
     print "Using namespace '" + namespaces.keys()[int(user_choice)] + "'"
