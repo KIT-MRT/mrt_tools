@@ -55,6 +55,13 @@ if ! [ -z "$GIT_ERROR" ]; then
 	exit 1
 fi
 
+#check for ssh key
+ssh -T -o "StrictHostKeyChecking=no" -o "BatchMode=yes" -o "ConnectTimeout=3" git@gitlab.mrt.uni-karlsruhe.de >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo "Your SSH Key does not seem to work. Have you created one and added it to gitlab?";
+	exit 1;
+fi
+
 #checkout repository
 wstool set $PACKAGE_NAME --git $GIT_REPOSITORY --confirm -t ./src 2>/dev/null > /dev/null
 echo "$(tput setaf 1)Search for package $PACKAGE_NAME $(tput sgr0)"
