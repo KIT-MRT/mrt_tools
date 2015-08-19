@@ -40,6 +40,13 @@ if ! [ -f "src/.rosinstall" ]; then
 	wstool init ./src > /dev/null
 fi
 
+#check for ssh key
+ssh -T -o "StrictHostKeyChecking=no" -o "BatchMode=yes" -o "ConnectTimeout=3" git@gitlab.mrt.uni-karlsruhe.de >/dev/null 2>&1
+if [ $? -ne 0 ]; then
+	echo "Your SSH Key does not seem to work. Have you created one and added it to gitlab?";
+	exit 1;
+fi
+
 PACKAGE_NAME=$1
 
 if [ "$#" -eq 1 ]; then
@@ -53,13 +60,6 @@ GIT_ERROR="$(git ls-remote $GIT_REPOSITORY 2>&1 > /dev/null)"
 if ! [ -z "$GIT_ERROR" ]; then
 	echo "Git repository not found: $GIT_REPOSITORY"
 	exit 1
-fi
-
-#check for ssh key
-ssh -T -o "StrictHostKeyChecking=no" -o "BatchMode=yes" -o "ConnectTimeout=3" git@gitlab.mrt.uni-karlsruhe.de >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	echo "Your SSH Key does not seem to work. Have you created one and added it to gitlab?";
-	exit 1;
 fi
 
 #checkout repository
