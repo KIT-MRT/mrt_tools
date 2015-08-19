@@ -20,6 +20,7 @@ if "-h" in arguments or "--help" in arguments:
     print(" --eclipse               Create a eclipse project.")
     print(" --debug                 Build in debug mode.")
     print(" --release               Build in release mode.")
+    print(" --verbose               Compile in verbose mode.")
     print("")
     print("Additional catkin parameters:")
     subprocess.check_call(["catkin"] + arguments)
@@ -40,7 +41,13 @@ if "--debug" in arguments:
 if "--release" in arguments: 
     arguments.remove("--release")
     arguments.append("-DCMAKE_BUILD_TYPE=RelWithDebInfo")
-
+	
+if "--verbose" in arguments: 
+    arguments.remove("--verbose")
+    arguments.append("-v")
+    arguments.append("--make-args")
+    arguments.append("VERBOSE=1")
+	
 build_eclipse = False
 if "--eclipse" in arguments:
     arguments.remove("--eclipse")
