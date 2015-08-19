@@ -57,11 +57,26 @@ if [ "$1" == "update" ];then
 		
 		# Push unpushed changes
 		if [ "$2" == "push" ]; then
-			cd $GIT_DIR_BASE_NAME
-			echo "$(tput setaf 2)Pushing repo $GIT_REPO_NAME: $(tput sgr0)"
-			git push
-			cd "$WORKSPACE_ROOT_FOLDER/src"
-		fi
+			PUSH_REPO=true;
+		fi;
+		cd $GIT_DIR_BASE_NAME
+		if [[ -n $(git log --branches --not --remotes) ]]; then 
+			echo "$(tput bold)$(tput setaf 1)There are unpushed commits in repo $(tput sgr0)\"$GIT_REPO_NAME\""
+			git log --branches --not --remotes --simplify-by-decoration --decorate --oneline
+			while [ -z "$PUSH_REPO" ]; do     
+			   read -p "Push them now? [Y/n] " yn 
+			   yn="${yn:=y}" # Default answer
+			   case ${yn^^} in      
+					[Y]* ) PUSH_REPO=true;;  
+					[N]* ) PUSH_REPO=false;;
+					* ) echo "$(tput setf 1)Please answer yes or no.$(tput sgr0)";;   
+				esac  
+			done   
+			if $PUSH_REPO; then
+				git push
+			fi;
+		fi;
+		cd "$WORKSPACE_ROOT_FOLDER/src"
 	done
 
 	# Testing for old, non existent repos in .rosinstall
