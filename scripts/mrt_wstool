@@ -32,13 +32,14 @@ fi
 
 # Need to init wstool?
 if [ ! -f ".rosinstall" ]; then 
-    echo "Initializing wstool"
+    echo "$(tput bold)Initializing wstool...$(tput sgr0)"
     wstool init . > /dev/null
 fi
 
 # Customize the update routine
 if [ "$1" == "update" ];then
 	# find all git directories
+	echo "$(tput bold)Testing .rosinstall...$(tput sgr0)"
 	GIT_DIRECTORIES=$(find . -type d -name '.git')
 	for var in ${GIT_DIRECTORIES}
 	do
@@ -46,13 +47,10 @@ if [ "$1" == "update" ];then
 		GIT_REPO_NAME=$(basename ${GIT_DIR_BASE_NAME})
 		GIT_REPO_PATH=$(cat "${var}/config" | egrep '^[[:space:]]url' | awk '{print $3}')
 
-		echo -n "Found GIT repository '${GIT_DIR_BASE_NAME}': "
 		FIND_REPO_IN_DB=$(cat .rosinstall | grep ${GIT_REPO_PATH}) 
 		if [[ -z ${FIND_REPO_IN_DB} ]]; then
 			wstool set ${GIT_REPO_NAME} --git ${GIT_REPO_PATH} --confirm -t . > /dev/null 2>&1
-			echo "$(tput setaf 2)repository added$(tput sgr0)"
-		else
-			echo "$(tput setaf 3)repository already available$(tput sgr0)"
+			echo "Found new git repository '${GIT_DIR_BASE_NAME}': $(tput setaf 2)repository added$(tput sgr0)"
 		fi
 		
 		# Push unpushed changes
@@ -91,13 +89,12 @@ if [ "$1" == "update" ];then
 
 			# Remove corresponding line from .rosinstall
 			sed -i -e "/$W/d" .rosinstall
-			echo -n "Couldn't find GIT repository '${pkg_name}': "
-			echo "$(tput setaf 1)Deleting entry from wstool$(tput sgr0)"
+			echo "Found old git repository '${pkg_name}': $(tput setaf 1)Deleting entry from wstool$(tput sgr0)"
 
 		fi;
 	done;
 
-	echo -e "\n\nUpdating repositories.\n"
+	echo -e "$(tput bold)Updating repositories...$(tput sgr0)"
 
 fi
 
