@@ -80,7 +80,7 @@ def main():
 
         for missing_package, package_dep_specified in missing_packages.iteritems():
             if not gitlabProjectDownloaded:
-                print "Retriving gitlab projects"
+                print "Retrieving gitlab projects"
                 projects = getGitlabProjects()
                 gitlabProjectDownloaded = True
             
