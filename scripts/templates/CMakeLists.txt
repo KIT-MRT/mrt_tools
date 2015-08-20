@@ -148,6 +148,9 @@ catkin_package(
 @xx|x @ 	  ${catkin_LIBRARIES}
 @xx|x @ 	  ${mrt_LIBRARIES}
 @xx|x @ 	)
+@xx|x @ else ()
+@xx|x @ 	file(GLOB_RECURSE PROJECT_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "include/*.*")
+@xx|x @ 	add_custom_target(${PROFECT_NAME} ALL SOURCES ${PROJECT_SOURCE_FILES_INC})
 @xx|x @ endif()
 @xx|x @ 
 @xx| x@ function(add_exec EXEC_NAME SEARCH_FOLDER)
@@ -194,6 +197,7 @@ catkin_package(
 @xx| x@ 	add_exec(${PROJECT_NAME} "src")
 @xx| x@ endif()
 @xx| x@ 
+
 #############
 ## Install ##
 #############
