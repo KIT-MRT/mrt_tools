@@ -10,7 +10,7 @@
 @  |  @ #
 @  |  @ #Put a "x" at the position to enable this line
 @  |  @ #E.g a non-ros library has the following mask: @x |x @
-#pkg_version=1.1
+#pkg_version=1.2
 cmake_minimum_required(VERSION 2.8.3)
 project(${CMAKE_PACKAGE_NAME})
 
@@ -149,6 +149,7 @@ catkin_package(
 @xx|x @ 	  ${mrt_LIBRARIES}
 @xx|x @ 	)
 @xx|x @ else ()
+@xx|x @		#Creating dummy target for header only libs, so that header files (i.e. all files under include/) will still show up in QtCreator as project files
 @xx|x @ 	file(GLOB_RECURSE PROJECT_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "include/*.*")
 @xx|x @ 	add_custom_target(${PROFECT_NAME} ALL SOURCES ${PROJECT_SOURCE_FILES_INC})
 @xx|x @ endif()
