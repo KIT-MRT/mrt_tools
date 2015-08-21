@@ -71,6 +71,8 @@ if [ "$1" == "update" ];then
 		# Push unpushed changes
 		if [ "$2" == "push" ]; then
 			PUSH_REPO=true;
+		else
+			PUSH_REPO=
 		fi;
 		if [[ -n $(git log --branches --not --remotes) ]]; then 
 			echo -e "\n\nUnpushed commits in repo '${GIT_DIR_BASE_NAME}'"
