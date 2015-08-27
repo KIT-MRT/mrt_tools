@@ -56,8 +56,12 @@ if "--eclipse" in arguments:
     arguments.append("-GEclipse CDT4 - Unix Makefiles")
 
 if resolve_deps:
-    subprocess.check_call([os.path.join(scriptRoot, "mrt_resolve_deps")])
-    
+    try:
+        subprocess.check_call([os.path.join(scriptRoot, "mrt_resolve_deps")])
+    except subprocess.CalledProcessError:
+        print("Cannot resolve dependencies.\n")
+        sys.exit(1)
+
 subprocess.call(["catkin"] + arguments)
 
 if build_eclipse:

@@ -39,7 +39,12 @@ def getGitlabProjects():
     git = gitlab.Gitlab(host, token=token)
     
     #get all projects from gitlab
-    return list(git.getall(git.getprojects))
+    try:
+        return list(git.getall(git.getprojects))
+    except:
+        print("Cannot connect to gitlab server. No internet?\n")
+        sys.exit(1)
+
 
 def updateAptAndRosPackages():
     FNULL = open(os.devnull, 'w')
