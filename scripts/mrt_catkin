@@ -29,25 +29,25 @@ if "-h" in arguments or "--help" in arguments:
 if "-rd" in arguments:
     resolve_deps = True
     arguments.remove("-rd")
-    
+
 if "--resolve-deps" in arguments:
     resolve_deps = True
     arguments.remove("--resolve-deps")
-    
-if "--debug" in arguments: 
+
+if "--debug" in arguments:
     arguments.remove("--debug")
     arguments.append("-DCMAKE_BUILD_TYPE=Debug")
-    
-if "--release" in arguments: 
+
+if "--release" in arguments:
     arguments.remove("--release")
     arguments.append("-DCMAKE_BUILD_TYPE=RelWithDebInfo")
-	
-if "--verbose" in arguments: 
+
+if "--verbose" in arguments:
     arguments.remove("--verbose")
     arguments.append("-v")
     arguments.append("--make-args")
     arguments.append("VERBOSE=1")
-	
+
 build_eclipse = False
 if "--eclipse" in arguments:
     arguments.remove("--eclipse")
@@ -66,4 +66,3 @@ subprocess.call(["catkin"] + arguments)
 
 if build_eclipse:
     subprocess.check_call([os.path.join(scriptRoot, "mrt_set_eclipse_project_setting")])
-    
