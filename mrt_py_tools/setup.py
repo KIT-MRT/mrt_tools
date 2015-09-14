@@ -3,7 +3,7 @@ A toolbelt full of mrt scripts
 """
 from setuptools import find_packages, setup
 
-dependencies = ['click', 'pyapi-gitlab', 'colorama']
+dependencies = ['click', 'pyapi-gitlab', 'wstool']
 
 setup(
     name='mrt',

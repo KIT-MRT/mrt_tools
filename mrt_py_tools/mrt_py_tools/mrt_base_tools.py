@@ -3,6 +3,7 @@ __author__ = 'bandera'
 import fnmatch
 import sys
 import os
+import subprocess
 
 if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRARY_PATH"]:
     print "ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash"
@@ -10,20 +11,11 @@ if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRA
 
 
 def get_workspace_root_folder(current_dir):
-    if not os.path.exists("src"):
-        print "No source folder found. This must be run in a standard catkin workspace (where you ran catkin_make)"
-        sys.exit(1)
-
-    found = False
     while current_dir != "/" and current_dir != "":
         if ".catkin_tools" in os.listdir(current_dir):
-            found = True
             break
 
         current_dir = os.path.dirname(current_dir)
-
-    if not found:
-        raise Exception("No catkin workspace root found.")
 
     return current_dir
 
@@ -34,7 +26,13 @@ def get_script_root():
 
 def change_to_workspace_root_folder():
     workspace_folder = get_workspace_root_folder(os.getcwd())
+
+    if workspace_folder == "/" or workspace_folder == "":
+        raise Exception("No catkin workspace root found.")
+
     os.chdir(workspace_folder)
+    if not os.path.exists("src/.rosinstall"):
+        subprocess.call("wstool init .")
 
 
 def find(pattern, path):
