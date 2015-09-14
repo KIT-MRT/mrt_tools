@@ -3,14 +3,20 @@ from mrt_py_tools import mrt_base_tools
 import os
 import distutils.util
 import subprocess
-from mrt_py_tools.commands import catkin
 import click
+import sys
 
 
 @click.command()
 def main():
     """ This script initializes a catkin workspace in the current folder. """
     init_repo = True
+
+    workspace_folder = mrt_base_tools.get_workspace_root_folder(os.getcwd())
+    print workspace_folder
+    if not (workspace_folder == "/" or  workspace_folder == ""):
+        click.secho("Catkin workspace exists already.", fg="red")
+        sys.exit(1)
 
     # Test whether directory is empty
     if os.listdir("."):
@@ -24,4 +30,4 @@ def main():
         subprocess.call("catkin init", shell=True)
         os.chdir("src")
         subprocess.call("wstool init", shell=True)
-        catkin.main()
+        subprocess.call("catkin build", shell=True)

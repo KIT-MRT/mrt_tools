@@ -1,12 +1,12 @@
 #!/usr/bin/python
-import click
-
-__author__ = 'bandera'
 from mrt_py_tools import mrt_base_tools
+import click
 import os
 import subprocess
 import sys
 import shutil
+
+mrt_base_tools.change_to_workspace_root_folder()
 
 
 def set_eclipse_project_setting():
@@ -27,43 +27,45 @@ def set_eclipse_project_setting():
         shutil.copy(script_dir + "/templates/language.settings.xml", "./.settings")
 
 
-@click.command()
+@click.command(context_settings=dict(ignore_unknown_options=True, ))
 @click.argument('action', type=click.STRING)
 @click.option('-rd', '--resolve-deps', is_flag=True, help='Check and resolve dependencies before building workspace.')
 @click.option('--eclipse', is_flag=True, help='Create a eclipse project.')
 @click.option('--debug', is_flag=True, help='Build in debug mode.')
 @click.option('--release', is_flag=True, help='Build in release mode.')
 @click.option('--verbose', is_flag=True, help='Compile in verbose mode.')
-@click.argument('catkin_args', nargs=-1, type=click.STRING)
-def main(action, rd, eclipse, debug, release, verbose, catkin_args):
+@click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
+def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
     """ A wrapper for catkin """
     if debug:
-        catkin_args.append("-DCMAKE_BUILD_TYPE=Debug")
+        catkin_args += ("-DCMAKE_BUILD_TYPE=Debug",)
 
     if release:
-        catkin_args.append("-DCMAKE_BUILD_TYPE=RelWithDebInfo")
+        catkin_args += (" -DCMAKE_BUILD_TYPE=RelWithDebInfo",)
 
     if verbose:
-        catkin_args.append("-v")
-        catkin_args.append("--make-args")
-        catkin_args.append("VERBOSE=1")
+        catkin_args += (" -v",)
+        catkin_args += (" --make-args",)
+        catkin_args += (" VERBOSE=1",)
 
     build_eclipse = False
     if eclipse:
         build_eclipse = True
-        catkin_args.append("--force-cmake")
-        catkin_args.append("-GEclipse CDT4 - Unix Makefiles")
+        catkin_args += (" --force-cmake",)
+        catkin_args += (" -GEclipse CDT4 - Unix Makefiles",)
 
-    if rd:
-        scriptRoot=mrt_base_tools.get_script_root()
+    if resolve_deps:
+        script_root = mrt_base_tools.get_script_root()
         try:
-            subprocess.check_call([os.path.join(scriptRoot, "mrt_resolve_deps")])
+            subprocess.check_call([os.path.join(script_root, "mrt_resolve_deps")])
         except subprocess.CalledProcessError:
             print("Cannot resolve dependencies.\n")
             sys.exit(1)
 
-    mrt_base_tools.change_to_workspace_root_folder()
-    subprocess.call(["catkin"] + action + catkin_args)
+    if len(catkin_args) == 0:
+        subprocess.call(["catkin", action])
+    else:
+        subprocess.call(["catkin", action, " ".join(catkin_args)])
 
     if build_eclipse:
         set_eclipse_project_setting()
