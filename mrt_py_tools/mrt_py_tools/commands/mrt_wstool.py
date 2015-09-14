@@ -7,9 +7,7 @@ from wstool import config as wstool_config
 import click
 import os
 
-mrt_base_tools.change_to_workspace_root_folder()
-ws_root = os.getcwd()
-os.chdir("src")
+
 
 
 @click.command(context_settings=dict(ignore_unknown_options=True, ))
@@ -19,6 +17,10 @@ def main(action, args):
     """
     A wrapper for wstool
     """
+
+    mrt_base_tools.change_to_workspace_root_folder()
+    ws_root = os.getcwd()
+    os.chdir("src")
 
     if action == "init":
         click.secho("Removing wstool database src/.rosinstall", fg="yellow")

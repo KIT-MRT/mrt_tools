@@ -6,8 +6,6 @@ import subprocess
 import sys
 import shutil
 
-mrt_base_tools.change_to_workspace_root_folder()
-
 
 def set_eclipse_project_setting():
     mrt_base_tools.change_to_workspace_root_folder()
@@ -37,6 +35,9 @@ def set_eclipse_project_setting():
 @click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
 def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
     """ A wrapper for catkin """
+
+    mrt_base_tools.change_to_workspace_root_folder()
+
     if debug:
         catkin_args += ("-DCMAKE_BUILD_TYPE=Debug",)
 

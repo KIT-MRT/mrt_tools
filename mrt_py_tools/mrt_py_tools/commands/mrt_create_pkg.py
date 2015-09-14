@@ -8,8 +8,6 @@ import re
 import os
 import sys
 
-self_dir = mrt_base_tools.get_script_root()
-mrt_base_tools.change_to_workspace_root_folder()
 user = mrt_gitlab_tools.get_userinfo()
 
 
@@ -34,11 +32,12 @@ def check_naming(pkg_name):
     return pkg_name
 
 
-def create_directories(pkg_name, pkg_type, ros, create_git_repo):
+def create_directories(pkg_name, pkg_type, ros):
     # Check for already existing folder
     if os.path.exists("src/" + pkg_name):
         click.secho(
-            "ERROR: The folder with the name ./src/" + pkg_name + " exists already. Please move it or choose a different package name.",
+            "ERROR: The folder with the name ./src/" + pkg_name +
+            " exists already. Please move it or choose a different package name.",
             fg="red")
         sys.exit(1)
 
@@ -60,7 +59,7 @@ def create_directories(pkg_name, pkg_type, ros, create_git_repo):
         touch("launch/params/.gitignore")
 
 
-def create_files(pkg_name, pkg_type, ros, create_git_repo):
+def create_files(pkg_name, pkg_type, ros, self_dir):
     # Create files and replace with user info
     # Readme and test file
     shutil.copyfile(self_dir + "/templates/README.md", "README.md")
@@ -114,6 +113,9 @@ def create_files(pkg_name, pkg_type, ros, create_git_repo):
 def main(pkg_name, pkg_type, ros, create_git_repo):
     """ Create a new catkin package """
 
+    self_dir = mrt_base_tools.get_script_root()
+    mrt_base_tools.change_to_workspace_root_folder()
+
     pkg_name = check_naming(pkg_name)
 
     if ros:
@@ -133,8 +135,8 @@ def main(pkg_name, pkg_type, ros, create_git_repo):
         click.echo("     --> Create  gitlab repository.... NO")
     click.echo("     --> Package Maintainer.... " + user['name'] + " <" + user['mail'] + ">")
 
-    create_directories(pkg_name, pkg_type, ros, create_git_repo)
-    create_files(pkg_name, pkg_type, ros, create_git_repo)
+    create_directories(pkg_name, pkg_type, ros)
+    create_files(pkg_name, pkg_type, ros, self_dir)
 
     if create_git_repo:
         ssh_url = mrt_gitlab_tools.create_repo(pkg_name)
@@ -158,4 +160,4 @@ def main(pkg_name, pkg_type, ros, create_git_repo):
             click.echo("Initializing wstool")
             subprocess.call("wstool init . >/dev/null 2>&1", shell=True)
 
-        subprocess.call("wstool set " + pkg_name + " --git "+ssh_url+" --confirm -t . >/dev/null", shell=True)
+        subprocess.call("wstool set " + pkg_name + " --git " + ssh_url + " --confirm -t . >/dev/null", shell=True)
