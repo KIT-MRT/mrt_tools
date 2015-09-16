@@ -29,6 +29,5 @@ if __name__ == '__main__':
 
 # TODO add source setup.bash to bashrc when installing
 # TODO port mrt init
-# TODO port visualization tools
 # TODO create apt package
 # TODO Add documentation where needed

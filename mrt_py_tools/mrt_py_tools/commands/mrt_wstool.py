@@ -8,8 +8,6 @@ import click
 import os
 
 
-
-
 @click.command(context_settings=dict(ignore_unknown_options=True, ))
 @click.argument('action', type=click.STRING)
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
@@ -65,16 +63,16 @@ def main(action, args):
         # Search for unpushed commits
         unpushed_repos = []
         for ps in wsconfig.get_source():
-            os.chdir(ws_root+"/src/"+ps.get_local_name())
+            os.chdir(ws_root + "/src/" + ps.get_local_name())
             git_process = subprocess.Popen("git log --branches --not --remotes", shell=True, stdout=subprocess.PIPE)
             result = git_process.communicate()
 
             if result[0] != "":
-                click.secho("Unpushed commits in repo '"+ps.get_local_name()+"'", fg="yellow")
+                click.secho("Unpushed commits in repo '" + ps.get_local_name() + "'", fg="yellow")
                 subprocess.call("git log --branches --not --remotes --oneline", shell=True)
                 unpushed_repos.append(ps.get_local_name())
 
-        if len(unpushed_repos)>0:
+        if len(unpushed_repos) > 0:
             choice_str = raw_input("Push them now? [y/N]")
             if choice_str == "":
                 choice_str = "n"
@@ -82,11 +80,11 @@ def main(action, args):
 
             if push_now:
                 for x in unpushed_repos:
-                    os.chdir(ws_root+"/src/"+x)
+                    os.chdir(ws_root + "/src/" + x)
                     subprocess.call("git push", shell=True)
 
     # Pass the rest to wstool
-    os.chdir(ws_root+"/src")
+    os.chdir(ws_root + "/src")
     if len(args) == 0:
         subprocess.call(["wstool", action])
     else:

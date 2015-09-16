@@ -181,3 +181,5 @@ check_output sudo pip install pyapi-gitlab colorama
 #install gitlab private token
 mrt_setup_gitlab
 
+# TODO Adjust this to new python setup gitlab...
+

@@ -1,7 +1,6 @@
 import os
 from mrt_py_tools import mrt_base_tools
 from catkin_pkg import packages
-from pprint import pprint
 import sys
 import click
 from mrt_py_tools import mrt_dep_plot
@@ -40,6 +39,7 @@ def main(pkg_name):
     deps = pkgs.keys()
     deps = [get_detailed_deps(d, all_pkgs) for d in deps]
 
-    # pprint(deps)
-
     mrt_dep_plot.plot_digraph(deps, pkg_name)
+
+# TODO Create interactive plots
+# TODO Create centric plot, when no package name is given
