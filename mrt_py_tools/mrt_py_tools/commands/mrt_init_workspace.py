@@ -35,5 +35,5 @@ def init_workspace():
 
 @click.command()
 def main():
-    """ This script initializes a catkin workspace in the current folder. """
+    """ Initialize a catkin workspace. """
     init_workspace()

@@ -34,7 +34,7 @@ def set_eclipse_project_setting():
 @click.option('--verbose', is_flag=True, help='Compile in verbose mode.')
 @click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
 def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
-    """ A wrapper for catkin """
+    """ A wrapper for catkin. """
 
     mrt_base_tools.change_to_workspace_root_folder()
 

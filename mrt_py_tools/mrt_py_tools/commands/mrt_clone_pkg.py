@@ -9,7 +9,10 @@ import click
 @click.argument("pkg_name", type=click.STRING, required=True)
 def main(pkg_name):
     """
-    This tool searches for, and clones a package from the MRT Gitlab Server into the current workspace.
+    Clone catkin packages from gitlab.
+    """
+    """
+    This tool searches for, and clones a package from the Gitlab Server into the current workspace.
     Execute this script from within a catkin workspace
     """
 
