@@ -1,11 +1,10 @@
 #!/usr/bin/python
-from mrt_py_tools import mrt_base_tools
-from mrt_py_tools import mrt_gitlab_tools
-import os
-import sys
+from mrt_py_tools import mrt_base_tools, mrt_gitlab_tools
 import subprocess
-import re
 import click
+import sys
+import os
+import re
 
 
 def update_apt_and_ros_packages():

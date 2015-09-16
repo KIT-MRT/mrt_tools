@@ -1,9 +1,8 @@
-import os
-from mrt_py_tools import mrt_base_tools
+from mrt_py_tools import mrt_base_tools, mrt_dep_plot
 from catkin_pkg import packages
-import sys
 import click
-from mrt_py_tools import mrt_dep_plot
+import sys
+import os
 
 
 def get_detailed_deps(pkg_name, all_pkgs):

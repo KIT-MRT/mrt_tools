@@ -1,13 +1,14 @@
 #!/usr/bin/python
-import click
+# from requests.packages import urllib3
+from wstool import config_yaml, multiproject_cli
+import subprocess
 import getpass
 import gitlab
-import os
-import subprocess
+import click
 import sys
-from requests.packages import urllib3
+import os
 
-urllib3.disable_warnings()
+# urllib3.disable_warnings()
 
 # Define paths
 token_dir = os.path.expanduser("~/.mrtgitlab")
@@ -16,6 +17,10 @@ host = "https://gitlab.mrt.uni-karlsruhe.de"
 
 
 def create_gitlab_token_file():
+    """
+    This function askes for the Gitlab user name and password, in order to create a local private token file.
+    Normally this function has to be called only once. From then on, the token file is used to communicate with the server.
+    """
     username = raw_input("Gitlab user name: ")
     password = getpass.getpass()
     git = gitlab.Gitlab(host)
@@ -33,6 +38,10 @@ def create_gitlab_token_file():
 
 
 def check_for_token_file():
+    """
+    This function searches for a private token file and creates it if not found.
+    The token file is an authentication key for communicating with the gitlab server through the python API.
+    """
     # Check for token file
     create_new_token = True
     if os.path.isfile(token_file):
@@ -54,6 +63,10 @@ def check_for_token_file():
 
 
 def check_sshkey():
+    """
+    This function tests for the presence and functionality of a ssh-key.
+    The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool.
+    """
     exit_code = os.system(
         'ssh -T -o "StrictHostKeyChecking=no" -o "BatchMode=yes" -o "ConnectTimeout=3" git@gitlab.mrt.uni-karlsruhe.de > /dev/null 2>&1')  # check for ssh key
     if exit_code is not 0:
@@ -62,6 +75,10 @@ def check_sshkey():
 
 
 def connect():
+    """
+    Connects to the server
+    :return: git object
+    """
     check_sshkey()
     check_for_token_file()
     # Connect
@@ -71,6 +88,10 @@ def connect():
 
 
 def get_namespaces():
+    """
+    This function returns a list of all namespaces in Gitlab
+    :return: List of namespace names
+    """
     # Check namespaces
     click.echo("Retrieving namespaces...")
     git = connect()
@@ -82,12 +103,23 @@ def get_namespaces():
 
 
 def get_repos():
+    """
+    This function returns a list of all repositories in Gitlab
+    :return: List of repositories names
+    """
     # Get all repos
     git = connect()
     return list(git.getall(git.getprojects))
 
 
 def find_repo(pkg_name, ns=None):
+    """
+    Searches for a repository within gitlab.
+    If repositories in different namespaces are found, the user is asked to select one.
+    :param pkg_name: Repo to search for
+    :param ns: Namespace to search in
+    :return: SSH URL of repository
+    """
     # Search for repo
     click.secho("Search for package " + pkg_name, fg='red')
     git = connect()
@@ -127,7 +159,12 @@ def find_repo(pkg_name, ns=None):
 
 
 def clone_pkg(pkg_name):
-    # Check wether package exists already
+    """
+    This function searches for and clones a repository.
+    :param pkg_name: Repository to clone
+    :return: Boolean for success
+    """
+    # Check whether package exists already
     f_null = open(os.devnull, 'w')
     wstool_process = subprocess.Popen(['wstool', 'info', pkg_name, "-t", "src"],
                                       stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -138,10 +175,11 @@ def clone_pkg(pkg_name):
         if ssh_url == "":
             return False
 
-        # add specified git repository (ignore errors because repository could be added but not checked out)
-        subprocess.call(["wstool", "set", pkg_name, "--git", ssh_url, "--confirm", "-t", "src"],
-                        stdout=f_null,
-                        stderr=f_null)
+        # add specified git repository to rosinstall
+        wsconfig = multiproject_cli.multiproject_cmd.get_config("src", config_filename=".rosinstall")
+        ps = config_yaml.PathSpec(pkg_name, "git", ssh_url)
+        wsconfig.add_path_spec(ps)
+        config_yaml.generate_config_yaml(wsconfig, ".rosinstall", "")
     else:
         click.echo("Package " + pkg_name + " exists already.")
 
@@ -150,6 +188,10 @@ def clone_pkg(pkg_name):
 
 
 def create_repo(pkg_name):
+    """
+    This function creates a new repository on the gitlab server.
+    It lets the user choose the namespace and tests whether the repo exists already.
+    """
     namespaces = get_namespaces()
 
     # Dialog to choose namespace
@@ -187,6 +229,9 @@ def create_repo(pkg_name):
 
 
 def git_error():
+    """
+    Print error and instructions on how to configure git
+    """
     click.secho("ERROR: Please install git and configure your username and email adress.", fg="red")
     click.echo("You can do this with:")
     click.echo(">sudo apt-get install git")
@@ -196,6 +241,9 @@ def git_error():
 
 
 def get_userinfo():
+    """
+    Tries to read in git user infos.
+    """
     # Check whether git is installed
     (dpkg_git, dpkg_err) = subprocess.Popen("dpkg -s git", shell=True, stdout=subprocess.PIPE).communicate()
 
