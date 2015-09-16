@@ -1,8 +1,13 @@
 #!/usr/bin/python
+from mrt_py_tools import mrt_base_tools
+from PIL import Image
+import click
+import pydot
+import os
+
 __author__ = "Omer Sahin Tas"
 __date__ = "10.09.2015"
 
-import pydot
 
 
 def create_node(node_name, graph, isleaf=False):
@@ -57,7 +62,7 @@ def add_edge(graph, a, b):
     return graph
 
 
-def plot_digraph(deps, pkg_name):
+def plot_digraph(deps, pkg_name, show=True):
     """plot a directed graph with one root node"""
 
     # create a graph object
@@ -68,6 +73,11 @@ def plot_digraph(deps, pkg_name):
         add_nodes(dep, graph)
 
     # save the figure
-    graph.write_png("deps_" + pkg_name + ".png")
-
-    print "figure saved!"
+    mrt_base_tools.change_to_workspace_root_folder()
+    if not os.path.exists("pics"):
+        os.mkdir("pics")
+    graph.write_png("pics/deps_" + pkg_name + ".png")
+    if show:
+        image = Image.open("pics/deps_" + pkg_name + ".png")
+        image.show()
+    click.echo("Image written to: "+os.getcwd()+"/pics/deps_" + pkg_name + ".png")
