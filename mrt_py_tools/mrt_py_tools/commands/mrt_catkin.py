@@ -1,10 +1,10 @@
 #!/usr/bin/python
 from mrt_py_tools import mrt_base_tools
-import click
-import os
 import subprocess
-import sys
 import shutil
+import click
+import sys
+import os
 
 
 def set_eclipse_project_setting():
@@ -66,7 +66,7 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
     if len(catkin_args) == 0:
         subprocess.call(["catkin", action])
     else:
-        subprocess.call(["catkin", action, " ".join(catkin_args)])
+        subprocess.call(["catkin", action]+list(catkin_args))
 
     if build_eclipse:
         set_eclipse_project_setting()
