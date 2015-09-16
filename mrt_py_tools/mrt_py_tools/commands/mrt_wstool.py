@@ -1,11 +1,42 @@
+#!/usr/bin/python
+from wstool import config_yaml, config as wstool_config
+from mrt_py_tools import mrt_base_tools
+from catkin_pkg import packages
 import distutils.util
 import subprocess
-from click.decorators import argument
-from mrt_py_tools import mrt_base_tools
-from wstool import config_yaml
-from wstool import config as wstool_config
 import click
 import os
+
+
+def update_rosinstall():
+    """
+    Goes through all directories within the workspace and checks whether the rosinstall file is up to date.
+    """
+    # Use catking to get all packages
+    all_pkgs = packages.find_packages(".")
+    pathspecs = []
+    for pkg in all_pkgs.keys():
+        try:
+            # Try to read it from package xml
+            if len(all_pkgs[pkg].urls) > 1:
+                raise IndexError
+            ssh_url = all_pkgs[pkg].urls[0].url
+        except IndexError:
+            click.secho("Warning: No URL (or multiple) defined in " + pkg + "/package.xml!", fg="yellow")
+            try:
+                # Try reading it from git repo
+                with open(pkg + "/.git/config", 'r') as f:
+                    ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
+            except StopIteration:
+                click.secho("Warning: Could not figure out any URL for " + pkg, fg="red")
+                ssh_url = None
+        pathspecs.append(config_yaml.PathSpec(pkg, "git", ssh_url))
+
+    # Create ws config object
+    wsconfig = wstool_config.Config(pathspecs, ".")
+
+    # Create rosinstall file from config
+    config_yaml.generate_config_yaml(wsconfig, ".rosinstall", "")
 
 
 @click.command(context_settings=dict(ignore_unknown_options=True, ))
@@ -13,7 +44,7 @@ import os
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def main(action, args):
     """
-    A wrapper for wstool
+    A wrapper for wstool.
     """
 
     mrt_base_tools.change_to_workspace_root_folder()
@@ -29,48 +60,12 @@ def main(action, args):
         click.echo("Initializing wstool...")
         subprocess.call("wstool init . > /dev/null", shell=True)
 
-    # Gather git directories
-    rosinstall = config_yaml.get_path_specs_from_uri(".rosinstall")
-    wsconfig = wstool_config.Config(rosinstall, ".")
-    rosinstall_dirs = {x.get_local_name() for x in rosinstall}
-    git_directories = []
-    for dir in os.listdir("."):
-        if os.path.isdir(dir + "/.git"):
-            git_directories.append(dir)
-    git_directories = {x for x in git_directories}
-
-    # Removing old repos from rosinstall
-    old_repos = rosinstall_dirs.difference(git_directories)
-    for x in old_repos:
-        click.secho("Found old git repository '" + x + "': Deleting entry from wstool", fg="red")
-        wsconfig.remove_element(x)
-
-    # Adding new repos to rosinstall
-    new_repos = git_directories.difference(rosinstall_dirs)
-    for x in new_repos:
-        click.secho("Found new git repository '" + x + "': repository added", fg="green")
-        try:
-            with open(x + "/.git/config", 'r') as f:
-                ssh_url = next(line[7:-1] for line in f if line.startswith("\tsurl"))
-        except StopIteration:
-            ssh_url = None
-        ps = config_yaml.PathSpec(x, "git", ssh_url)
-        wsconfig.add_path_spec(ps)
-    config_yaml.generate_config_yaml(wsconfig, ".rosinstall", "")
+    update_rosinstall()
 
     if action == "update":
 
         # Search for unpushed commits
-        unpushed_repos = []
-        for ps in wsconfig.get_source():
-            os.chdir(ws_root + "/src/" + ps.get_local_name())
-            git_process = subprocess.Popen("git log --branches --not --remotes", shell=True, stdout=subprocess.PIPE)
-            result = git_process.communicate()
-
-            if result[0] != "":
-                click.secho("Unpushed commits in repo '" + ps.get_local_name() + "'", fg="yellow")
-                subprocess.call("git log --branches --not --remotes --oneline", shell=True)
-                unpushed_repos.append(ps.get_local_name())
+        unpushed_repos = mrt_base_tools.get_unpushed_repos()
 
         if len(unpushed_repos) > 0:
             choice_str = raw_input("Push them now? [y/N]")
@@ -88,4 +83,4 @@ def main(action, args):
     if len(args) == 0:
         subprocess.call(["wstool", action])
     else:
-        subprocess.call(["catkin", action, " ".join(args)])
+        subprocess.call(["wstool", action] + list(args))
