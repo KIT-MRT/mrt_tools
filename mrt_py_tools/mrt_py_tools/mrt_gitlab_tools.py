@@ -15,6 +15,7 @@ urllib3.disable_warnings()
 token_dir = os.path.expanduser("~/.mrtgitlab")
 token_file = token_dir + "/.token"
 host = "https://gitlab.mrt.uni-karlsruhe.de"
+cached_repos_file = token_dir + "/repo_cache"
 
 
 def create_gitlab_token_file():
@@ -100,7 +101,41 @@ def get_repos():
     """
     # Get all repos
     git = connect()
-    return list(git.getall(git.getprojects))
+    return list(git.getall(git.getprojects, per_page=100))
+
+
+def export_repo_names():
+    """
+    Read repo list from server and write it into caching file.
+    """
+    repo_dicts = get_repos()
+    with open(cached_repos_file, "w") as f:
+        for r in repo_dicts:
+            f.write(r["name"] + ",")
+
+
+def import_repo_names():
+    """
+    Try to read in repos from cached file. If file is older than 60 seconds, a new list is retrieved from server.
+    """
+    import time
+
+    now = time.time()
+    try:
+        # Read in last modification time
+        last_modification = os.path.getmtime(cached_repos_file)
+    except OSError:
+        # Set modification time to 2 Minutes ago
+        last_modification = now - 2 * 60
+
+    # Read new repo list from server if delta_t > 1 Minute
+    if (now - last_modification) > 60:
+        export_repo_names()
+
+    # Read in repo list from cache
+    with open(cached_repos_file, "r") as f:
+        repos = f.read()
+    return repos.split(",")[:-1]
 
 
 def find_repo(pkg_name, ns=None):

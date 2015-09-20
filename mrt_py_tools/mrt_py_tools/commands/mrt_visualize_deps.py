@@ -4,6 +4,11 @@ import click
 import sys
 import os
 
+mrt_base_tools.change_to_workspace_root_folder()
+
+all_pkgs = packages.find_packages("src")
+pkg_list = [k for k, v in all_pkgs.items()]
+
 
 def get_detailed_deps(pkg_name, all_pkgs):
     if pkg_name in all_pkgs.keys():
@@ -18,13 +23,9 @@ def get_detailed_deps(pkg_name, all_pkgs):
 
 
 @click.command()
-@click.argument("pkg_name", type=click.STRING, required=False)
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=pkg_list)
 def main(pkg_name):
     """ Visualize dependencies of catkin packages."""
-    mrt_base_tools.change_to_workspace_root_folder()
-
-    all_pkgs = packages.find_packages("src")
-
     if pkg_name:
         if pkg_name in all_pkgs.keys():
             pkgs = [k for k, v in all_pkgs.items() if k == pkg_name]

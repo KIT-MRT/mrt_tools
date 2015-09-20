@@ -4,9 +4,11 @@ from mrt_py_tools import mrt_gitlab_tools
 from mrt_py_tools.commands import mrt_resolve_deps
 import click
 
+repo_list = mrt_gitlab_tools.import_repo_names()
+
 
 @click.command()
-@click.argument("pkg_name", type=click.STRING, required=True)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=repo_list)
 def main(pkg_name):
     """
     Clone catkin packages from gitlab.
@@ -20,7 +22,5 @@ def main(pkg_name):
 
     # clone pkg
     if mrt_gitlab_tools.clone_pkg(pkg_name):
-
         # resolve deps
         mrt_resolve_deps.resolve_dependencies()
-
