@@ -1,14 +1,14 @@
 #!/usr/bin/python
-import shutil
+from mrt_py_tools.mrt_base_tools import get_script_root, cd_to_ws_root_folder, cd_to_ws_src_folder
+from mrt_py_tools.mrt_gitlab_tools import Git, get_userinfo
 import subprocess
-from mrt_py_tools import mrt_base_tools
-from mrt_py_tools import mrt_gitlab_tools
+import shutil
 import click
 import re
 import os
 import sys
 
-user = mrt_gitlab_tools.get_userinfo()
+user = get_userinfo()
 
 
 def touch(fname, times=None):
@@ -113,8 +113,8 @@ def create_files(pkg_name, pkg_type, ros, self_dir):
 def main(pkg_name, pkg_type, ros, create_git_repo):
     """ Create a new catkin package """
 
-    self_dir = mrt_base_tools.get_script_root()
-    mrt_base_tools.change_to_workspace_root_folder()
+    self_dir = get_script_root()
+    cd_to_ws_root_folder()
 
     pkg_name = check_naming(pkg_name)
 
@@ -139,13 +139,14 @@ def main(pkg_name, pkg_type, ros, create_git_repo):
     create_files(pkg_name, pkg_type, ros, self_dir)
 
     if create_git_repo:
-        ssh_url = mrt_gitlab_tools.create_repo(pkg_name)
+        git = Git()
+        ssh_url = git.create_repo(pkg_name)
         subprocess.call("sed -i " +
                         "-e 's#\${PACKAGE_REPOSITORY_URL}#" + ssh_url + "#g' " +
                         "package.xml", shell=True)
         # Initialize repository
-        mrt_base_tools.change_to_workspace_root_folder()
-        os.chdir("src/" + pkg_name)
+        cd_to_ws_src_folder()
+        os.chdir(pkg_name)
         subprocess.call("git init", shell=True)
         subprocess.call("git remote add origin " + ssh_url + " >/dev/null 2>&1", shell=True)
         with open('.gitignore', 'w') as f:

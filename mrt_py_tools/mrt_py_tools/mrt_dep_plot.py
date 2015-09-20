@@ -73,7 +73,7 @@ def plot_digraph(deps, pkg_name, show=True):
         add_nodes(dep, graph)
 
     # save the figure
-    mrt_base_tools.change_to_workspace_root_folder()
+    mrt_base_tools.cd_to_ws_root_folder()
     if not os.path.exists("pics"):
         os.mkdir("pics")
     graph.write_png("pics/deps_" + pkg_name + ".png")

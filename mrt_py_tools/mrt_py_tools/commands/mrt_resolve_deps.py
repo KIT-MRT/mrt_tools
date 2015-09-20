@@ -1,5 +1,6 @@
 #!/usr/bin/python
-from mrt_py_tools import mrt_base_tools, mrt_gitlab_tools
+from mrt_py_tools.mrt_base_tools import cd_to_ws_root_folder
+from mrt_py_tools.mrt_gitlab_tools import Git
 import subprocess
 import click
 import sys
@@ -21,6 +22,8 @@ def resolve_dependencies():
 
     first_missing_dep = True
 
+    git = Git()
+
     while True:
         rosdep_process = subprocess.Popen(['rosdep', 'check', '--from-paths', 'src', '--ignore-src'],
                                           stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -41,7 +44,7 @@ def resolve_dependencies():
         for missing_package, package_dep_specified in missing_packages.iteritems():
 
             # Clone pkg
-            if not mrt_gitlab_tools.clone_pkg(missing_package):
+            if not git.clone_pkg(missing_package):
                 # no Gitlab project found
                 if first_missing_dep:
                     # first not found package. Update apt-get and ros.
@@ -64,6 +67,6 @@ def resolve_dependencies():
 def main():
     """ Resolve all dependencies in this workspace."""
 
-    mrt_base_tools.change_to_workspace_root_folder()
+    cd_to_ws_root_folder()
 
     resolve_dependencies()

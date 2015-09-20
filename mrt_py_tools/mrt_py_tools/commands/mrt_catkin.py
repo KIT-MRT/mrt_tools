@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from mrt_py_tools import mrt_base_tools
+from mrt_py_tools.mrt_base_tools import cd_to_ws_root_folder, get_script_root, find_by_pattern
 import subprocess
 import shutil
 import click
@@ -8,9 +8,9 @@ import os
 
 
 def set_eclipse_project_setting():
-    mrt_base_tools.change_to_workspace_root_folder()
+    cd_to_ws_root_folder()
     os.chdir("build")
-    for project in mrt_base_tools.find(".project", "build"):
+    for project in find_by_pattern(".project", "build"):
         os.chdir(os.path.dirname(project))
         # set environment variables
         subprocess.call(
@@ -21,7 +21,7 @@ def set_eclipse_project_setting():
         if not os.path.isfile("./.settings/language.settings.xml"):
             if not os.path.isdir("./.settings"):
                 os.mkdir("./.settings")
-        script_dir = mrt_base_tools.get_script_root()
+        script_dir = get_script_root()
         shutil.copy(script_dir + "/templates/language.settings.xml", "./.settings")
 
 
@@ -36,7 +36,7 @@ def set_eclipse_project_setting():
 def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
     """ A wrapper for catkin. """
 
-    mrt_base_tools.change_to_workspace_root_folder()
+    cd_to_ws_root_folder()
 
     if debug:
         catkin_args += ("-DCMAKE_BUILD_TYPE=Debug",)
@@ -56,7 +56,7 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
         catkin_args += (" -GEclipse CDT4 - Unix Makefiles",)
 
     if resolve_deps:
-        script_root = mrt_base_tools.get_script_root()
+        script_root = get_script_root()
         try:
             subprocess.check_call([os.path.join(script_root, "mrt_resolve_deps")])
         except subprocess.CalledProcessError:

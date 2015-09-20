@@ -1,6 +1,6 @@
-__author__ = 'bandera'
-from mrt_py_tools import mrt_base_tools, mrt_gitlab_tools
-from mrt_py_tools.commands import mrt_resolve_deps
+from mrt_py_tools.mrt_base_tools import cd_to_ws_root_folder
+from mrt_py_tools.mrt_gitlab_tools import Git, import_repo_names
+from mrt_py_tools.commands.mrt_resolve_deps import resolve_dependencies
 import click
 
 
@@ -15,11 +15,10 @@ def main(pkg_name):
     Execute this script from within a catkin workspace
     """
 
-    mrt_base_tools.change_to_workspace_root_folder()
+    cd_to_ws_root_folder()
+    git = Git()
 
     # clone pkg
-    if mrt_gitlab_tools.clone_pkg(pkg_name):
-
+    if git.clone_pkg(pkg_name):
         # resolve deps
-        mrt_resolve_deps.resolve_dependencies()
-
+        resolve_dependencies()

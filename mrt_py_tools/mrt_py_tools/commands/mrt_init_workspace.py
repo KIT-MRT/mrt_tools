@@ -1,5 +1,5 @@
 #!/bin/python
-from mrt_py_tools import mrt_base_tools
+from mrt_py_tools.mrt_base_tools import get_ws_root_folder
 import distutils.util
 import subprocess
 import click
@@ -13,7 +13,7 @@ def init_workspace():
     """
     init_repo = True
 
-    workspace_folder = mrt_base_tools.get_workspace_root_folder(os.getcwd())
+    workspace_folder = get_ws_root_folder(os.getcwd())
     print workspace_folder
     if not (workspace_folder == "/" or  workspace_folder == ""):
         click.secho("Already inside a catkin workspace. Can't create new.", fg="red")

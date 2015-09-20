@@ -1,6 +1,6 @@
 #!/usr/bin/python
 from wstool import config_yaml, config as wstool_config
-from mrt_py_tools import mrt_base_tools
+from mrt_py_tools.mrt_base_tools import cd_to_ws_src_folder, get_unpushed_repos
 from catkin_pkg import packages
 import distutils.util
 import subprocess
@@ -47,9 +47,8 @@ def main(action, args):
     A wrapper for wstool.
     """
 
-    mrt_base_tools.change_to_workspace_root_folder()
-    ws_root = os.getcwd()
-    os.chdir("src")
+    cd_to_ws_src_folder()
+    ws_src = os.getcwd()
 
     if action == "init":
         click.secho("Removing wstool database src/.rosinstall", fg="yellow")
@@ -65,7 +64,7 @@ def main(action, args):
     if action == "update":
 
         # Search for unpushed commits
-        unpushed_repos = mrt_base_tools.get_unpushed_repos()
+        unpushed_repos = get_unpushed_repos()
 
         if len(unpushed_repos) > 0:
             choice_str = raw_input("Push them now? [y/N]")
@@ -75,11 +74,15 @@ def main(action, args):
 
             if push_now:
                 for x in unpushed_repos:
-                    os.chdir(ws_root + "/src/" + x)
+                    os.chdir(ws_src + x)
                     subprocess.call("git push", shell=True)
 
+        # Speedup the pull process by parallelization
+        if not [a for a in args if a.startswith("-j")]:
+            args += ("-j10",)
+
     # Pass the rest to wstool
-    os.chdir(ws_root + "/src")
+    os.chdir(ws_src)
     if len(args) == 0:
         subprocess.call(["wstool", action])
     else:
