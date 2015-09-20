@@ -1,6 +1,5 @@
 __author__ = 'bandera'
-from mrt_py_tools import mrt_base_tools
-from mrt_py_tools import mrt_gitlab_tools
+from mrt_py_tools import mrt_base_tools, mrt_gitlab_tools
 from mrt_py_tools.commands import mrt_resolve_deps
 import click
 
