@@ -1,6 +1,6 @@
 #!/usr/bin/python
-# from requests.packages import urllib3
 from wstool import config_yaml, multiproject_cli
+from requests.packages import urllib3
 import subprocess
 import getpass
 import gitlab
@@ -8,7 +8,8 @@ import click
 import sys
 import os
 
-# urllib3.disable_warnings()
+urllib3.disable_warnings()
+
 
 # Define paths
 token_dir = os.path.expanduser("~/.mrtgitlab")
@@ -18,7 +19,7 @@ host = "https://gitlab.mrt.uni-karlsruhe.de"
 
 def create_gitlab_token_file():
     """
-    This function askes for the Gitlab user name and password, in order to create a local private token file.
+    This function asks for the Gitlab user name and password, in order to create a local private token file.
     Normally this function has to be called only once. From then on, the token file is used to communicate with the server.
     """
     username = raw_input("Gitlab user name: ")
@@ -43,17 +44,7 @@ def check_for_token_file():
     The token file is an authentication key for communicating with the gitlab server through the python API.
     """
     # Check for token file
-    create_new_token = True
-    if os.path.isfile(token_file):
-        # print("Private token file exists already.")
-        # choice_str = raw_input("Would you like to recreate it [y/N]? ")
-        # if choice_str == "":
-        #     choice_str = "n"
-        #
-        # create_new_token = distutils.util.strtobool(choice_str)
-        create_new_token = False
-
-    if create_new_token:
+    if not os.path.isfile(token_file):
         for i in range(0, 3):
             try:
                 create_gitlab_token_file()
