@@ -1,10 +1,11 @@
-from mrt_py_tools import mrt_base_tools, mrt_dep_plot
+from mrt_py_tools.mrt_base_tools import cd_to_ws_root_folder
+from mrt_py_tools import mrt_dep_plot
 from catkin_pkg import packages
 import click
 import sys
 import os
 
-mrt_base_tools.change_to_workspace_root_folder()
+cd_to_ws_root_folder()
 
 all_pkgs = packages.find_packages("src")
 pkg_list = [k for k, v in all_pkgs.items()]

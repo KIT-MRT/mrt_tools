@@ -6,7 +6,6 @@ import click
 import sys
 import os
 
-
 __author__ = 'bandera'
 
 # Test whether ros is sourced
@@ -15,7 +14,7 @@ if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRA
     sys.exit(1)
 
 
-def get_workspace_root_folder(current_dir):
+def get_ws_root_folder(current_dir):
     """
     Find the root directory of a workspace, starting from current_dir
     """
@@ -36,22 +35,28 @@ def get_script_root():
     return os.path.dirname(os.path.realpath(__file__))
 
 
-def change_to_workspace_root_folder():
+def cd_to_ws_root_folder():
     """
     Searches for and cd's into workspace root folder.
     Throws Exeption if root can't be found.
     """
-    workspace_folder = get_workspace_root_folder(os.getcwd())
+    workspace_folder = get_ws_root_folder(os.getcwd())
 
     if workspace_folder == "/" or workspace_folder == "":
         raise Exception("No catkin workspace root found.")
 
     os.chdir(workspace_folder)
     if not os.path.exists("src/.rosinstall"):
-        subprocess.call("wstool init .")
+        subprocess.call("wstool init src")
 
 
-def find(pattern, path):
+def cd_to_ws_src_folder():
+    """Searches for and cd's into workspace src folder."""
+    cd_to_ws_root_folder()
+    os.chdir("src")
+
+
+def find_by_pattern(pattern, path):
     """
     Searches for a file within a directory
     :param pattern: Name to search for
@@ -72,7 +77,7 @@ def get_unpushed_repos():
     :return: List of repository names in src/
     """
 
-    change_to_workspace_root_folder()
+    cd_to_ws_root_folder()
     ws_root = os.getcwd()
     os.chdir("src")
 

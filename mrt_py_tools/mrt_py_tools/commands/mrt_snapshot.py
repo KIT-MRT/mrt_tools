@@ -1,7 +1,7 @@
 #!/usr/bin/python
+from mrt_py_tools.mrt_base_tools import cd_to_ws_root_folder, get_unpushed_repos
 from mrt_py_tools.commands import mrt_init_workspace, mrt_resolve_deps
 from wstool import multiproject_cli, multiproject_cmd
-from mrt_py_tools import mrt_base_tools
 import subprocess
 import zipfile
 import shutil
@@ -10,7 +10,6 @@ import yaml
 import sys
 import os
 
-__author__ = 'bandera'
 fileending = ".snapshot"
 
 
@@ -30,7 +29,7 @@ def test_for_changes(wsconfig):
     statuslist = [{k["entry"].get_local_name(): k["status"]} for k in statuslist if k["status"] != ""]
 
     # Check for unpushed commits
-    unpushed_repos = mrt_base_tools.get_unpushed_repos()
+    unpushed_repos = get_unpushed_repos()
 
     # Prompt user if changes detected
     if len(unpushed_repos) > 0 or len(statuslist) > 0:
@@ -51,7 +50,7 @@ def create_snapshot(name):
     The .rosinstall file pins every repository to the commit it is at right now.
     """
     # Change to root of ws
-    mrt_base_tools.change_to_workspace_root_folder()
+    cd_to_ws_root_folder()
 
     # Read in .rosinstall
     wsconfig = multiproject_cli.multiproject_cmd.get_config("src", config_filename=".rosinstall")
@@ -60,7 +59,7 @@ def create_snapshot(name):
     test_for_changes(wsconfig)
 
     # Create snapshot of rosinstall
-    mrt_base_tools.change_to_workspace_root_folder()
+    cd_to_ws_root_folder()
     source_aggregate = multiproject_cmd.cmd_snapshot(wsconfig)
     with open('.rosinstall', 'w') as f:
         f.writelines(yaml.safe_dump(source_aggregate))

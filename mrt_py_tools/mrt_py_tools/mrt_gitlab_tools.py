@@ -2,7 +2,6 @@
 from wstool import config_yaml, multiproject_cli
 from requests.packages import urllib3
 import subprocess
-import getpass
 import gitlab
 import click
 import sys
@@ -10,176 +9,311 @@ import os
 
 urllib3.disable_warnings()
 
+# Ugly test to test for bash completion mode
+try:
+    os.environ['COMP_WORDS']
+    is_bashcompletion = True
+except KeyError:
+    is_bashcompletion = False
 
-# Define paths
-token_dir = os.path.expanduser("~/.mrtgitlab")
-token_file = token_dir + "/.token"
-host = "https://gitlab.mrt.uni-karlsruhe.de"
-cached_repos_file = token_dir + "/repo_cache"
-
-git = None
-
-
-def connect():
-    """
-    Connects to the server
-    :return: git object
-    """
-    global git
-
-    # Test whether git is configured
-    get_userinfo()
-
-    check_token_file()
-
-    # Connect
-    token = os.read(os.open(token_file, 0), 20)
-    git_obj = gitlab.Gitlab(host, token=token)
-
-    check_sshkey()
-
-    return git_obj
+# Default settings
+default_token_path = "~/.mrtgitlab/.token"
+default_ssh_path = "~/.ssh"
+default_repo_cache = "~/.mrtgitlab/repo_cache"
+default_repo_cache_time = 60 # in seconds
+default_host = "https://gitlab.mrt.uni-karlsruhe.de"
 
 
-def check_token_file():
-    """
-    This function searches for a private token file and creates it if not found.
-    The token file is an authentication key for communicating with the gitlab server through the python API.
-    """
-    # Check for token file
-    if not os.path.isfile(token_file):
-        click.echo("No gitlab token file found. Creating new one...")
-        create_gitlab_token_file()
+class Git:
+    def __init__(self, token=None, host=default_host):
+        # Host URL
+        self.host = host
+        self.token = token
+        self.server = None
+        self.ssh_key = None
 
+        if is_bashcompletion:
+            self.connect()
+        else:
+            self.test_and_connect()
 
-def create_gitlab_token_file():
-    """
-    This function asks for the Gitlab user name and password, in order to create a local private token file.
-    Normally this function has to be called only once.
-    From then on, the token file is used to communicate with the server.
-    """
-    username = raw_input("Gitlab user name: ")
-    password = getpass.getpass()
-    tmp_git_obj = gitlab.Gitlab(host)
-    tmp_git_obj.login(username, password)
-    gitlab_user = tmp_git_obj.currentuser()
-    token = gitlab_user['private_token']
+    def test_and_connect(self):
+        # Token
+        if self.token is None:
+            self.token = Token()
+        elif isinstance(self.token, str):
+            self.token = Token(path=self.token)
+        elif isinstance(self.token, Token):
+            pass
+        else:
+            click.secho("Can't create a token from " + str(type(self.token)), fg="red")
 
-    # Write to file
-    if not os.path.exists(token_dir):
-        os.mkdir(token_dir)
+        # Test whether git is configured
+        get_userinfo()
 
-    if not os.path.isfile(token_file):
-        os.mknod(token_file)
-    os.write(os.open(token_file, 1), token)
+        # Connect
+        self.connect()
 
-    click.echo("Token file created at: " + token_file)
+        # Test ssh key
+        if not self.check_ssh_key():
+            # SSH Key not on server yet. Ask user
+            click.echo("No ssh key match found. Which ssh key should we use?")
+            local_keys = get_local_ssh_keys()
+            user_choice = get_user_choice([key.name for key in local_keys], default="Create new key.")
+            if user_choice is None:
+                self.ssh_key = SSHkey()
+                self.ssh_key.create()
+            else:
+                self.ssh_key = local_keys[user_choice]
+            self.upload_ssh_key()
 
+    def connect(self):
+        """Connects to the server"""
+        self.server = gitlab.Gitlab(self.host, token=self.token.token)
 
-def check_sshkey():
-    """
-    This function tests for the presence and functionality of a ssh-key.
-    The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool.
-    """
-    global git
-    remote_keys = git.getsshkeys()
-    local_keys = get_local_ssh_keys()
-    if [key for key in local_keys if key["key"] in [r["key"] for r in remote_keys]]:
+    def check_ssh_key(self):
+        """Test for the presence and functionality of a ssh-key."""
+        local_keys = get_local_ssh_keys()
+        remote_keys = self.server.getsshkeys()
+        if [key for key in local_keys if key.public_key in [r["key"] for r in remote_keys]]:
+            return True
+        else:
+            return False
+
+    def upload_ssh_key(self):
+        """Add ssh key to gitlab user account"""
+        click.echo("Uploading key " + self.ssh_key.name)
+        self.server.addsshkey(self.ssh_key.name, self.ssh_key.public_key)
+
+    def get_namespaces(self):
+        """Returns a list of all namespaces in Gitlab"""
+
+        click.echo("Retrieving namespaces...")
+        namespaces = {project['namespace']['name']: project['namespace']['id'] for project in self.get_repos()}
+        user_name = self.server.currentuser()['username']
+        if user_name not in namespaces.keys():
+            namespaces[user_name] = 0  # The default user namespace_id will be created with first user project
+        return namespaces
+
+    def get_repos(self):
+        """Returns a list of all repositories in Gitlab"""
+
+        return list(self.server.getall(self.server.getprojects, per_page=100))
+
+    def find_repo(self, pkg_name, ns=None):
+        """Search for a repository within gitlab."""
+
+        click.secho("Search for package " + pkg_name, fg='red')
+        results = self.server.searchproject(pkg_name)
+
+        if ns is not None:
+            try:
+                return next(
+                    x["ssh_url_to_repo"] for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
+            except StopIteration:
+                return None
+
+        exact_hits = [res for res in results if res["name"] == pkg_name]
+        count = len(exact_hits)
+
+        if count is 0:
+            # None found
+            click.secho("Package " + pkg_name + " could not be found.", fg='red')
+            return ""
+        if count is 1:
+            # Only one found
+            user_choice = 0
+        else:
+            # Multiple found
+            print "More than one repo with \"" + str(pkg_name) + "\" found. Please choose:"
+            user_choice = get_user_choice([item["path_with_namespace"] for item in exact_hits])
+
+        ssh_url = exact_hits[user_choice]['ssh_url_to_repo']
+        click.secho("Found " + exact_hits[user_choice]['path_with_namespace'], fg='green')
+
+        return ssh_url
+
+    def clone_pkg(self, pkg_name):
+        """Search and clone a repository."""
+
+        # Check whether package exists already
+        f_null = open(os.devnull, 'w')
+        wstool_process = subprocess.Popen(['wstool', 'info', pkg_name, "-t", "src"],
+                                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        wstool_output, wstool_err = wstool_process.communicate()
+
+        if wstool_err:
+            ssh_url = self.find_repo(pkg_name)
+            if ssh_url is None:
+                return False
+
+            # add specified git repository to rosinstall
+            wsconfig = multiproject_cli.multiproject_cmd.get_config("src", config_filename=".rosinstall")
+            ps = config_yaml.PathSpec(pkg_name, "git", ssh_url)
+            wsconfig.add_path_spec(ps)
+            config_yaml.generate_config_yaml(wsconfig, ".rosinstall", "")
+        else:
+            click.echo("Package " + pkg_name + " exists already.")
+
+        self.check_ssh_key()  # Shouldn't be needed, but gives error if not here.
+        subprocess.call(["wstool", "update", pkg_name, "-t", "src"], stdout=f_null)
         return True
 
-    # SSH Key not on server yet. Ask user
-    click.echo("No ssh key match found. Which ssh key should we use?")
-    for index, item in enumerate(local_keys):
-        print "(" + str(index) + ") " + "Upload key '" + item["name"] + "'"
-    print "(" + str(index + 1) + ") " + "Create new key"
-    valid_choices = range(0, len(local_keys) + 1)
-    while True:
-        user_choice = click.prompt('Please enter a number [0-' + str(len(local_keys)) + ']', type=int)
-        if user_choice in valid_choices:
-            break
-    if user_choice == len(local_keys):
-        new_key = create_new_sshkey()
-        add_ssh_key(new_key)
-    else:
-        add_ssh_key(local_keys[user_choice])
+    def create_repo(self, pkg_name):
+        """
+        This function creates a new repository on the gitlab server.
+        It lets the user choose the namespace and tests whether the repo exists already.
+        """
+        # Dialog to choose namespace
+        click.echo("Available namespaces in gitlab, please select one for your new project:")
+        namespaces = self.get_namespaces()
+        user_choice = get_user_choice(namespaces)
+        click.echo("Using namespace '" + namespaces.keys()[int(user_choice)] + "'")
+        ns_id = namespaces.values()[int(user_choice)]
+
+        # Check whether repo exists
+        ssh_url = self.find_repo(pkg_name, namespaces.keys()[int(user_choice)])
+
+        if ssh_url is not None:
+            click.secho("    ERROR Repo exist already: " + ssh_url, fg='red')
+            sys.exit(1)
+
+        # Create repo
+        if ns_id == 0:  # Create new user namespace
+            request = self.server.createproject(pkg_name)
+        else:
+            request = self.server.createproject(pkg_name, namespace_id=ns_id)
+        if not request:
+            click.secho("There was a problem with creating the repo.", fg='red')
+            sys.exit(1)
+
+        # Return URL
+        click.echo("Repository URL is: " + request['ssh_url_to_repo'])
+        return request['ssh_url_to_repo']
 
 
-def get_local_ssh_keys():
+class SSHkey:
+    """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
+
+    def __init__(self, name="mrtgitlab", key="", dir_path=default_ssh_path):
+        self.name = name
+        self.secret_key = ""
+        self.dir_path = os.path.expanduser(dir_path)
+        self.path = self.dir_path + "/" + self.name
+        self.public_key = key
+
+    def load(self):
+        """Load from file"""
+        try:
+            # Secret key
+            with open(self.path, 'r') as f:
+                self.secret_key = f.read().splitlines()
+                while type(self.secret_key) is list:
+                    self.secret_key = self.secret_key[0]
+
+            # Public key
+            with open(self.path + ".pub", 'r') as f:
+                self.public_key = f.read().splitlines()
+                while type(self.public_key) is list:
+                    self.public_key = self.public_key[0]
+
+            return True
+        except IOError:
+            return False
+
+    def write(self):
+        """Write key to file"""
+        from os import chmod
+
+        # Choose key file
+        while os.path.exists(self.path):
+            key_file = click.prompt("Please enter a new key name: ")
+            self.path = os.path.expanduser(self.dir_path + key_file)
+
+        # Write keys
+        if self.secret_key:
+            with open(self.path, 'w') as f:
+                chmod(self.path, 0600)
+                f.write(self.secret_key)
+        if self.public_key:
+            with open(self.path + ".pub", 'w') as f:
+                chmod(self.path, 0600)
+                f.write(self.public_key)
+
+        click.echo("Wrote key to " + self.path + "(.pub)")
+
+    def create(self):
+        """Create new SSH key"""
+        from Crypto.PublicKey import RSA
+
+        # Generate key
+        click.echo("Generating new SSH Key")
+        key = RSA.generate(2048)
+        self.secret_key = key.exportKey('PEM')
+        self.public_key = key.publickey().exportKey('OpenSSH')
+        self.write()
+
+
+class Token:
+    """
+    The token file is an authentication key for communicating with the gitlab server through the python API.
+    """
+
+    def __init__(self, path=default_token_path, allow_creation=True):
+        self.path = os.path.expanduser(path)
+        self.token = self.load(self.path)
+        if not self and allow_creation:
+            self.create()
+
+    def __nonzero__(self):
+        return self.token != ""
+
+    @staticmethod
+    def load(path):
+        """
+        Read in the token from a specified path
+        """
+        try:
+            return os.read(os.open(path, 0), 20)
+        except OSError:
+            return ""
+
+    def create(self):
+        """
+        Create a new token from Gitlab user name and password.
+        Normally this function has to be called only once.
+        From then on, the persistent token file is used to communicate with the server.
+        """
+        click.echo("No existing gitlab token file found. Creating new one...")
+        username = click.prompt("Gitlab user name")
+        password = click.prompt("Gitlab password", hide_input=True)
+
+        tmp_git_obj = gitlab.Gitlab(default_host)
+        tmp_git_obj.login(username, password)
+        gitlab_user = tmp_git_obj.currentuser()
+
+        self.token = gitlab_user['private_token']
+        self.write()
+
+    def write(self):
+        """Write to file"""
+        if not os.path.exists(os.path.dirname(self.path)):
+            os.makedirs(os.path.dirname(self.path))
+
+        with open(self.path, 'w') as f:
+            f.write(self.token)
+
+        click.echo("Token written to: " + self.path)
+
+
+def get_local_ssh_keys(path=default_ssh_path):
+    path = os.path.expanduser(path)
     keys = []
-    for filename in os.listdir(os.path.expanduser("~/.ssh")):
-        if filename.endswith(".pub"):
-            with open(os.path.expanduser("~/.ssh/" + filename), 'r') as f:
-                key = f.read().splitlines()
-                while type(key) is list:
-                    key = key[0]
-                keys.append({'name': filename, 'key': key, 'path': os.path.expanduser("~/.ssh/" + filename)})
+    for filename in os.listdir(path):
+        key = SSHkey(name=filename, dir_path=path)
+        if key.load():
+            keys.append(key)
     return keys
-
-
-def create_new_sshkey():
-    from os import chmod
-    from Crypto.PublicKey import RSA
-
-    # Generate key
-    click.echo("Generating new SSH Key")
-    key = RSA.generate(2048)
-    # Choose key file
-    key_file = os.path.expanduser("~/.ssh/mrtgitlab")
-    while os.path.exists(key_file):
-        key_file = click.prompt("Please enter a new key name: ")
-        key_file = os.path.expanduser("~/.ssh/" + key_file)
-
-    # Write key to file
-    with open(key_file, 'w') as content_file:
-        chmod(key_file, 0600)
-        content_file.write(key.exportKey('PEM'))
-    pubkey = key.publickey()
-    with open(key_file + ".pub", 'w') as content_file:
-        content_file.write(pubkey.exportKey('OpenSSH'))
-    click.echo("Wrote key to " + key_file + "(.pub)")
-
-    return {"name": os.path.basename(key_file),
-            "key": pubkey.exportKey('OpenSSH'),
-            "path": key_file}
-
-
-def add_ssh_key(key):
-    global git
-    click.echo("Uploading key " + key["name"])
-    git.addsshkey(key["name"], key["key"])
-
-
-def get_namespaces():
-    """
-    This function returns a list of all namespaces in Gitlab
-    :return: List of namespace names
-    """
-    global git
-    if git is None:
-        # Create connection to git
-        git = connect()
-
-    # Check namespaces
-    click.echo("Retrieving namespaces...")
-    namespaces = {project['namespace']['name']: project['namespace']['id'] for project in get_repos()}
-    if git.currentuser()['username'] not in namespaces.keys():
-        namespaces[
-            git.currentuser()['username']] = 0  # The default user namespace_id will be created with first userproject
-    return namespaces
-
-
-def get_repos():
-    """
-    This function returns a list of all repositories in Gitlab
-    :return: List of repositories names
-    """
-    global git
-    if git is None:
-        # Create connection to git
-        git = connect()
-
-    # Get all repos
-    return list(git.getall(git.getprojects, per_page=100))
 
 
 def export_repo_names():
@@ -188,187 +322,54 @@ def export_repo_names():
     """
     # Because we are calling this during autocompletion, we don't wont any errors.
     # -> Just exit when something is not ok.
-    global git
-    if git is None:
-        try:
-            # Connect
-            token = os.read(os.open(token_file, 0), 20)
-            git = gitlab.Gitlab(host, token=token)
-        except:
-            sys.exit(1)
+    try:
+        # Connect
+        token = Token(path=default_token_path, allow_creation=False)
+        git = Git(token=token)
+        repo_dicts = git.get_repos()
+    except:
+        # In case the connection didn't succeed, the file is going to be flushed.
+        repo_dicts = []
 
-    repo_dicts = get_repos()
-    with open(cached_repos_file, "w") as f:
+    with open(os.path.expanduser(default_repo_cache), "w") as f:
         for r in repo_dicts:
             f.write(r["name"] + ",")
-
-    # Delete git again, as we are not sure whether all tests are met.
-    git = None
 
 
 def import_repo_names():
     """
-    Try to read in repos from cached file. If file is older than 60 seconds, a new list is retrieved from server.
+    Try to read in repos from cached file.
+    If file is older than default_repo_cache_time seconds, a new list is retrieved from server.
     """
     import time
 
     now = time.time()
     try:
         # Read in last modification time
-        last_modification = os.path.getmtime(cached_repos_file)
+        last_modification = os.path.getmtime(os.path.expanduser(default_repo_cache))
     except OSError:
-        # Set modification time to 2 Minutes ago
-        last_modification = now - 2 * 60
+        # Set modification time to 2 * default_repo_cache_time ago
+        last_modification = now - 2 * default_repo_cache_time
 
     # Read new repo list from server if delta_t > 1 Minute
-    if (now - last_modification) > 60:
+    if (now - last_modification) > default_repo_cache_time:
         export_repo_names()
 
     # Read in repo list from cache
-    with open(cached_repos_file, "r") as f:
+    with open(os.path.expanduser(default_repo_cache), "r") as f:
         repos = f.read()
     return repos.split(",")[:-1]
 
 
-def find_repo(pkg_name, ns=None):
-    """
-    Searches for a repository within gitlab.
-    If repositories in different namespaces are found, the user is asked to select one.
-    :param pkg_name: Repo to search for
-    :param ns: Namespace to search in
-    :return: SSH URL of repository
-    """
-    global git
-    if git is None:
-        # Create connection to git
-        git = connect()
-
-    # Search for repo
-    click.secho("Search for package " + pkg_name, fg='red')
-    results = git.searchproject(pkg_name)
-
-    if ns is not None:
-        try:
-            return next(x["ssh_url_to_repo"] for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
-        except StopIteration:
-            return ""
-
-    exact_hits = [res for res in results if res["name"] == pkg_name]
-    count = len(exact_hits)
-
-    if count is 0:
-        # None found
-        click.secho("Package " + pkg_name + " could not be found.", fg='red')
-        return ""
-    if count is 1:
-        # Only one found
-        user_choice = 0
-    if count > 1:
-        # Multiple found
-        print "More than one repo with \"" + str(pkg_name) + "\" found. Please choose:"
-        for index, item in enumerate(exact_hits):
-            print "(" + str(index) + ") " + item["path_with_namespace"]
-        valid_choices = range(0, count)
-        while True:
-            user_choice = int(raw_input("Enter number: "))
-            if user_choice in valid_choices:
-                break
-
-    ssh_url = exact_hits[user_choice]['ssh_url_to_repo']
-    click.secho("Found " + exact_hits[user_choice]['path_with_namespace'] + ". Cloning.", fg='green')
-
-    return ssh_url
-
-
-def clone_pkg(pkg_name):
-    """
-    This function searches for and clones a repository.
-    :param pkg_name: Repository to clone
-    :return: Boolean for success
-    """
-    global git
-    if git is None:
-        # Create connection to git
-        git = connect()
-
-    # Check whether package exists already
-    f_null = open(os.devnull, 'w')
-    wstool_process = subprocess.Popen(['wstool', 'info', pkg_name, "-t", "src"],
-                                      stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    wstool_output, wstool_err = wstool_process.communicate()
-
-    if wstool_err:
-        ssh_url = find_repo(pkg_name)
-        if ssh_url == "":
-            return False
-
-        # add specified git repository to rosinstall
-        wsconfig = multiproject_cli.multiproject_cmd.get_config("src", config_filename=".rosinstall")
-        ps = config_yaml.PathSpec(pkg_name, "git", ssh_url)
-        wsconfig.add_path_spec(ps)
-        config_yaml.generate_config_yaml(wsconfig, ".rosinstall", "")
-    else:
-        click.echo("Package " + pkg_name + " exists already.")
-        check_sshkey()  # Shouldn't be needed, but gives error if not here.
-
-    subprocess.call(["wstool", "update", pkg_name, "-t", "src"], stdout=f_null)
-    return True
-
-
-def create_repo(pkg_name):
-    """
-    This function creates a new repository on the gitlab server.
-    It lets the user choose the namespace and tests whether the repo exists already.
-    """
-    global git
-    if git is None:
-        # Create connection to git
-        git = connect()
-
-    namespaces = get_namespaces()
-
-    # Dialog to choose namespace
-    print "Available namespaces in gitlab:"
-    for index, item in enumerate(namespaces):
-        print "(" + str(index) + ") " + item
-    valid_choices = {str(x) for x in range(0, len(namespaces))}
-    while True:
-        user_choice = str(raw_input("Please select one of the above namespaces for your new project: "))
-        if user_choice in valid_choices:
-            break
-    print "Using namespace '" + namespaces.keys()[int(user_choice)] + "'"
-    ns_id = namespaces.values()[int(user_choice)]
-
-    # Check whether repo exists
-    ssh_url = find_repo(pkg_name, namespaces.keys()[int(user_choice)])
-
-    if ssh_url != "":
-        click.secho("    ERROR Repo exist already: " + ssh_url, fg='red')
-        sys.exit(1)
-
-    # Create repo
-    if ns_id == 0:  # Create new user namespace
-        request = git.createproject(pkg_name)
-    else:
-        request = git.createproject(pkg_name, namespace_id=ns_id)
-    if not request:
-        click.secho("There was a problem with creating the repo.", fg='red')
-        sys.exit(1)
-
-    # Return URL
-    print "Repository URL is: " + request['ssh_url_to_repo']
-    return request['ssh_url_to_repo']
-
-
 def get_userinfo():
-    """
-    Tries to read in git user infos.
-    """
+    """Read in git user infos."""
+
     # Check whether git is installed
     (dpkg_git, dpkg_err) = subprocess.Popen("dpkg -s git", shell=True, stdout=subprocess.PIPE).communicate()
 
     # Read out username and email
-    (name, name_err) = subprocess.Popen("git config --get user.name", shell=True, stdout=subprocess.PIPE).communicate()
+    (name, name_err) = subprocess.Popen("git config --get user.name", shell=True,
+                                        stdout=subprocess.PIPE).communicate()
     (email, mail_err) = subprocess.Popen("git config --get user.email", shell=True,
                                          stdout=subprocess.PIPE).communicate()
 
@@ -388,3 +389,25 @@ def get_userinfo():
         subprocess.call("git config --global user.email '" + email + "'", shell=True)
 
     return {'name': name[:-1], 'mail': email[:-1]}
+
+
+def get_user_choice(items, default=None):
+    # Print choices
+    valid_choices = []
+    for index, item in enumerate(items):
+        valid_choices.append(index)
+        click.echo("(" + str(valid_choices[-1]) + ") " + item)
+    valid_choices = range(0, len(items))
+
+    # Add default choice
+    if default:
+        valid_choices.append(len(items))
+        click.echo("(" + str(valid_choices[-1]) + ") " + str(default))
+    while True:
+        user_choice = click.prompt('Please enter a number [0-' + str(valid_choices[-1]) + ']', type=int)
+        if user_choice in valid_choices:
+            if default is not None and user_choice is valid_choices[-1]:
+                # Return None if default was chosen
+                return None
+            else:
+                return user_choice
