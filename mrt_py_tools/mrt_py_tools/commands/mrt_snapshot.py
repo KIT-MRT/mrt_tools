@@ -121,7 +121,7 @@ def restore_snapshot(name):
 
 
 @click.command()
-@click.argument('action', type=click.STRING, required=True)
+@click.argument('action', type=click.STRING, required=True, autocompletion=["create", "restore"])
 @click.argument("name", type=click.STRING, required=True)
 def main(action, name):
     """Create a snapshot of the current workspace.\n
