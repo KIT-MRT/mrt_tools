@@ -30,12 +30,12 @@ def check_naming(pkg_name):
     return pkg_name
 
 
-
 def get_rosdeps():
     """ Returns a list of all rosdep dependencies known"""
     process = subprocess.Popen(['rosdep', 'db'], stdout=subprocess.PIPE)
     output, __ = process.communicate()
     return [line.split(" -> ")[0] for line in output.split("\n") if " -> " in line]
+
 
 def create_directories(pkg_name, pkg_type, ros):
     # Check for already existing folder
