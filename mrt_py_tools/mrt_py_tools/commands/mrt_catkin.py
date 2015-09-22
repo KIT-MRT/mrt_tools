@@ -1,14 +1,13 @@
 #!/usr/bin/python
-from mrt_py_tools.mrt_base_tools import cd_to_ws_root_folder, get_script_root, find_by_pattern
+from mrt_py_tools.base import Workspace, find_by_pattern
+from mrt_py_tools.utilities import *
 import subprocess
 import shutil
 import click
-import sys
 import os
 
 
 def set_eclipse_project_setting():
-    cd_to_ws_root_folder()
     os.chdir("build")
     for project in find_by_pattern(".project", "build"):
         os.chdir(os.path.dirname(project))
@@ -36,7 +35,8 @@ def set_eclipse_project_setting():
 def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
     """ A wrapper for catkin. """
 
-    cd_to_ws_root_folder()
+    ws = Workspace()
+    ws.cd_root()
 
     if debug:
         catkin_args += ("-DCMAKE_BUILD_TYPE=Debug",)
@@ -56,12 +56,7 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
         catkin_args += (" -GEclipse CDT4 - Unix Makefiles",)
 
     if resolve_deps:
-        script_root = get_script_root()
-        try:
-            subprocess.check_call([os.path.join(script_root, "mrt_resolve_deps")])
-        except subprocess.CalledProcessError:
-            print("Cannot resolve dependencies.\n")
-            sys.exit(1)
+        ws.resolve_dependencies()
 
     if len(catkin_args) == 0:
         subprocess.call(["catkin", action])
@@ -69,4 +64,5 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
         subprocess.call(["catkin", action]+list(catkin_args))
 
     if build_eclipse:
+        ws.cd_root()
         set_eclipse_project_setting()
