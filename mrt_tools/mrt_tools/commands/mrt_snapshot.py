@@ -1,6 +1,6 @@
 #!/usr/bin/python
-from mrt_py_tools.base import Workspace
-from mrt_py_tools.commands import mrt_resolve_deps
+from mrt_tools.base import Workspace
+from mrt_tools.commands import mrt_resolve_deps
 import subprocess
 import zipfile
 import shutil
@@ -90,7 +90,7 @@ def restore_snapshot(name):
 
 
 @click.command()
-@click.argument('action', type=click.STRING, required=True, autocompletion=["create", "restore"])
+@click.argument('action', type=click.STRING, required=True)
 @click.argument("name", type=click.STRING, required=True)
 def main(action, name):
     """Create a snapshot of the current workspace.\n

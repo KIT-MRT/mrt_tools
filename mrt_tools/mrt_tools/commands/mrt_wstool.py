@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from mrt_py_tools.base import Workspace
+from mrt_tools.base import Workspace
 import subprocess
 import click
 import os

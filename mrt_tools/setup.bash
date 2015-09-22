@@ -1,5 +1,5 @@
 _MRT_COMPLETE=source mrt
-for command in $(ls mrt_py_tools/commands/*.py); do
+for command in $(ls mrt_tools/commands/*.py); do
     cmd=$(basename $command)
     cmd="${cmd%.*}"
     if [ ! "$cmd" == "__init__" ]; then

@@ -1,19 +1,23 @@
-from mrt_py_tools.base import Workspace
+from mrt_tools.base import Workspace
 from PIL import Image
 import pydot
 import click
 import sys
 import os
 
-ws = Workspace()
-pkg_list = ws.get_catkin_package_names()
+try:
+    tmp_ws = Workspace()
+    suggestions = tmp_ws.get_catkin_package_names()
+except:
+    suggestions = []
 
 
 @click.command()
-@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=pkg_list)
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
 def main(pkg_name):
     """ Visualize dependencies of catkin packages."""
-    global pkg_list
+    ws = Workspace()
+    pkg_list = ws.get_catkin_package_names()
     ws.cd_root()
     if pkg_name:
         if pkg_name not in pkg_list:

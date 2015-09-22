@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from mrt_py_tools.base import Git, get_userinfo, Workspace, get_script_root, touch
+from mrt_tools.base import Git, get_userinfo, Workspace, get_script_root, touch
 import subprocess
 import shutil
 import click
