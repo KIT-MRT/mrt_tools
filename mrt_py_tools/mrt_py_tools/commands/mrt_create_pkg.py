@@ -1,6 +1,5 @@
 #!/usr/bin/python
-from mrt_py_tools.mrt_base_tools import get_script_root, cd_to_ws_root_folder, cd_to_ws_src_folder
-from mrt_py_tools.mrt_gitlab_tools import Git, get_userinfo
+from mrt_py_tools.base import Git, get_userinfo, Workspace, get_script_root, touch
 import subprocess
 import shutil
 import click
@@ -9,11 +8,6 @@ import os
 import sys
 
 user = get_userinfo()
-
-
-def touch(fname, times=None):
-    with open(fname, 'a'):
-        os.utime(fname, times)
 
 
 def check_naming(pkg_name):
@@ -112,9 +106,9 @@ def create_files(pkg_name, pkg_type, ros, self_dir):
 @click.option('-g', 'create_git_repo', is_flag=True, help="Create Git repository", prompt="Create a git repository?")
 def main(pkg_name, pkg_type, ros, create_git_repo):
     """ Create a new catkin package """
-
+    ws = Workspace()
+    ws.cd_root()
     self_dir = get_script_root()
-    cd_to_ws_root_folder()
 
     pkg_name = check_naming(pkg_name)
 
@@ -145,7 +139,7 @@ def main(pkg_name, pkg_type, ros, create_git_repo):
                         "-e 's#\${PACKAGE_REPOSITORY_URL}#" + ssh_url + "#g' " +
                         "package.xml", shell=True)
         # Initialize repository
-        cd_to_ws_src_folder()
+        ws.cd_src()
         os.chdir(pkg_name)
         subprocess.call("git init", shell=True)
         subprocess.call("git remote add origin " + ssh_url + " >/dev/null 2>&1", shell=True)
@@ -154,11 +148,4 @@ def main(pkg_name, pkg_type, ros, create_git_repo):
         subprocess.call("git add . >/dev/null 2>&1", shell=True)
         subprocess.call("git commit -m 'Initial commit' >/dev/null 2>&1", shell=True)
         subprocess.call("git push -u origin master >/dev/null 2>&1", shell=True)
-        os.chdir("..")
-
-        # Register with rosdep
-        if not os.path.exists(".rosinstall"):
-            click.echo("Initializing wstool")
-            subprocess.call("wstool init . >/dev/null 2>&1", shell=True)
-
-        subprocess.call("wstool set " + pkg_name + " --git " + ssh_url + " --confirm -t . >/dev/null", shell=True)
+        ws.add(pkg_name, ssh_url)

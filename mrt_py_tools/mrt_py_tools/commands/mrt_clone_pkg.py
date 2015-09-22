@@ -1,6 +1,5 @@
-from mrt_py_tools.mrt_base_tools import cd_to_ws_root_folder
-from mrt_py_tools.mrt_gitlab_tools import Git, import_repo_names
-from mrt_py_tools.commands.mrt_resolve_deps import resolve_dependencies
+import sys
+from mrt_py_tools.base import Git, import_repo_names, Workspace
 import click
 
 
@@ -15,10 +14,16 @@ def main(pkg_name):
     Execute this script from within a catkin workspace
     """
 
-    cd_to_ws_root_folder()
-    git = Git()
+    ws = Workspace()
 
-    # clone pkg
-    if git.clone_pkg(pkg_name):
-        # resolve deps
-        resolve_dependencies()
+    # Test for package
+    if ws.find(pkg_name):
+        click.echo("Package {0} already present in workspace, updating:".format(pkg_name))
+        ws.update_only(pkg_name)
+    else:
+        git = Git()
+        url = git.find_repo(pkg_name) # Gives error string
+        if not url:
+            sys.exit(1)
+        ws.add(pkg_name, url)
+        ws.resolve_dependencies(git=git)
