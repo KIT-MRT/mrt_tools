@@ -23,8 +23,19 @@ def check_naming(pkg_name):
     if pkg_name[-4:] == "_ros":
         pkg_name = pkg_name[:-4]
 
+    if pkg_name in get_rosdeps():
+        click.secho("This name collides with a rosdep dependency. Please choose a different one.", fg="red")
+        sys.exit(1)
+
     return pkg_name
 
+
+
+def get_rosdeps():
+    """ Returns a list of all rosdep dependencies known"""
+    process = subprocess.Popen(['rosdep', 'db'], stdout=subprocess.PIPE)
+    output, __ = process.communicate()
+    return [line.split(" -> ")[0] for line in output.split("\n") if " -> " in line]
 
 def create_directories(pkg_name, pkg_type, ros):
     # Check for already existing folder
