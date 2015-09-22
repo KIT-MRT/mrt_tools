@@ -1,6 +1,6 @@
 #!/usr/bin/python
-from mrt_py_tools.base import Workspace
-from mrt_py_tools.commands import mrt_resolve_deps
+from mrt_tools.base import Workspace
+from mrt_tools.commands import mrt_resolve_deps
 import subprocess
 import zipfile
 import shutil

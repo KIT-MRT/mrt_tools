@@ -7,9 +7,9 @@ dependencies = ['click', 'pyapi-gitlab', 'wstool', 'catkin_pkg', 'pydot', 'Image
 
 setup(
     name='mrt',
-    version='0.1.0',
+    version='2.0.0',
     url='https://github.com/cbandera/mrt_build',
-    license='BSD',
+    license='GPL-3.0+',
     author='Claudio Bandera',
     author_email='claudio.bandera@kit.edu',
     description='A toolbelt full of mrt scripts',
@@ -21,7 +21,7 @@ setup(
     install_requires=dependencies,
     entry_points={
         'console_scripts': [
-            'mrt = mrt_py_tools.cli:cli',
+            'mrt = mrt_tools.cli:cli',
         ],
     },
     classifiers=[
@@ -35,7 +35,7 @@ setup(
         # 'Development Status :: 7 - Inactive',
         'Environment :: Console',
         'Intended Audience :: Developers',
-        'License :: OSI Approved :: BSD License',
+        'License :: OSI Approved :: GPL-3.0+ License',
         'Operating System :: POSIX',
         'Operating System :: MacOS',
         'Operating System :: Unix',

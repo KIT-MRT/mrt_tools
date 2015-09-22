@@ -1,6 +1,6 @@
 #!/usr/bin/python
-from mrt_py_tools.settings import *
-from mrt_py_tools.utilities import *
+from mrt_tools.settings import *
+from mrt_tools.utilities import *
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
 import re
 from requests.packages import urllib3

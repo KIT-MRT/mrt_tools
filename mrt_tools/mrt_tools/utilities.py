@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from mrt_py_tools.settings import *
+from mrt_tools.settings import *
 import subprocess
 import fnmatch
 import click

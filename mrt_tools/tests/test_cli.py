@@ -1,6 +1,6 @@
 import pytest
 from click.testing import CliRunner
-from mrt_py_tools import cli
+from mrt_tools import cli
 
 
 @pytest.fixture

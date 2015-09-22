@@ -1,5 +1,5 @@
 import sys
-from mrt_py_tools.base import Git, import_repo_names, Workspace
+from mrt_tools.base import Git, import_repo_names, Workspace
 import click
 
 

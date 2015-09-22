@@ -1,5 +1,5 @@
 #!/bin/python
-from mrt_py_tools.base import Workspace
+from mrt_tools.base import Workspace
 import click
 
 
