@@ -34,7 +34,7 @@ def set_eclipse_project_setting():
 @click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
 def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
     """ A wrapper for catkin. """
-
+    org_dir = os.getcwd()
     ws = Workspace()
     ws.cd_root()
 
@@ -58,6 +58,7 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
     if resolve_deps:
         ws.resolve_dependencies()
 
+    os.chdir(org_dir)
     if len(catkin_args) == 0:
         subprocess.call(["catkin", action])
     else:

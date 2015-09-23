@@ -2,7 +2,6 @@
 from mrt_tools.base import Workspace
 import subprocess
 import zipfile
-import shutil
 import click
 import time
 import sys
