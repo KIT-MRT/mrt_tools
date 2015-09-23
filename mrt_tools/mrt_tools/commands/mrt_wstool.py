@@ -20,6 +20,7 @@ def main(action, args):
         os.remove(".rosinstall")
         click.echo("Initializing wstool...")
         ws.scan()
+        return
 
     # Need to init wstool?
     if not os.path.exists(".rosinstall"):
@@ -47,3 +48,6 @@ def main(action, args):
         subprocess.call(["wstool", action])
     else:
         subprocess.call(["wstool", action] + list(args))
+
+    if action == "status":
+        ws.unpushed_repos()
