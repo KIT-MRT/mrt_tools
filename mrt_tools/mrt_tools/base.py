@@ -2,8 +2,13 @@
 from mrt_tools.settings import *
 from mrt_tools.utilities import *
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
+from Crypto.PublicKey import RSA
 import re
-from requests.packages import urllib3
+try:
+    from requests.packages import urllib3
+    from requests.exceptions import ConnectionError
+except ImportError:
+    import urllib3
 from catkin_pkg import packages
 import subprocess
 import gitlab
@@ -73,7 +78,14 @@ class Git:
 
     def connect(self):
         """Connects to the server"""
-        self.server = gitlab.Gitlab(self.host, token=self.token.token)
+        try:
+            self.server = gitlab.Gitlab(self.host, token=self.token.token)
+        except gitlab.exceptions.HttpError:
+            click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
+        except ValueError:
+            click.secho("No connection to server. Did you connect to VPN?", fg="red")
+        except ConnectionError:
+            click.secho("No internet connection. Could not connect to server.", fg="red")
 
     def check_ssh_key(self):
         """Test for the presence and functionality of a ssh-key."""
@@ -173,10 +185,13 @@ class Git:
     def get_local_ssh_keys(path=default_ssh_path):
         path = os.path.expanduser(path)
         keys = []
-        for filename in os.listdir(path):
-            key = SSHkey(name=filename, dir_path=path)
-            if key.load():
-                keys.append(key)
+        try:
+            for filename in os.listdir(path):
+                key = SSHkey(name=filename, dir_path=path)
+                if key.load():
+                    keys.append(key)
+        except OSError:
+            pass
         return keys
 
 
@@ -206,7 +221,7 @@ class SSHkey:
                     self.public_key = self.public_key[0]
 
             return True
-        except IOError:
+        except (IOError, OSError):
             return False
 
     def write(self):
@@ -219,6 +234,8 @@ class SSHkey:
             self.path = os.path.expanduser(self.dir_path + key_file)
 
         # Write keys
+        if not os.path.exists(os.path.dirname(self.path)):
+            os.makedirs(os.path.dirname(self.path))
         if self.secret_key:
             with open(self.path, 'w') as f:
                 chmod(self.path, 0600)
@@ -227,14 +244,12 @@ class SSHkey:
             with open(self.path + ".pub", 'w') as f:
                 chmod(self.path, 0600)
                 f.write(self.public_key)
-
+        subprocess.call("eval '$(ssh-agent -s)'", shell=True)
+        subprocess.call("ssh-add "+self.path, shell=True)
         click.echo("Wrote key to " + self.path + "(.pub)")
 
     def create(self):
         """Create new SSH key"""
-        from Crypto.PublicKey import RSA
-
-        # Generate key
         click.echo("Generating new SSH Key")
         key = RSA.generate(2048)
         self.secret_key = key.exportKey('PEM')
@@ -263,7 +278,7 @@ class Token:
         """
         try:
             return os.read(os.open(path, 0), 20)
-        except OSError:
+        except (IOError, OSError):
             return ""
 
     def create(self):
@@ -273,12 +288,22 @@ class Token:
         From then on, the persistent token file is used to communicate with the server.
         """
         click.echo("No existing gitlab token file found. Creating new one...")
-        username = click.prompt("Gitlab user name")
-        password = click.prompt("Gitlab password", hide_input=True)
 
         tmp_git_obj = gitlab.Gitlab(default_host)
-        tmp_git_obj.login(username, password)
-        gitlab_user = tmp_git_obj.currentuser()
+        gitlab_user = None
+        while gitlab_user is None:
+            try:
+                username = click.prompt("Gitlab user name")
+                password = click.prompt("Gitlab password", hide_input=True)
+                tmp_git_obj.login(username, password)
+                gitlab_user = tmp_git_obj.currentuser()
+            except gitlab.exceptions.HttpError:
+                click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
+            except ValueError:
+                click.secho("No connection to server. Did you connect to VPN?", fg="red")
+            except ConnectionError:
+                click.secho("No connection to server. Are you connected to the internet?", fg="red")
+
 
         self.token = gitlab_user['private_token']
         self.write()
@@ -585,6 +610,9 @@ def export_repo_names():
         # In case the connection didn't succeed, the file is going to be flushed.
         repo_dicts = []
 
+    file_name = os.path.expanduser(default_repo_cache)
+    if not os.path.exists(file_name):
+        os.makedirs(os.path.dirname(file_name))
     with open(os.path.expanduser(default_repo_cache), "w") as f:
         for r in repo_dicts:
             f.write(r["name"] + ",")

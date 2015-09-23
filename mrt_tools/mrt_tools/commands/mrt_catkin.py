@@ -1,5 +1,5 @@
 #!/usr/bin/python
-from mrt_tools.base import Workspace, find_by_pattern
+from mrt_tools.base import Workspace
 from mrt_tools.utilities import *
 import subprocess
 import shutil

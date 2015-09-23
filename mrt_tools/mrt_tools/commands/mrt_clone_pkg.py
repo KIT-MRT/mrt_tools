@@ -20,8 +20,7 @@ def main(pkg_name):
 
     # Test for package
     if ws.find(pkg_name):
-        click.echo("Package {0} already present in workspace, updating:".format(pkg_name))
-        ws.update_only(pkg_name)
+        click.echo("Package {0} already present in workspace config. Run 'mrt wstool update':".format(pkg_name))
     else:
         git = Git()
         url = git.find_repo(pkg_name) # Gives error string
