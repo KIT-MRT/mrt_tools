@@ -4,9 +4,11 @@ import subprocess
 import click
 import os
 
+wscommands = ['help', 'init', 'set', 'merge', 'remove', 'update', 'info', 'status', 'diff']
+
 
 @click.command(context_settings=dict(ignore_unknown_options=True, ))
-@click.argument('action', type=click.STRING)
+@click.argument('action', type=click.STRING, autocompletion=wscommands)
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def main(action, args):
     """
