@@ -173,3 +173,5 @@ check_output rosdep update
 #python-yaml: Used in the auto dependency resolver to read the rosdep yaml file
 #python-pip: Used to install further python packages
 check_output sudo apt-get install mrt-build python-rosinstall python-catkin-tools python-rosdep python-rosinstall-generator python-wstool python-yaml python-pip --yes > /dev/null
+
+curl https://raw.githubusercontent.com/mitsuhiko/pipsi/master/get-pipsi.py | python
