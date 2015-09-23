@@ -533,11 +533,12 @@ class Workspace:
                     raise IndexError
                 ssh_url = self.pkgs[pkg].urls[0].url
             except IndexError:
-                click.secho("Warning: No URL (or multiple) defined in " + pkg + "/package.xml!", fg="yellow")
+                click.secho("Warning: No URL (or multiple) defined in src/" + pkg + "/package.xml!", fg="yellow")
                 try:
                     # Try reading it from git repo
                     with open(pkg + "/.git/config", 'r') as f:
                         ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
+                    # fix_package_xml(self.src + "/" + pkg + "/package.xml", ssh_url)
                 except IOError:
                     click.secho("Warning: Could not figure out any URL for " + pkg, fg="red")
                     ssh_url = None
@@ -546,6 +547,25 @@ class Workspace:
         # Create rosinstall file from config
         if write:
             self.write()
+
+
+def fix_package_xml(filename, url):
+    with open(filename, 'r') as f:
+        contents = f.readlines()
+    click.clear()
+    for index, item in enumerate(contents):
+        click.echo("{0}: {1}".format(index, item))
+    linenumber = click.prompt("Line to enter url?", type=click.INT)
+    contents.insert(linenumber, '  <url type="repository">{0}</url>\n'.format(url))
+    contents = "".join(contents)
+    with open(filename, 'w') as f:
+        f.write(contents)
+    if click.confirm("Commit?"):
+        org_dir = os.getcwd()
+        os.chdir(os.path.dirname(filename))
+        subprocess.call("git add {0}".format(filename), shell=True)
+        subprocess.call("git commit -m 'Added repository url to package.xml'", shell=True)
+        os.chdir(org_dir)
 
 
 def export_repo_names():
