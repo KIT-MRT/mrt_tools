@@ -64,25 +64,7 @@ def create_directories(pkg_name, pkg_type, ros):
         touch("launch/params/.gitignore")
 
 
-def create_files(pkg_name, pkg_type, ros, self_dir):
-    # Create files and replace with user info
-    # Readme and test file
-    shutil.copyfile(self_dir + "/templates/README.md", "README.md")
-    shutil.copyfile(self_dir + "/templates/test.cpp", "./test/test_" + pkg_name + ".cpp")
-
-    # Package.xml
-    if ros:
-        shutil.copyfile(self_dir + "/templates/package_ros.xml", "./package.xml")
-    else:
-        shutil.copyfile(self_dir + "/templates/package.xml", "./package.xml")
-
-    subprocess.call("sed -i " +
-                    "-e 's/\${PACKAGE_NAME}/" + pkg_name + "/g' " +
-                    "-e 's/\${CMAKE_PACKAGE_NAME}/" + pkg_name.upper() + "/g' " +
-                    "-e 's/\${USER_NAME}/" + user['name'] + "/g' " +
-                    "-e 's/\${USER_EMAIL}/" + user['mail'] + "/g' " +
-                    "package.xml", shell=True)
-
+def create_cmakelists(pkg_name, pkg_type, ros, self_dir):
     # CMakeLists.txt
     # build mask @12|34@
     # pos1: non ros package
@@ -107,6 +89,28 @@ def create_files(pkg_name, pkg_type, ros, self_dir):
                     "-e '/^@..|..@/d' " +
                     "-e 's/\${CMAKE_PACKAGE_NAME}/" + pkg_name + "/g' " +
                     "CMakeLists.txt", shell=True)
+
+
+def create_files(pkg_name, pkg_type, ros, self_dir):
+    # Create files and replace with user info
+    # Readme and test file
+    shutil.copyfile(self_dir + "/templates/README.md", "README.md")
+    shutil.copyfile(self_dir + "/templates/test.cpp", "./test/test_" + pkg_name + ".cpp")
+
+    # Package.xml
+    if ros:
+        shutil.copyfile(self_dir + "/templates/package_ros.xml", "./package.xml")
+    else:
+        shutil.copyfile(self_dir + "/templates/package.xml", "./package.xml")
+
+    subprocess.call("sed -i " +
+                    "-e 's/\${PACKAGE_NAME}/" + pkg_name + "/g' " +
+                    "-e 's/\${CMAKE_PACKAGE_NAME}/" + pkg_name.upper() + "/g' " +
+                    "-e 's/\${USER_NAME}/" + user['name'] + "/g' " +
+                    "-e 's/\${USER_EMAIL}/" + user['mail'] + "/g' " +
+                    "package.xml", shell=True)
+
+    create_cmakelists(pkg_name, pkg_type, ros, self_dir)
 
 
 @click.command()

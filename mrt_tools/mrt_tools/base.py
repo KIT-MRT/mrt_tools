@@ -4,6 +4,7 @@ from mrt_tools.utilities import *
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
 from Crypto.PublicKey import RSA
 import re
+
 try:
     from requests.packages import urllib3
     from requests.exceptions import ConnectionError
@@ -245,7 +246,7 @@ class SSHkey:
                 chmod(self.path, 0600)
                 f.write(self.public_key)
         subprocess.call("eval '$(ssh-agent -s)'", shell=True)
-        subprocess.call("ssh-add "+self.path, shell=True)
+        subprocess.call("ssh-add " + self.path, shell=True)
         click.echo("Wrote key to " + self.path + "(.pub)")
 
     def create(self):
@@ -303,7 +304,6 @@ class Token:
                 click.secho("No connection to server. Did you connect to VPN?", fg="red")
             except ConnectionError:
                 click.secho("No connection to server. Are you connected to the internet?", fg="red")
-
 
         self.token = gitlab_user['private_token']
         self.write()
@@ -421,7 +421,7 @@ class Workspace:
             jobs = 10 if jobs > 10 else jobs
             pkgs = " ".join(pkgs)
         subprocess.call("wstool update -t {0} -j {1} {2}".format(self.src, jobs, pkgs), shell=True)
-        
+
     def unpushed_repos(self):
         """Search for unpushed commits in workspace"""
         org_dir = os.getcwd()
@@ -574,25 +574,6 @@ class Workspace:
         # Create rosinstall file from config
         if write:
             self.write()
-
-
-def fix_package_xml(filename, url):
-    with open(filename, 'r') as f:
-        contents = f.readlines()
-    click.clear()
-    for index, item in enumerate(contents):
-        click.echo("{0}: {1}".format(index, item))
-    linenumber = click.prompt("Line to enter url?", type=click.INT)
-    contents.insert(linenumber, '  <url type="repository">{0}</url>\n'.format(url))
-    contents = "".join(contents)
-    with open(filename, 'w') as f:
-        f.write(contents)
-    if click.confirm("Commit?"):
-        org_dir = os.getcwd()
-        os.chdir(os.path.dirname(filename))
-        subprocess.call("git add {0}".format(filename), shell=True)
-        subprocess.call("git commit -m 'Added repository url to package.xml'", shell=True)
-        os.chdir(org_dir)
 
 
 def export_repo_names():
