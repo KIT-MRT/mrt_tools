@@ -396,9 +396,10 @@ class Workspace:
             jobs = 10 if jobs > 10 else jobs
             pkgs = " ".join(pkgs)
         subprocess.call("wstool update -t {0} -j {1} {2}".format(self.src, jobs, pkgs), shell=True)
-
+        
     def unpushed_repos(self):
         """Search for unpushed commits in workspace"""
+        org_dir = os.getcwd()
         unpushed_repos = []
         for ps in self.config.get_config_elements():
             os.chdir(self.src + ps.get_local_name())
@@ -410,6 +411,7 @@ class Workspace:
                 subprocess.call("git log --branches --not --remotes --oneline", shell=True)
                 unpushed_repos.append(ps.get_local_name())
 
+        os.chdir(org_dir)
         return unpushed_repos
 
     def test_for_changes(self):
@@ -538,7 +540,7 @@ class Workspace:
                     # Try reading it from git repo
                     with open(pkg + "/.git/config", 'r') as f:
                         ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
-                    # fix_package_xml(self.src + "/" + pkg + "/package.xml", ssh_url)
+                        # fix_package_xml(self.src + "/" + pkg + "/package.xml", ssh_url)
                 except IOError:
                     click.secho("Warning: Could not figure out any URL for " + pkg, fg="red")
                     ssh_url = None
