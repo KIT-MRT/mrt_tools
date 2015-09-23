@@ -4,25 +4,42 @@ import subprocess
 import zipfile
 import shutil
 import click
+import time
 import sys
 import os
 
+suffix = "_" + time.strftime("%y%m%d")
 file_ending = ".snapshot"
+snapshot_version = "0.1.0"
+version_file = "snapshot.version"
 
 
 def zip_files(files, archive):
     zf = zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED)
     for filename in files:
-        zf.write(filename)
+        if isinstance(filename, tuple):
+            zf.write(filename[0], arcname=filename[1])
+        else:
+            zf.write(filename)
     zf.close()
 
 
-def create_snapshot(name):
+@click.group()
+def main():
+    pass
+
+
+@main.command()
+@click.argument("name", type=click.STRING, required=True)
+def create(name):
+    """Create a snapshot of the current workspace."""
     """
     This function creates a zip file, containing the workspace configuration '.catkin_tools' and a '.rosinstall' file.
     The workspace configuration contains build settings like whether 'install' was specified.
     The .rosinstall file pins every repository to the commit it is at right now.
     """
+    snapshot_name = name + suffix + file_ending
+    filename = os.path.join(os.getcwd(), snapshot_name)
     ws = Workspace()
 
     # First test whether it's safe to create a snapshot
@@ -33,76 +50,62 @@ def create_snapshot(name):
     ws.snapshot(filename=".rosinstall")
 
     # Create archive
-    files = ['.rosinstall', '.catkin_tools']
-    zip_files(files, name + file_ending)
+    with open(version_file, "w") as f:
+        f.write(snapshot_version)
+    files = [('.rosinstall', 'src/.rosinstall'), '.catkin_tools', version_file]
+    zip_files(files, filename)
     os.remove(".rosinstall")
-    click.secho("Wrote snapshot to " + os.path.abspath(name + file_ending), fg="green")
+    os.remove(version_file)
+    click.secho("Wrote snapshot to " + filename, fg="green")
 
 
-def restore_snapshot(name):
+@main.command()
+@click.argument("name", type=click.STRING, required=True)
+def restore(name):
+    """Restore a catkin workspace from a snapshot"""
     """
     This function takes a zip file as created in create_snapshot and tries to restore it.
     Therefor a new workspace is initiated, the settings and .rosinstall file are copied from the snapshot.
     Next, the specified commits are cloned into the workspace and the whole workspace is build.
     """
     org_dir = os.getcwd()
-    # Create workspace folder
-    try:
-        os.mkdir(name + "_snapshot_ws")
-    except OSError:
-        click.secho("Directory " + name + "_snapshot exists already", fg="red")
-        sys.exit(1)
+    filename = os.path.join(org_dir, name)
+    workspace = os.path.join(org_dir, os.path.basename(name).split(".")[0] + "_snapshot_ws")
 
-    # Init catkin workspace
-    os.chdir(name + "_snapshot_ws")
+    # Read archive
     try:
-        Workspace(init=True)
-    except:
-        os.chdir(org_dir)
-        shutil.rmtree(name + "_snapshot_ws")
-        sys.exit(1)
-
-    # Extract archive and copy files
-    try:
-        zf = zipfile.ZipFile("../" + name + file_ending, "r", zipfile.ZIP_DEFLATED)
-        zf.extractall()  # .catkin_tools is already at the right spot
-        shutil.copy(".rosinstall", "src")
-        os.remove(".rosinstall")
-        # Recreate Workspace
-        ws = Workspace()
+        zf = zipfile.ZipFile(filename, "r", zipfile.ZIP_DEFLATED)
+        # file_list = [f.filename for f in zf.filelist]
+        version = zf.read(version_file)
     except IOError:
         print os.getcwd()
         click.secho("Can't find file: '" + name + file_ending + "'", fg="red")
-        os.chdir(org_dir)
-        shutil.rmtree(name + "_snapshot_ws")
-        sys.exit(1)
-
-    # Clone packages
-    click.secho("Cloning packages", fg="green")
-    ws.update()
-    ws.resolve_dependencies()
-
-    # Build workspace
-    click.secho("Building workspace", fg="green")
-    subprocess.call(["catkin", "clean", "-a"])
-    subprocess.call(["catkin", "build"])
-
-
-@click.command()
-@click.argument('action', type=click.STRING, required=True)
-@click.argument("name", type=click.STRING, required=True)
-def main(action, name):
-    """Create a snapshot of the current workspace.\n
-    :param ACTION: Can be 'create' or 'restore' \n
-    :param NAME: Name of the snapshot to create or restore
-    """
-
-    if name.endswith(file_ending):
-        name = name[:-len(file_ending)]
-    if action == "create":
-        create_snapshot(name)
-    elif action == "restore":
-        restore_snapshot(name)
-    else:
-        click.secho("Action must be one of [create|restore]", fg="red")
         sys.exit()
+
+    if version == "0.1.0":
+        # Create workspace folder
+        try:
+            os.mkdir(workspace)
+            os.chdir(workspace)
+            ws = Workspace(init=True)
+        except OSError:
+            click.secho("Directory " + name + "_snapshot exists already", fg="red")
+            os.chdir(org_dir)
+            sys.exit(1)
+
+        # Extract archive
+        zf.extractall(path=workspace)  # .catkin_tools is already at the right spot
+        os.remove(os.path.join(workspace, version_file))
+
+        # Clone packages
+        click.secho("Cloning packages", fg="green")
+        ws.update()
+        ws.resolve_dependencies()
+
+        # Build workspace
+        click.secho("Building workspace", fg="green")
+        subprocess.call(["catkin", "clean", "-a"])
+        subprocess.call(["catkin", "build"])
+
+    else:
+        click.secho("ERROR: Snapshot version not known.", fg="red")

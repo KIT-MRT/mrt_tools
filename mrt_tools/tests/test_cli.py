@@ -2,7 +2,7 @@ import pytest
 from click.testing import CliRunner
 from mrt_tools import cli
 
-
+# TODO write tests
 @pytest.fixture
 def runner():
     return CliRunner()
