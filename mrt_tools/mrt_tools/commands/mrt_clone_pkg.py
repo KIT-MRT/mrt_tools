@@ -21,7 +21,7 @@ def main(pkg_name):
         click.echo("Package {0} already present in workspace config. Run 'mrt wstool update':".format(pkg_name))
     else:
         git = Git()
-        url = git.find_repo(pkg_name) # Gives error string
+        url = git.find_repo(pkg_name)  # Gives error string
         if not url:
             sys.exit(1)
         ws.add(pkg_name, url)

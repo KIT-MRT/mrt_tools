@@ -59,7 +59,7 @@ def get_userinfo():
     return {'name': name[:-1], 'mail': email[:-1]}
 
 
-def get_user_choice(items, default=None):
+def get_user_choice(items, extra=None, prompt="Please choose a number", default=None):
     # Print choices
     valid_choices = []
     for index, item in enumerate(items):
@@ -68,13 +68,13 @@ def get_user_choice(items, default=None):
     valid_choices = range(0, len(items))
 
     # Add default choice
-    if default:
+    if extra:
         valid_choices.append(len(items))
-        click.echo("(" + str(valid_choices[-1]) + ") " + str(default))
+        click.echo("(" + str(valid_choices[-1]) + ") " + str(extra))
     while True:
-        user_choice = click.prompt('Please enter a number [0-' + str(valid_choices[-1]) + ']', type=int)
+        user_choice = click.prompt(prompt + ' [0-' + str(valid_choices[-1]) + ']', type=int, default=default)
         if user_choice in valid_choices:
-            if default is not None and user_choice is valid_choices[-1]:
+            if extra is not None and user_choice is valid_choices[-1]:
                 # Return None if default was chosen
                 return None
             else:
