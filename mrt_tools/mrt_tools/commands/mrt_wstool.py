@@ -44,6 +44,11 @@ def main(action, args):
         if not [a for a in args if a.startswith("-j")]:
             args += ("-j10",)
 
+    if action == "status" or action == "info":
+        # Show untracked files as well
+        if not ("--untracked" in args or "-u" in args):
+            args += ("--untracked",)
+    
     # Pass the rest to wstool
     ws.cd_src()
     if len(args) == 0:
