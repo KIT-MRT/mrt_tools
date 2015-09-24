@@ -422,11 +422,15 @@ class Workspace:
             pkgs = " ".join(pkgs)
         subprocess.call("wstool update -t {0} -j {1} {2}".format(self.src, jobs, pkgs), shell=True)
 
-    def unpushed_repos(self):
+    def unpushed_repos(self, pkg_name=None):
         """Search for unpushed commits in workspace"""
         org_dir = os.getcwd()
         unpushed_repos = []
         for ps in self.config.get_config_elements():
+            # If we are only looking for one specific pkg:
+            if pkg_name and ps != pkg_name:
+                pass
+
             try:
                 os.chdir(self.src + ps.get_local_name())
                 git_process = subprocess.Popen("git log --branches --not --remotes", shell=True, stdout=subprocess.PIPE)
@@ -442,14 +446,17 @@ class Workspace:
         os.chdir(org_dir)
         return unpushed_repos
 
-    def test_for_changes(self):
+    def test_for_changes(self, pkg_name=None):
         """ Test workspace for any changes that are not yet pushed to the server """
         # Parse git status messages
         statuslist = multiproject_cmd.cmd_status(self.config, untracked=True)
         statuslist = [{k["entry"].get_local_name(): k["status"]} for k in statuslist if k["status"] != ""]
 
+        if pkg_name:
+            statuslist = [line for line in statuslist if pkg_name in line]
+
         # Check for unpushed commits
-        unpushed_repos = self.unpushed_repos()
+        unpushed_repos = self.unpushed_repos(pkg_name)
 
         # Prompt user if changes detected
         if len(unpushed_repos) > 0 or len(statuslist) > 0:
