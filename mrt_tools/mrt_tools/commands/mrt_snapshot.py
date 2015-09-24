@@ -25,6 +25,7 @@ def zip_files(files, archive):
 
 @click.group()
 def main():
+    """Save the current state of your workspace."""
     pass
 
 

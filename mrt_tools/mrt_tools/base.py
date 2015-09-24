@@ -67,9 +67,9 @@ class Git:
         # Test ssh key
         if not self.check_ssh_key():
             # SSH Key not on server yet. Ask user
-            click.echo("No ssh key match found. Which ssh key should we use?")
             local_keys = self.get_local_ssh_keys()
-            user_choice = get_user_choice([key.name for key in local_keys], default="Create new key.")
+            user_choice = get_user_choice([key.name for key in local_keys], extra="Create new key.",
+                                          prompt="No ssh key match found. Which ssh key should we use?")
             if user_choice is None:
                 self.ssh_key = SSHkey()
                 self.ssh_key.create()
@@ -142,8 +142,9 @@ class Git:
             user_choice = 0
         else:
             # Multiple found
-            print "More than one repo with \"" + str(pkg_name) + "\" found. Please choose:"
-            user_choice = get_user_choice([item["path_with_namespace"] for item in exact_hits])
+            user_choice = get_user_choice([item["path_with_namespace"] for item in exact_hits],
+                                          prompt="More than one repo with \"" + str(
+                                              pkg_name) + "\" found. Please choose")
 
         ssh_url = exact_hits[user_choice]['ssh_url_to_repo']
         click.secho("Found " + exact_hits[user_choice]['path_with_namespace'], fg='green')
@@ -392,6 +393,7 @@ class Workspace:
     def load(self):
         """Read in .rosinstall from workspace"""
         self.config = multiproject_cli.multiproject_cmd.get_config(self.src, config_filename=".rosinstall")
+        self.pkgs = self.get_catkin_packages()
 
     def write(self):
         """Write to .rosinstall in workspace"""
@@ -440,7 +442,7 @@ class Workspace:
                     click.secho("Unpushed commits in repo '" + ps.get_local_name() + "'", fg="yellow")
                     subprocess.call("git log --branches --not --remotes --oneline", shell=True)
                     unpushed_repos.append(ps.get_local_name())
-            except OSError: # Directory does not exist (repo not cloned yet)
+            except OSError:  # Directory does not exist (repo not cloned yet)
                 pass
 
         os.chdir(org_dir)
@@ -481,6 +483,7 @@ class Workspace:
 
     def get_catkin_package_names(self):
         """Returns a list of all catkin packages in ws"""
+        self.pkgs = self.get_catkin_packages()
         return [k for k, v in self.pkgs.items()]
 
     def get_wstool_package_names(self):
@@ -507,6 +510,7 @@ class Workspace:
 
     def resolve_dependencies(self, git=None):
         # TODO maybe use rosdep2 package directly
+        click.echo("Resolving dependencies...")
         if not git:
             git = Git()
 
@@ -575,7 +579,6 @@ class Workspace:
                     # Try reading it from git repo
                     with open(pkg + "/.git/config", 'r') as f:
                         ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
-                        # fix_package_xml(self.src + "/" + pkg + "/package.xml", ssh_url)
                 except IOError:
                     click.secho("Warning: Could not figure out any URL for " + pkg, fg="red")
                     ssh_url = None
