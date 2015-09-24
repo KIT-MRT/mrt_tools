@@ -20,7 +20,13 @@ def main():
     pass
 
 
-@main.command()
+@main.group()
+def workspace():
+    """Workspace related stuff"""
+    pass
+
+
+@workspace.command()
 @click.argument("package", required=False)
 def update_cmakelists(package):
     """Update CMAKELISTS"""
@@ -40,7 +46,7 @@ def update_cmakelists(package):
     if not package:
         for pkg_name in catkin_packages:
             ws.cd_src()
-            check_and_update_cmakelists(pkg_name)
+            check_and_update_cmakelists(pkg_name, current_version)
     else:
         check_and_update_cmakelists(package, current_version)
 
@@ -78,17 +84,7 @@ def check_and_update_cmakelists(pkg_name, current_version):
                 subprocess.call("git commit -m 'Update CMakeLists.txt to {0}'".format(current_version), shell=True)
 
 
-@main.command()
-def penalty():
-    """Report a crime to the deamon"""
-    subprocess.call('xdg-email \
-                    --utf8 \
-                    --body "Lieber Ablassdaemon,\n ich möchte folgende Meldung machen:\n\n" \
-                    --subject "Nachricht an den Ablassdaemon" \
-                    "ablassdaemon@mrt.kit.edu"', shell=True)
-
-
-@main.command()
+@workspace.command()
 def clean():
     """Delete everything in current workspace."""
     ws = Workspace()
@@ -104,7 +100,7 @@ def clean():
             os.remove(f)
 
 
-@main.command()
+@workspace.command()
 @click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
 def remove(pkg_name):
     """Delete package from workspace."""
@@ -116,7 +112,7 @@ def remove(pkg_name):
     ws.cd_root()
 
 
-@main.command()
+@workspace.command()
 def fix_package_xml():
     """Inserts missing URL into package.xml"""
 
@@ -162,3 +158,93 @@ def fix_package_xml():
 
     # Create rosinstall file from config
     ws.write()
+
+
+@main.command()
+def penalty():
+    """Report a crime to the deamon"""
+    subprocess.call('xdg-email \
+                    --utf8 \
+                    --body "Lieber Ablassdaemon,\n ich möchte folgende Meldung machen:\n\n" \
+                    --subject "Nachricht an den Ablassdaemon" \
+                    "ablassdaemon@mrt.kit.edu"', shell=True)
+
+
+@main.group()
+def gitlab():
+    """Gitlab related tools"""
+    pass
+
+
+@gitlab.command()
+def create_token():
+    """Create new gitlab token"""
+    Token()
+
+
+@gitlab.command()
+def create_ssh_key():
+    """Create new ssh key"""
+    SSHkey().create()
+
+
+@gitlab.command()
+@click.pass_context
+def add_user_to_repo(ctx):
+    """Add a user to a repository"""
+    click.echo("Loading... please wait a moment")
+
+    git = Git()
+    users = list(git.server.getall(git.server.getusers))
+    users = sorted(users, key=lambda k: k['name'])
+    repo_dicts = git.get_repos()
+    repo_dicts = sorted(repo_dicts, key=lambda k: k['path_with_namespace'])
+    user_choice = get_user_choice([user["name"] for user in users], prompt="Please choose a user")
+    user = users[user_choice]
+    repo_choice = get_user_choice([repo["path_with_namespace"] for repo in repo_dicts], prompt="Please choose a repo.")
+    repo = repo_dicts[repo_choice]
+    roles = ["Guest", "Reporter", "Developer", "Master", "Owner"]
+    role_choice = get_user_choice(roles, prompt='Please choose a role for the user.', default=2)
+    role = roles[role_choice]
+
+    click.echo("\nAdding user {0} to repo {1} with role {2}\n".format(user["name"].upper(),
+                                                                      repo["path_with_namespace"].upper(),
+                                                                      roles[role_choice].upper()))
+    git.server.addprojectmember(repo["id"], user["id"], role)
+    if not click.confirm("Should I test dependencies?", default=True):
+        return
+
+    # Create temporary workspace
+    org_dir = os.getcwd()
+    if os.path.exists("/tmp/mrtgitlab_test_ws"):
+        shutil.rmtree("/tmp/mrtgitlab_test_ws")
+    os.mkdir("/tmp/mrtgitlab_test_ws")
+    os.chdir("/tmp/mrtgitlab_test_ws")
+    ws = Workspace(init=True)
+
+    # Clone pkg and resolve dependencies
+    pkg_name = repo["name"]
+    url = git.find_repo(pkg_name)  # Gives error string
+    ws.add(pkg_name, url)
+    ws.resolve_dependencies(git=git)
+
+    # Read in dependencies
+    ws.load()
+    new_repos = ws.get_catkin_packages()
+    new_repos.pop(pkg_name)
+    click.echo("\n\nFound following new repos:")
+    for r in new_repos:
+        click.echo(r)
+    if not click.confirm("\nAdd user {0} to these repos aswell?".format(user["name"]), default=True):
+        return
+    for r in new_repos:
+        click.echo("\nAdding user {0} to repo {1}\n".format(user["name"].upper(),
+                                                            r.upper()))
+        repo_id = [s["id"] for s in repo_dicts if s["name"] == r]
+        role_choice = get_user_choice(roles, prompt='Please choose a role for the user for this repo.', default=2)
+        role = roles[role_choice]
+        git.server.addprojectmember(repo_id[0], user["id"], role)
+
+    # Add user as well
+    os.chdir(org_dir)
+    shutil.rmtree("/tmp/mrtgitlab_test_ws")
