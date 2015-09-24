@@ -6,14 +6,12 @@ import shutil
 import os
 
 self_dir = get_script_root()
-current_version = None
-with open(self_dir + "/templates/CMakeLists.txt") as f:
-    for line in f:
-        if line.startswith("#pkg_version="):
-            current_version = line[:-1]
-            break
-if not current_version:
-    raise Exception("current pkg_version could not be found.")
+
+try:
+    tmp_ws = Workspace()
+    suggestions = tmp_ws.get_catkin_package_names()
+except:
+    suggestions = []
 
 
 @click.group()
@@ -29,18 +27,28 @@ def update_cmakelists(package):
     ws = Workspace()
     catkin_packages = ws.get_catkin_package_names()
 
+    # Read in newest CMakeLists.txt
+    current_version = None
+    with open(self_dir + "/templates/CMakeLists.txt") as f:
+        for line in f:
+            if line.startswith("#pkg_version="):
+                current_version = line[:-1]
+                break
+    if not current_version:
+        raise Exception("current pkg_version could not be found.")
+
     if not package:
         for pkg_name in catkin_packages:
             ws.cd_src()
             check_and_update_cmakelists(pkg_name)
     else:
-        check_and_update_cmakelists(package)
+        check_and_update_cmakelists(package, current_version)
 
     click.secho("The commit is not yet pushed, in case you didn't really test the changes yet... You "
-                           "didn't, right? Ok, so go ahead and test them and then run 'mrt wstool update'", fg="yellow")
+                "didn't, right? Ok, so go ahead and test them and then run 'mrt wstool update'", fg="yellow")
 
 
-def check_and_update_cmakelists(pkg_name):
+def check_and_update_cmakelists(pkg_name, current_version):
     os.chdir(pkg_name)
     with open("CMakeLists.txt") as f:
         pkg_version = f.readline()[:-1]
@@ -70,7 +78,6 @@ def check_and_update_cmakelists(pkg_name):
                 subprocess.call("git commit -m 'Update CMakeLists.txt to {0}'".format(current_version), shell=True)
 
 
-
 @main.command()
 def penalty():
     """Report a crime to the deamon"""
@@ -95,6 +102,18 @@ def clean():
             shutil.rmtree(f)
         else:
             os.remove(f)
+
+
+@main.command()
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
+def remove(pkg_name):
+    """Delete package from workspace."""
+    ws = Workspace()
+    ws.test_for_changes(pkg_name)
+    ws.cd_src()
+    click.echo("Removing {0}".format(pkg_name))
+    shutil.rmtree(pkg_name)
+    ws.cd_root()
 
 
 @main.command()
