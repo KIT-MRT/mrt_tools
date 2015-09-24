@@ -427,14 +427,17 @@ class Workspace:
         org_dir = os.getcwd()
         unpushed_repos = []
         for ps in self.config.get_config_elements():
-            os.chdir(self.src + ps.get_local_name())
-            git_process = subprocess.Popen("git log --branches --not --remotes", shell=True, stdout=subprocess.PIPE)
-            result = git_process.communicate()
+            try:
+                os.chdir(self.src + ps.get_local_name())
+                git_process = subprocess.Popen("git log --branches --not --remotes", shell=True, stdout=subprocess.PIPE)
+                result = git_process.communicate()
 
-            if result[0] != "":
-                click.secho("Unpushed commits in repo '" + ps.get_local_name() + "'", fg="yellow")
-                subprocess.call("git log --branches --not --remotes --oneline", shell=True)
-                unpushed_repos.append(ps.get_local_name())
+                if result[0] != "":
+                    click.secho("Unpushed commits in repo '" + ps.get_local_name() + "'", fg="yellow")
+                    subprocess.call("git log --branches --not --remotes --oneline", shell=True)
+                    unpushed_repos.append(ps.get_local_name())
+            except OSError: # Directory does not exist (repo not cloned yet)
+                pass
 
         os.chdir(org_dir)
         return unpushed_repos
