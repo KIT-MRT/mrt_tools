@@ -29,8 +29,8 @@ def main(action, args):
         ws.write()
 
     if action == "update":
-
         # Search for unpushed commits
+        ws.scan() # Rebuild .rosinstall in case a package was deletetd manually
         unpushed_repos = ws.unpushed_repos()
 
         if len(unpushed_repos) > 0:

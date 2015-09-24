@@ -510,6 +510,7 @@ class Workspace:
 
     def resolve_dependencies(self, git=None):
         # TODO maybe use rosdep2 package directly
+        click.echo("Resolving dependencies...")
         if not git:
             git = Git()
 
