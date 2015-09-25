@@ -1,8 +1,17 @@
-#!/usr/bin/python
-from mrt_tools.settings import *
-from mrt_tools.utilities import *
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
+from mrt_tools.utilities import *
+from mrt_tools.settings import *
 from Crypto.PublicKey import RSA
+from catkin_pkg import packages
+from builtins import object
+from builtins import next
+from builtins import str
+import subprocess
+import gitlab
+import click
+import yaml
+import sys
+import os
 import re
 
 try:
@@ -10,13 +19,6 @@ try:
     from requests.exceptions import ConnectionError
 except ImportError:
     import urllib3
-from catkin_pkg import packages
-import subprocess
-import gitlab
-import click
-import yaml
-import sys
-import os
 
 urllib3.disable_warnings()
 
@@ -30,11 +32,11 @@ except KeyError:
 
 # Test whether ros is sourced
 if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRARY_PATH"]:
-    print "ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash"
+    click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
     sys.exit(1)
 
 
-class Git:
+class Git(object):
     def __init__(self, token=None, host=default_host):
         # Host URL
         self.host = host
@@ -108,7 +110,7 @@ class Git:
         click.echo("Retrieving namespaces...")
         namespaces = {project['namespace']['name']: project['namespace']['id'] for project in self.get_repos()}
         user_name = self.server.currentuser()['username']
-        if user_name not in namespaces.keys():
+        if user_name not in list(namespaces.keys()):
             namespaces[user_name] = 0  # The default user namespace_id will be created with first user project
         return namespaces
 
@@ -160,11 +162,11 @@ class Git:
         click.echo("Available namespaces in gitlab, please select one for your new project:")
         namespaces = self.get_namespaces()
         user_choice = get_user_choice(namespaces)
-        click.echo("Using namespace '" + namespaces.keys()[int(user_choice)] + "'")
-        ns_id = namespaces.values()[int(user_choice)]
+        click.echo("Using namespace '" + list(namespaces.keys())[int(user_choice)] + "'")
+        ns_id = list(namespaces.values())[int(user_choice)]
 
         # Check whether repo exists
-        ssh_url = self.find_repo(pkg_name, namespaces.keys()[int(user_choice)])
+        ssh_url = self.find_repo(pkg_name, list(namespaces.keys())[int(user_choice)])
 
         if ssh_url is not None:
             click.secho("    ERROR Repo exist already: " + ssh_url, fg='red')
@@ -197,7 +199,7 @@ class Git:
         return keys
 
 
-class SSHkey:
+class SSHkey(object):
     """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
 
     def __init__(self, name="mrtgitlab", key="", dir_path=default_ssh_path):
@@ -240,11 +242,11 @@ class SSHkey:
             os.makedirs(os.path.dirname(self.path))
         if self.secret_key:
             with open(self.path, 'w') as f:
-                chmod(self.path, 0600)
+                chmod(self.path, 0o600)
                 f.write(self.secret_key)
         if self.public_key:
             with open(self.path + ".pub", 'w') as f:
-                chmod(self.path, 0600)
+                chmod(self.path, 0o600)
                 f.write(self.public_key)
         subprocess.call("eval '$(ssh-agent -s)'", shell=True)
         subprocess.call("ssh-add " + self.path, shell=True)
@@ -259,7 +261,7 @@ class SSHkey:
         self.write()
 
 
-class Token:
+class Token(object):
     """
     The token file is an authentication key for communicating with the gitlab server through the python API.
     """
@@ -270,7 +272,7 @@ class Token:
         if not self and allow_creation:
             self.create()
 
-    def __nonzero__(self):
+    def __bool__(self):
         return self.token != ""
 
     @staticmethod
@@ -320,7 +322,7 @@ class Token:
         click.echo("Token written to: " + self.path)
 
 
-class Workspace:
+class Workspace(object):
     """Object representing a catkin workspace"""
 
     def __init__(self, init=False):
@@ -465,8 +467,8 @@ class Workspace:
             if len(statuslist) > 0:  # Unpushed repos where asked already
                 click.secho("\nYou have the following uncommited changes:", fg="red")
                 for e in statuslist:
-                    click.echo(e.keys()[0])
-                    click.echo(e.values()[0])
+                    click.echo(list(e.keys())[0])
+                    click.echo(list(e.values())[0])
 
             click.confirm("Are you sure you want to continue to create a snapshot?" +
                           " These changes won't be included in the snapshot!", abort=True)
@@ -484,7 +486,7 @@ class Workspace:
     def get_catkin_package_names(self):
         """Returns a list of all catkin packages in ws"""
         self.pkgs = self.get_catkin_packages()
-        return [k for k, v in self.pkgs.items()]
+        return [k for k, v in list(self.pkgs.items())]
 
     def get_wstool_package_names(self):
         """Returns a list of all wstool packages in ws"""
@@ -492,7 +494,7 @@ class Workspace:
 
     def get_dependencies(self, pkg_name, deep=False):
         """Returns a dict of all dependencies"""
-        if pkg_name in self.pkgs.keys():
+        if pkg_name in list(self.pkgs.keys()):
             deps = [d.name for d in self.pkgs[pkg_name].build_depends]
             if len(deps) > 0:
                 if deep:
@@ -506,7 +508,7 @@ class Workspace:
     def get_all_dependencies(self):
         """Returns a flat list of dependencies"""
         return set(
-            [build_depend.name for catkin_pkg in self.pkgs.values() for build_depend in catkin_pkg.build_depends])
+            [build_depend.name for catkin_pkg in list(self.pkgs.values()) for build_depend in catkin_pkg.build_depends])
 
     def resolve_dependencies(self, git=None):
         # TODO maybe use rosdep2 package directly
@@ -529,12 +531,12 @@ class Workspace:
                 missing_packages[match.group(2)] = match.group(1)
 
             if not missing_packages:
-                print rosdep_output
-                print rosdep_err
+                click.echo(rosdep_output)
+                click.echo(rosdep_err)
                 sys.exit(1)
 
             gitlab_packages = []
-            for missing_package, package_dep_specified in missing_packages.iteritems():
+            for missing_package, package_dep_specified in missing_packages.items():
                 # Search for package in gitlab
                 url = git.find_repo(missing_package)
                 if url:
@@ -567,7 +569,7 @@ class Workspace:
         self.pkgs = self.get_catkin_packages()
         self.config = wstool_config.Config([], self.src)
         self.cd_src()
-        for pkg in self.pkgs.keys():
+        for pkg in list(self.pkgs.keys()):
             try:
                 # Try to read it from package xml
                 if len(self.pkgs[pkg].urls) > 1:

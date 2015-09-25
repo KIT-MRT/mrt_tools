@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import input
 #!/usr/bin/python
 from mrt_tools.base import Git, get_userinfo, Workspace, get_script_root, touch
 import subprocess
@@ -13,7 +15,7 @@ user = get_userinfo()
 def check_naming(pkg_name):
     while re.match("^[a-z][a-z_]+$", pkg_name) is None:
         pkg_name = str(
-            raw_input("Please enter a package name containing only [a-z] and _ (First char must be a letter): "))
+            input("Please enter a package name containing only [a-z] and _ (First char must be a letter): "))
 
     # Fail safe
     if pkg_name[-4:] == "_ros":

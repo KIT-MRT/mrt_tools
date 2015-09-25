@@ -1,3 +1,5 @@
+from builtins import str
+from builtins import range
 #!/usr/bin/python
 from mrt_tools.settings import *
 import subprocess
@@ -65,7 +67,7 @@ def get_user_choice(items, extra=None, prompt="Please choose a number", default=
     for index, item in enumerate(items):
         valid_choices.append(index)
         click.echo("(" + str(valid_choices[-1]) + ") " + item)
-    valid_choices = range(0, len(items))
+    valid_choices = list(range(0, len(items)))
 
     # Add default choice
     if extra:

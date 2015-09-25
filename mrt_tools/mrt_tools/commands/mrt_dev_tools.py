@@ -1,3 +1,4 @@
+from builtins import next
 #!/usr/bin/python
 from mrt_tools.settings import *
 from mrt_tools.commands.mrt_create_pkg import create_cmakelists
@@ -138,7 +139,7 @@ def fix_package_xml():
     ws.pkgs = ws.get_catkin_packages()
     ws.config = wstool_config.Config([], ws.src)
     ws.cd_src()
-    for pkg in ws.pkgs.keys():
+    for pkg in list(ws.pkgs.keys()):
         try:
             # Try to read it from package xml
             if len(ws.pkgs[pkg].urls) > 1:

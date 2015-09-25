@@ -78,7 +78,7 @@ def restore(name):
         # file_list = [f.filename for f in zf.filelist]
         version = zf.read(version_file)
     except IOError:
-        print os.getcwd()
+        click.echo(os.getcwd())
         click.secho("Can't find file: '" + name + file_ending + "'", fg="red")
         sys.exit()
 
