@@ -30,12 +30,6 @@ except KeyError:
     is_bashcompletion = False
 
 
-# Test whether ros is sourced
-if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRARY_PATH"]:
-    click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
-    sys.exit(1)
-
-
 class Git(object):
     def __init__(self, token=None, host=default_host):
         # Host URL
@@ -202,7 +196,7 @@ class Git(object):
 class SSHkey(object):
     """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
 
-    def __init__(self, name="mrtgitlab", key="", dir_path=default_ssh_path):
+    def __init__(self, name=default_ssh_key_name, key="", dir_path=default_ssh_path):
         self.name = name
         self.secret_key = ""
         self.dir_path = os.path.expanduser(dir_path)
@@ -513,6 +507,11 @@ class Workspace(object):
     def resolve_dependencies(self, git=None):
         # TODO maybe use rosdep2 package directly
         click.echo("Resolving dependencies...")
+        # Test whether ros is sourced
+        if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRARY_PATH"]:
+            click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
+            raise Exception("ROS_ROOT not set.")
+
         if not git:
             git = Git()
 

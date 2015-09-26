@@ -110,6 +110,7 @@ def remove(pkg_name):
     ws.cd_src()
     click.echo("Removing {0}".format(pkg_name))
     shutil.rmtree(pkg_name)
+    ws.scan()
     ws.cd_root()
 
 
