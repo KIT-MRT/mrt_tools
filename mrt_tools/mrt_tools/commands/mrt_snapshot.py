@@ -8,19 +8,9 @@ import sys
 import os
 
 suffix = "_" + time.strftime("%y%m%d")
-file_ending = ".snapshot"
-snapshot_version = "0.1.0"
-version_file = "snapshot.version"
 
 
-def zip_files(files, archive):
-    zf = zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED)
-    for filename in files:
-        if isinstance(filename, tuple):
-            zf.write(filename[0], arcname=filename[1])
-        else:
-            zf.write(filename)
-    zf.close()
+
 
 
 @click.group()

@@ -1,4 +1,6 @@
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
+from requests.exceptions import ConnectionError
+from requests.packages import urllib3
 from mrt_tools.utilities import *
 from mrt_tools.settings import *
 from Crypto.PublicKey import RSA
@@ -6,19 +8,17 @@ from catkin_pkg import packages
 from builtins import object
 from builtins import next
 from builtins import str
+from PIL import Image
 import subprocess
 import gitlab
+import shutil
+import pydot
 import click
 import yaml
 import sys
 import os
 import re
 
-try:
-    from requests.packages import urllib3
-    from requests.exceptions import ConnectionError
-except ImportError:
-    import urllib3
 
 urllib3.disable_warnings()
 
@@ -319,22 +319,23 @@ class Token(object):
 class Workspace(object):
     """Object representing a catkin workspace"""
 
-    def __init__(self, init=False):
+    def __init__(self, silent=False):
         self.root = self.get_root()
-        if init:
-            self.create()
-        elif self.root is None:
-            raise Exception("No catkin workspace root found.")
-        self.src = self.root + "/src/"
         self.config = None
         self.updated_apt = False
-        self.load()
-        self.pkgs = self.get_catkin_packages()
-        catkin_pkgs = set(self.get_catkin_package_names())
-        wstool_pks = set(self.get_wstool_package_names())
-        if not catkin_pkgs.issubset(wstool_pks):
-            self.scan()
-            click.echo("wstool and catkin found different packages!")
+        if self.root is not None:
+            self.src = self.root + "/src/"
+            self.load()
+            self.catkin_pkgs = self.get_catkin_packages()
+            self.catkin_pkg_names = self.get_catkin_package_names()
+            self.wstool_pkg_names = self.get_wstool_package_names()
+            if not set(self.catkin_pkg_names).issubset(set(self.wstool_pkg_names)):
+                click.secho("INFO: wstool and catkin found different packages! Maybe you should run 'ws fix "
+                           "url_in_package_xml'", fg='yellow')
+                self.recreate_index()
+            self.cd_root()
+        elif not silent:
+            raise Exception("No catkin workspace root found.")
 
     def create(self):
         """Initialize new catkin workspace"""
@@ -356,7 +357,28 @@ class Workspace(object):
         os.chdir("src")
         subprocess.call("wstool init", shell=True)
         subprocess.call("catkin build", shell=True)
+
+        self.src = self.root + "/src/"
+        self.load()
+        self.catkin_pkgs = self.get_catkin_packages()
+        catkin_pkgs = set(self.get_catkin_package_names())
+        wstool_pks = set(self.get_wstool_package_names())
+        if not catkin_pkgs.issubset(wstool_pks):
+            click.echo("wstool and catkin found different packages!")
+            self.scan()
         self.cd_root()
+
+    def clean(self):
+        """Delete everything in current workspace."""
+        self.test_for_changes()
+        self.cd_root()
+        click.secho("WARNING:", fg="red")
+        click.confirm("Delete everything within " + self.root, abort=True)
+        for f in os.listdir(self.root):
+            if os.path.isdir(f):
+                shutil.rmtree(f)
+            else:
+                os.remove(f)
 
     def exists(self):
         """Test whether workspace exists"""
@@ -389,7 +411,7 @@ class Workspace(object):
     def load(self):
         """Read in .rosinstall from workspace"""
         self.config = multiproject_cli.multiproject_cmd.get_config(self.src, config_filename=".rosinstall")
-        self.pkgs = self.get_catkin_packages()
+        self.catkin_pkgs = self.get_catkin_packages()
 
     def write(self):
         """Write to .rosinstall in workspace"""
@@ -423,28 +445,34 @@ class Workspace(object):
     def unpushed_repos(self, pkg_name=None):
         """Search for unpushed commits in workspace"""
         org_dir = os.getcwd()
+        # Read in again
+        self.catkin_pkg_names = self.get_catkin_package_names()
+        self.wstool_pkg_names = self.get_wstool_package_names()
         unpushed_repos = []
-        for ps in self.config.get_config_elements():
+        for pkg in self.wstool_pkg_names:
+            if pkg not in self.catkin_pkg_names:
+                continue
+
             # If we are only looking for one specific pkg:
-            if pkg_name and ps != pkg_name:
-                pass
+            if pkg_name and pkg != pkg_name:
+                continue
 
             try:
-                os.chdir(self.src + ps.get_local_name())
+                os.chdir(self.src + pkg)
                 git_process = subprocess.Popen("git log --branches --not --remotes", shell=True, stdout=subprocess.PIPE)
                 result = git_process.communicate()
 
                 if result[0] != "":
-                    click.secho("Unpushed commits in repo '" + ps.get_local_name() + "'", fg="yellow")
+                    click.secho("Unpushed commits in repo '" + pkg + "'", fg="yellow")
                     subprocess.call("git log --branches --not --remotes --oneline", shell=True)
-                    unpushed_repos.append(ps.get_local_name())
+                    unpushed_repos.append(pkg)
             except OSError:  # Directory does not exist (repo not cloned yet)
                 pass
 
         os.chdir(org_dir)
         return unpushed_repos
 
-    def test_for_changes(self, pkg_name=None):
+    def test_for_changes(self, pkg_name=None, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server """
         # Parse git status messages
         statuslist = multiproject_cmd.cmd_status(self.config, untracked=True)
@@ -464,8 +492,7 @@ class Workspace(object):
                     click.echo(list(e.keys())[0])
                     click.echo(list(e.values())[0])
 
-            click.confirm("Are you sure you want to continue to create a snapshot?" +
-                          " These changes won't be included in the snapshot!", abort=True)
+            click.confirm(prompt, abort=True)
 
     def snapshot(self, filename):
         """Writes current workspace configuration to file"""
@@ -479,20 +506,25 @@ class Workspace(object):
 
     def get_catkin_package_names(self):
         """Returns a list of all catkin packages in ws"""
-        self.pkgs = self.get_catkin_packages()
-        return [k for k, v in list(self.pkgs.items())]
+        self.catkin_pkgs = self.get_catkin_packages()
+        return [k for k, v in list(self.catkin_pkgs.items())]
+
+    def get_wstool_packages(self):
+        """Returns a list of all wstool packages in ws"""
+        return self.config.get_config_elements()
 
     def get_wstool_package_names(self):
         """Returns a list of all wstool packages in ws"""
-        return [pkg.get_local_name() for pkg in self.config.get_config_elements()]
+        self.wstool_pks = self.get_wstool_packages()
+        return [pkg.get_local_name() for pkg in self.wstool_pks]
 
     def get_dependencies(self, pkg_name, deep=False):
         """Returns a dict of all dependencies"""
-        if pkg_name in list(self.pkgs.keys()):
-            deps = [d.name for d in self.pkgs[pkg_name].build_depends]
+        if pkg_name in list(self.catkin_pkgs.keys()):
+            deps = [d.name for d in self.catkin_pkgs[pkg_name].build_depends]
             if len(deps) > 0:
                 if deep:
-                    deps = [self.get_dependencies(d, self.pkgs) for d in deps]
+                    deps = [self.get_dependencies(d, self.catkin_pkgs) for d in deps]
                 return {pkg_name: deps}
             else:
                 return {pkg_name: []}
@@ -502,7 +534,7 @@ class Workspace(object):
     def get_all_dependencies(self):
         """Returns a flat list of dependencies"""
         return set(
-            [build_depend.name for catkin_pkg in list(self.pkgs.values()) for build_depend in catkin_pkg.build_depends])
+            [build_depend.name for catkin_pkg in list(self.catkin_pkgs.values()) for build_depend in catkin_pkg.build_depends])
 
     def resolve_dependencies(self, git=None):
         # TODO maybe use rosdep2 package directly
@@ -563,27 +595,21 @@ class Workspace(object):
         # install missing system dependencies
         subprocess.check_call(["rosdep", "install", "--from-paths", self.src, "--ignore-src"])
 
-    def scan(self, write=True):
+    def recreate_index(self, write=True):
         """Goes through all directories within the workspace and checks whether the rosinstall file is up to date."""
-        self.pkgs = self.get_catkin_packages()
+        self.catkin_pkg_names = self.get_catkin_package_names()
+
         self.config = wstool_config.Config([], self.src)
         self.cd_src()
-        for pkg in list(self.pkgs.keys()):
+
+        for pkg in self.catkin_pkg_names:
+            # Try reading it from git repo
             try:
-                # Try to read it from package xml
-                if len(self.pkgs[pkg].urls) > 1:
-                    raise IndexError
-                ssh_url = self.pkgs[pkg].urls[0].url
-            except IndexError:
-                click.secho("Warning: No URL (or multiple) defined in src/" + pkg + "/package.xml!", fg="yellow")
-                try:
-                    # Try reading it from git repo
-                    with open(pkg + "/.git/config", 'r') as f:
-                        ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
-                except IOError:
-                    click.secho("Warning: Could not figure out any URL for " + pkg, fg="red")
-                    ssh_url = None
-            self.add(pkg, ssh_url, update=False)
+                with open(pkg + "/.git/config", 'r') as f:
+                    git_ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
+                    self.add(pkg, git_ssh_url, update=False)
+            except IOError:
+                pass
 
         # Create rosinstall file from config
         if write:
@@ -636,3 +662,70 @@ def import_repo_names():
     with open(os.path.expanduser(default_repo_cache), "r") as f:
         repos = f.read()
     return repos.split(",")[:-1]
+
+
+class Digraph(object):
+    def __init__(self, deps):
+        # create a graph object
+        self.graph = pydot.Dot(graph_type='digraph')
+        self.nodes = None
+        # add nodes and edges to the root node
+        for dep in deps:
+            self.add_nodes(dep)
+
+    def create_node(self, name, isleaf=False):
+        if isleaf:
+            node = pydot.Node(name, style="filled", fillcolor="red")
+        else:
+            node = pydot.Node(name, style="filled", fillcolor="green")
+        self.graph.add_node(node)
+        return node
+
+    def get_node(self, name, isleaf=False):
+        """creates or returns (if the node already exists) the node"""
+
+        # check all of the graph nodes
+        for node in self.graph.get_nodes():
+            if name == node.get_name():
+                return node
+
+        return self.create_node(name, isleaf=isleaf)
+
+    def add_nodes(self, deps_dict):
+        """Add several nodes"""
+        root_node = self.get_node(list(deps_dict.keys())[0])
+
+        for v in list(deps_dict.values())[0]:
+
+            # if the list element is not a dict
+            if type(v) != dict:
+                node = self.get_node(v, isleaf=True)
+                self.add_edge(root_node, node)
+
+            # if the element is a dict, call recursion
+            else:
+                node = self.get_node(list(v.keys())[0], isleaf=False)
+                self.add_edge(root_node, node)
+                self.add_nodes(v)
+
+    def add_edge(self, a, b):
+        """checks if the edge already exists, if not, creates one from a2b"""
+
+        for edge_obj in self.graph.get_edge_list():
+            if a.get_name() in edge_obj.obj_dict["points"] and \
+                            b.get_name() in edge_obj.obj_dict["points"]:
+                break
+        else:
+            # such an edge doesn't exist. create it
+            self.graph.add_edge(pydot.Edge(a, b))
+
+    def plot(self, pkg_name, show=True):
+        """plot a directed graph with one root node"""
+        if not os.path.exists("pics"):
+            os.mkdir("pics")
+        filename = "pics/deps_{0}.png".format(pkg_name)
+        self.graph.write_png(filename)
+        if show:
+            image = Image.open(filename)
+            image.show()
+        click.echo("Image written to: " + os.getcwd() + "/" + filename)

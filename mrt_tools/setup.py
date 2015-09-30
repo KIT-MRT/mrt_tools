@@ -22,7 +22,8 @@ setup(
     use_2to3=True,
     entry_points={
         'console_scripts': [
-            'mrt = mrt_tools.cli:cli',
+            'ws = mrt_tools.mrt_ws:main',
+            'gitlab = mrt_tools.mrt_gitlab:main',
         ],
     },
     classifiers=[

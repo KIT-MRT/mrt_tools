@@ -137,15 +137,15 @@ def fix_package_xml():
             os.chdir(org_dir)
 
     ws = Workspace()
-    ws.pkgs = ws.get_catkin_packages()
+    ws.catkin_pkgs = ws.get_catkin_packages()
     ws.config = wstool_config.Config([], ws.src)
     ws.cd_src()
-    for pkg in list(ws.pkgs.keys()):
+    for pkg in list(ws.catkin_pkgs.keys()):
         try:
             # Try to read it from package xml
-            if len(ws.pkgs[pkg].urls) > 1:
+            if len(ws.catkin_pkgs[pkg].urls) > 1:
                 raise IndexError
-            ssh_url = ws.pkgs[pkg].urls[0].url
+            ssh_url = ws.catkin_pkgs[pkg].urls[0].url
         except IndexError:
             click.secho("Warning: No URL (or multiple) defined in src/" + pkg + "/package.xml!", fg="yellow")
             try:
