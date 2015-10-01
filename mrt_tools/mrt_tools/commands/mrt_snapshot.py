@@ -1,20 +1,15 @@
-#!/usr/bin/python
-from mrt_tools.base import Workspace
 from mrt_tools.utilities import *
-from mrt_tools.settings import *
-import subprocess
-import zipfile
+from mrt_tools.base import *
 import click
 import time
-import sys
-import os
-
-suffix = "_" + time.strftime("%y%m%d")
 
 
+########################################################################################################################
+# Snapshot
+########################################################################################################################
 @click.group()
 def main():
-    """Save the current state of your workspace."""
+    """Save or restore the current state of the ws..."""
     pass
 
 
@@ -27,12 +22,13 @@ def create(name):
     The workspace configuration contains build settings like whether 'install' was specified.
     The .rosinstall file pins every repository to the commit it is at right now.
     """
+    suffix = "_" + time.strftime("%y%m%d")
     snapshot_name = name + suffix + file_ending
     filename = os.path.join(os.getcwd(), snapshot_name)
-    ws = Workspace()
 
     # First test whether it's safe to create a snapshot
-    ws.test_for_changes()
+    ws = Workspace()
+    ws.test_for_changes(prompt="Are you sure you want to continue? These changes won't be included in the snapshot!")
 
     # Create snapshot of rosinstall
     ws.cd_root()
@@ -42,6 +38,7 @@ def create(name):
     with open(version_file, "w") as f:
         f.write(snapshot_version)
     files = [('.rosinstall', 'src/.rosinstall'), '.catkin_tools', version_file]
+    files += [os.path.join(dp, f) for dp, dn, fn in os.walk(".catkin_tools") for f in fn]
     zip_files(files, filename)
     os.remove(".rosinstall")
     os.remove(version_file)
@@ -76,15 +73,15 @@ def restore(name):
         try:
             os.mkdir(workspace)
             os.chdir(workspace)
-            ws = Workspace()
+            ws = Workspace(silent=True)
             ws.create()
         except OSError:
-            click.secho("Directory " + name + "_snapshot exists already", fg="red")
+            click.secho("Directory {0} exists already".format(workspace), fg="red")
             os.chdir(org_dir)
             sys.exit(1)
 
         # Extract archive
-        zf.extractall(path=workspace)  # .catkin_tools is already at the right spot
+        zf.extractall(path=workspace)
         os.remove(os.path.join(workspace, version_file))
 
         # Clone packages

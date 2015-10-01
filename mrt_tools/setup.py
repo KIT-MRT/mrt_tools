@@ -3,7 +3,7 @@ A toolbelt full of mrt scripts
 """
 from setuptools import find_packages, setup
 
-dependencies = ['click', 'pyapi-gitlab', 'wstool', 'catkin_pkg', 'pydot', 'Image', 'pycrypto']
+dependencies = ['click', 'pyapi-gitlab', 'wstool', 'catkin_pkg', 'pydot2', 'Image', 'pycrypto', 'future']
 
 setup(
     name='mrt',

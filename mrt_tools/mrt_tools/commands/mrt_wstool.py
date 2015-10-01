@@ -1,10 +1,12 @@
-#!/usr/bin/python
 from mrt_tools.base import Workspace
 import subprocess
 import click
 import os
 
 
+########################################################################################################################
+# WStool
+########################################################################################################################
 @click.command(context_settings=dict(ignore_unknown_options=True, ))
 @click.argument('action', type=click.STRING)
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
