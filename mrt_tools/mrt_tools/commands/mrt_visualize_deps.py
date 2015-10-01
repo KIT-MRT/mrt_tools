@@ -1,4 +1,5 @@
 from mrt_tools.base import Workspace
+from builtins import object
 from PIL import Image
 import pydot
 import click
@@ -15,7 +16,7 @@ def main(pkg_name):
     ws.cd_root()
     if pkg_name:
         if pkg_name not in pkg_list:
-            print("Package not found, cant create graph")
+            click.secho("Package not found, cant create graph", fg="red")
             sys.exit(1)
         pkg_list = [pkg_name]
     else:
@@ -37,7 +38,7 @@ def main(pkg_name):
 # TODO Create centric plot, when complete dependency graph is generated
 
 
-class Digraph:
+class Digraph(object):
     def __init__(self, deps):
         # create a graph object
         self.graph = pydot.Dot(graph_type='digraph')
@@ -66,9 +67,9 @@ class Digraph:
 
     def add_nodes(self, deps_dict):
         """Add several nodes"""
-        root_node = self.get_node(deps_dict.keys()[0])
+        root_node = self.get_node(list(deps_dict.keys())[0])
 
-        for v in deps_dict.values()[0]:
+        for v in list(deps_dict.values())[0]:
 
             # if the list element is not a dict
             if type(v) != dict:
@@ -77,7 +78,7 @@ class Digraph:
 
             # if the element is a dict, call recursion
             else:
-                node = self.get_node(v.keys()[0], isleaf=False)
+                node = self.get_node(list(v.keys())[0], isleaf=False)
                 self.add_edge(root_node, node)
                 self.add_nodes(v)
 

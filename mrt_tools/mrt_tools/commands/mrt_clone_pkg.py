@@ -1,10 +1,12 @@
-import sys
 from mrt_tools.base import Git, import_repo_names, Workspace
 import click
+import sys
+
+repo_list = import_repo_names()
 
 
 @click.command()
-@click.argument("pkg_name", type=click.STRING, required=True)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=repo_list)
 def main(pkg_name):
     """
     Clone catkin packages from gitlab.

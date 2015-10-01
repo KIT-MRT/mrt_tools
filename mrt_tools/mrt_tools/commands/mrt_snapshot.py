@@ -1,5 +1,7 @@
 #!/usr/bin/python
 from mrt_tools.base import Workspace
+from mrt_tools.utilities import *
+from mrt_tools.settings import *
 import subprocess
 import zipfile
 import click
@@ -8,19 +10,6 @@ import sys
 import os
 
 suffix = "_" + time.strftime("%y%m%d")
-file_ending = ".snapshot"
-snapshot_version = "0.1.0"
-version_file = "snapshot.version"
-
-
-def zip_files(files, archive):
-    zf = zipfile.ZipFile(archive, "w", zipfile.ZIP_DEFLATED)
-    for filename in files:
-        if isinstance(filename, tuple):
-            zf.write(filename[0], arcname=filename[1])
-        else:
-            zf.write(filename)
-    zf.close()
 
 
 @click.group()
@@ -78,7 +67,7 @@ def restore(name):
         # file_list = [f.filename for f in zf.filelist]
         version = zf.read(version_file)
     except IOError:
-        print os.getcwd()
+        click.echo(os.getcwd())
         click.secho("Can't find file: '" + name + file_ending + "'", fg="red")
         sys.exit()
 
@@ -87,7 +76,8 @@ def restore(name):
         try:
             os.mkdir(workspace)
             os.chdir(workspace)
-            ws = Workspace(init=True)
+            ws = Workspace()
+            ws.create()
         except OSError:
             click.secho("Directory " + name + "_snapshot exists already", fg="red")
             os.chdir(org_dir)

@@ -1,27 +1,11 @@
 #!/usr/bin/python
-from mrt_tools.base import Workspace
-from mrt_tools.utilities import *
 import subprocess
-import shutil
-import click
 import os
 
+import click
 
-def set_eclipse_project_setting():
-    os.chdir("build")
-    for project in find_by_pattern(".project", "build"):
-        os.chdir(os.path.dirname(project))
-        # set environment variables
-        subprocess.call(
-            'awk -f $(rospack find mk)/eclipse.awk .project > .project_with_env && mv .project_with_env .project',
-            shell=True)
-
-        # add support for indexing
-        if not os.path.isfile("./.settings/language.settings.xml"):
-            if not os.path.isdir("./.settings"):
-                os.mkdir("./.settings")
-        script_dir = get_script_root()
-        shutil.copy(script_dir + "/templates/language.settings.xml", "./.settings")
+from mrt_tools.base import Workspace
+from mrt_tools.utilities import *
 
 
 @click.command(context_settings=dict(ignore_unknown_options=True, ))

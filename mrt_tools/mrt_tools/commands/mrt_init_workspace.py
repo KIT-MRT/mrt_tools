@@ -6,4 +6,5 @@ import click
 @click.command()
 def main():
     """ Initialize a catkin workspace. """
-    Workspace(init=True)
+    Workspace(silent=True).create()
+
