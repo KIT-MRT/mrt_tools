@@ -152,7 +152,7 @@ def create_directories(pkg_name, pkg_type, ros):
     os.makedirs("src/" + pkg_name)
     os.chdir("src/" + pkg_name)
 
-    if pkg_type == "exec":
+    if pkg_type == "lib":
         os.makedirs("include/" + pkg_name + "/internal")
         touch("include/" + pkg_name + "/internal/.gitignore")
 
