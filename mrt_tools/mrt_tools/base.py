@@ -89,7 +89,12 @@ class Git(object):
     def check_ssh_key(self):
         """Test for the presence and functionality of a ssh-key."""
         local_keys = self.get_local_ssh_keys()
-        remote_keys = self.server.getsshkeys()
+        try:
+            remote_keys = self.server.getsshkeys()
+        except ConnectionError:
+            click.secho("Couldn't connect to server. Are you connected to the internet?")
+            sys.exit(1)
+
         if remote_keys is False:
             raise Exception("There was a problem with gitlab...")
         if [key for key in local_keys if key.public_key in [r["key"] for r in remote_keys]]:
@@ -481,6 +486,25 @@ class Workspace(object):
         os.chdir(org_dir)
         return unpushed_repos
 
+    def fetch(self, pkg_name=None):
+        """Perform a git fetch in every repo"""
+        org_dir = os.getcwd()
+        # Read in again
+        self.catkin_pkg_names = self.get_catkin_package_names()
+        self.wstool_pkg_names = self.get_wstool_package_names()
+        for pkg in self.wstool_pkg_names:
+            # If we are only looking for one specific pkg:
+            if pkg_name and pkg != pkg_name:
+                continue
+
+            try:
+                os.chdir(self.src + pkg)
+                click.echo("Fetching in {0}...".format(pkg))
+                subprocess.call("git fetch --quiet", shell=True)
+            except OSError:  # Directory does not exist (repo not cloned yet)
+                pass
+        os.chdir(org_dir)
+
     def test_for_changes(self, pkg_name=None, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server """
         # Parse git status messages
@@ -618,7 +642,7 @@ class Workspace(object):
                 with open(pkg + "/.git/config", 'r') as f:
                     git_ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
                     self.add(pkg, git_ssh_url, update=False)
-            except IOError:
+            except (IOError, StopIteration):
                 pass
 
         # Create rosinstall file from config

@@ -116,6 +116,7 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
 
 @main.command()
 @click.argument("pkg_name", type=click.STRING, required=False)  # , autocompletion=suggestions)
+@click.pass_obj
 def visualize_deps(ws, pkg_name):
     """ Visualize dependencies of catkin packages."""
     pkg_list = ws.get_catkin_package_names()

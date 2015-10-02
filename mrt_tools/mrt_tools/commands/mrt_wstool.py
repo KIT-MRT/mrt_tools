@@ -48,7 +48,17 @@ def main(action, args):
         # Show untracked files as well
         if not ("--untracked" in args or "-u" in args):
             args += ("--untracked",)
-    
+
+    if action == "fetch":
+        # Search for unpushed commits
+        ws.fetch()
+        action = "info"
+
+    if action == "status" or action == "info":
+        # Show untracked files as well
+        if not ("--untracked" in args or "-u" in args):
+            args += ("--untracked",)
+
     # Pass the rest to wstool
     ws.cd_src()
     if len(args) == 0:

@@ -1,9 +1,3 @@
-#!/usr/bin/python
-import subprocess
-import os
-
-import click
-
 from mrt_tools.base import Workspace
 from mrt_tools.utilities import *
 
