@@ -3,14 +3,14 @@ from mrt_tools.base import *
 import click
 
 # Autocompletion
-# try:
-#     tmp_ws = Workspace()
-#     suggestions = tmp_ws.get_catkin_package_names()
-#     repo_list = import_repo_names()
-# except:
-#     suggestions = []
-#     repo_list = []
-#     self_dir = get_script_root()
+try:
+    tmp_ws = Workspace()
+    suggestions = tmp_ws.get_catkin_package_names()
+    repo_list = import_repo_names()
+except:
+    suggestions = []
+    repo_list = []
+    self_dir = get_script_root()
 
 
 ########################################################################################################################
@@ -24,7 +24,7 @@ def main(ctx):
 
 
 @main.command()
-@click.argument("pkg_name", type=click.STRING, required=True)  # , autocompletion=repo_list)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=repo_list)
 @click.pass_obj
 def add(ws, pkg_name):
     """Clone catkin packages from gitlab."""
@@ -48,7 +48,7 @@ def add(ws, pkg_name):
 
 
 @main.command()
-@click.argument("pkg_name", type=click.STRING, required=True)  # , autocompletion=suggestions)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
 @click.pass_obj
 def remove(ws, pkg_name):
     """Delete package from workspace."""
@@ -115,7 +115,7 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
 
 
 @main.command()
-@click.argument("pkg_name", type=click.STRING, required=False)  # , autocompletion=suggestions)
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
 @click.pass_obj
 def visualize_deps(ws, pkg_name):
     """ Visualize dependencies of catkin packages."""
