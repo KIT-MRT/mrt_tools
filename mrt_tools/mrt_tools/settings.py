@@ -11,7 +11,9 @@ default_ssh_key_name = "mrtgitlab"
 
 # Cache
 default_repo_cache = "~/.mrtgitlab/repo_cache"
-default_repo_cache_time = 60  # in seconds
+default_cache_lock = "~/.mrtgitlab/.repo_cache_lock"
+default_repo_cache_decay_time = 5*60  # in seconds
+default_cache_lock_decay_time = 30  # in seconds
 
 # Gitlab
 default_host = "https://gitlab.mrt.uni-karlsruhe.de"

@@ -135,3 +135,29 @@ def recreate_rosinstall(ws):
 def resolve_deps(ws):
     """Resolve dependencies for packages"""
     ws.resolve_dependencies()
+
+
+@main.command()
+def update_repo_cache():
+    """
+    Read repo list from server and write it into caching file.
+    :rtype : object
+    """
+    # Because we are calling this during autocompletion, we don't wont any errors.
+    # -> Just exit when something is not ok.
+    try:
+        # Connect
+        token = Token(path=default_token_path, allow_creation=False)
+        git = Git(token=token)
+        repo_dicts = git.get_repos()
+    except:
+        # In case the connection didn't succeed, the file is going to be flushed.
+        repo_dicts = []
+
+    file_name = os.path.expanduser(default_repo_cache)
+    dir_name = os.path.dirname(file_name)
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
+    with open(file_name, "w") as f:
+        for r in repo_dicts:
+            f.write(r["name"] + ",")
