@@ -329,6 +329,7 @@ class Workspace(object):
     """Object representing a catkin workspace"""
 
     def __init__(self, silent=False):
+        self.org_dir = os.getcwd()
         self.root = self.get_root()
         self.config = None
         self.updated_apt = False
@@ -344,8 +345,8 @@ class Workspace(object):
             self.catkin_pkg_names = self.get_catkin_package_names()
             self.wstool_pkg_names = self.get_wstool_package_names()
             if not set(self.catkin_pkg_names).issubset(set(self.wstool_pkg_names)):
-                click.secho("INFO: wstool and catkin found different packages! Maybe you should run 'ws fix "
-                            "url_in_package_xml'", fg='yellow')
+                # click.secho("INFO: wstool and catkin found different packages! Maybe you should run 'ws fix "
+                #             "url_in_package_xml'", fg='yellow')
                 self.recreate_index()
             self.cd_root()
         elif not silent:
@@ -458,7 +459,6 @@ class Workspace(object):
 
     def unpushed_repos(self, pkg_name=None):
         """Search for unpushed commits in workspace"""
-        org_dir = os.getcwd()
         # Read in again
         self.catkin_pkg_names = self.get_catkin_package_names()
         self.wstool_pkg_names = self.get_wstool_package_names()
@@ -483,12 +483,11 @@ class Workspace(object):
             except OSError:  # Directory does not exist (repo not cloned yet)
                 pass
 
-        os.chdir(org_dir)
+        os.chdir(self.org_dir)
         return unpushed_repos
 
     def fetch(self, pkg_name=None):
         """Perform a git fetch in every repo"""
-        org_dir = os.getcwd()
         # Read in again
         self.catkin_pkg_names = self.get_catkin_package_names()
         self.wstool_pkg_names = self.get_wstool_package_names()
@@ -503,7 +502,7 @@ class Workspace(object):
                 subprocess.call("git fetch --quiet", shell=True)
             except OSError:  # Directory does not exist (repo not cloned yet)
                 pass
-        os.chdir(org_dir)
+        os.chdir(self.org_dir)
 
     def test_for_changes(self, pkg_name=None, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server """
@@ -650,54 +649,6 @@ class Workspace(object):
             self.write()
 
 
-def export_repo_names():
-    """
-    Read repo list from server and write it into caching file.
-    """
-    # Because we are calling this during autocompletion, we don't wont any errors.
-    # -> Just exit when something is not ok.
-    try:
-        # Connect
-        token = Token(path=default_token_path, allow_creation=False)
-        git = Git(token=token)
-        repo_dicts = git.get_repos()
-    except:
-        # In case the connection didn't succeed, the file is going to be flushed.
-        repo_dicts = []
-
-    file_name = os.path.expanduser(default_repo_cache)
-    if not os.path.exists(file_name):
-        os.makedirs(os.path.dirname(file_name))
-    with open(os.path.expanduser(default_repo_cache), "w") as f:
-        for r in repo_dicts:
-            f.write(r["name"] + ",")
-
-
-def import_repo_names():
-    """
-    Try to read in repos from cached file.
-    If file is older than default_repo_cache_time seconds, a new list is retrieved from server.
-    """
-    import time
-
-    now = time.time()
-    try:
-        # Read in last modification time
-        last_modification = os.path.getmtime(os.path.expanduser(default_repo_cache))
-    except OSError:
-        # Set modification time to 2 * default_repo_cache_time ago
-        last_modification = now - 2 * default_repo_cache_time
-
-    # Read new repo list from server if delta_t > 1 Minute
-    if (now - last_modification) > default_repo_cache_time:
-        export_repo_names()
-
-    # Read in repo list from cache
-    with open(os.path.expanduser(default_repo_cache), "r") as f:
-        repos = f.read()
-    return repos.split(",")[:-1]
-
-
 class Digraph(object):
     def __init__(self, deps):
         # create a graph object
@@ -763,3 +714,33 @@ class Digraph(object):
             image = Image.open(filename)
             image.show()
         click.echo("Image written to: " + os.getcwd() + "/" + filename)
+
+
+def import_repo_names():
+    """
+    Try to read in repos from cached file.
+    If file is older than default_repo_cache_time seconds, a new list is retrieved from server.
+    """
+    import time
+    import logging
+    logging.basicConfig(filename='/home/bandera/repos/tmp_ws/example.log', level=logging.DEBUG)
+
+    now = time.time()
+    try:
+        # Read in last modification time
+        last_modification = os.path.getmtime(os.path.expanduser(default_repo_cache))
+    except OSError:
+        # Set modification time to 2 * default_repo_cache_time ago
+        last_modification = now - 2 * default_repo_cache_decay_time
+        logging.debug("{0} does not exist yet.".format(default_repo_cache))
+
+    # Read new repo list from server if delta_t > default_repo_cache_time
+    if (now - last_modification) > default_repo_cache_decay_time:
+        logging.debug("Last modification date of {0} too old: {1} seconds old".format(default_repo_cache,
+                                                                                      now - last_modification))
+        return []
+
+    # Read in repo list from cache
+    with open(os.path.expanduser(default_repo_cache), "r") as f:
+        repos = f.read()
+    return repos.split(",")[:-1]
