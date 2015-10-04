@@ -143,9 +143,8 @@ def visualize_deps(ws, pkg_name, this):
                 graph = Digraph(deps)
                 graph.plot(pkg_name, show=False)
         if click.confirm("Create complete dependency graph for workspace?", abort=True):
-            pkg_name = os.path.basename(os.getcwd())
+            pkg_name = os.path.basename(ws.root)
 
-    deps = [ws.get_dependencies(pkg_name, deep=True) for pkg_name in pkg_list]
-
+    deps = [ws.get_dependencies(pkg, deep=True) for pkg in pkg_list]
     graph = Digraph(deps)
     graph.plot(pkg_name)
