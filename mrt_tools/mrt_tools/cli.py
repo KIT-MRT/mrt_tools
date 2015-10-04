@@ -1,4 +1,5 @@
 import click
+import sys
 import os
 
 plugin_folder = os.path.join(os.path.dirname(__file__), 'commands')
@@ -16,9 +17,13 @@ class MyCLI(click.MultiCommand):
     def get_command(self, ctx, name):
         ns = {}
         fn = os.path.join(plugin_folder, 'mrt_' + name + '.py')
-        with open(fn) as f:
-            code = compile(f.read(), fn, 'exec')
-            eval(code, ns, ns)
+        try:
+            with open(fn) as f:
+                code = compile(f.read(), fn, 'exec')
+                eval(code, ns, ns)
+        except IOError:
+            click.secho("No such subcommand: '{0}'".format(name), fg="red")
+            sys.exit(1)
         return ns['main']
 
 
