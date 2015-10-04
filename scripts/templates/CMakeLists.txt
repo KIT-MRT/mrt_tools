@@ -10,7 +10,7 @@
 @  |  @ #
 @  |  @ #Put a "x" at the position to enable this line
 @  |  @ #E.g a non-ros library has the following mask: @x |x @
-#pkg_version=1.2
+#pkg_version=1.3
 cmake_minimum_required(VERSION 2.8.3)
 project(${CMAKE_PACKAGE_NAME})
 
@@ -148,10 +148,6 @@ catkin_package(
 @xx|x @ 	  ${catkin_LIBRARIES}
 @xx|x @ 	  ${mrt_LIBRARIES}
 @xx|x @ 	)
-@xx|x @ else ()
-@xx|x @		#Creating dummy target for header only libs, so that header files (i.e. all files under include/) will still show up in QtCreator as project files
-@xx|x @ 	file(GLOB_RECURSE PROJECT_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "include/*.*")
-@xx|x @ 	add_custom_target(${PROFECT_NAME} ALL SOURCES ${PROJECT_SOURCE_FILES_INC})
 @xx|x @ endif()
 @xx|x @ 
 @xx| x@ function(add_exec EXEC_NAME SEARCH_FOLDER)
@@ -168,8 +164,10 @@ catkin_package(
 @xx| x@ 
 @ x| x@ 		# Add cmake target dependencies of the executable/library
 @ x| x@ 		# as an example, message headers may need to be generated before nodes
-@ x| x@ 		add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
-@ x| x@ 		add_dependencies(${PROJECT_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+@ x| x@ 		add_dependencies(${EXEC_NAME} ${catkin_EXPORTED_TARGETS})
+@ x| x@ 		if (${PROJECT_NAME}_EXPORTED_TARGETS)
+@ x| x@ 		    add_dependencies(${EXEC_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+@ x| x@ 		endif (${PROJECT_NAME}_EXPORTED_TARGETS)
 @ x| x@ 	
 @xx| x@ 		# Specify libraries to link a library or executable target against
 @xx| x@ 		target_link_libraries(${EXEC_NAME}
