@@ -195,6 +195,7 @@ def create_cmakelists(pkg_name, pkg_type, ros, self_dir):
 
 def create_files(pkg_name, pkg_type, ros):
     # Create files and replace with user info
+    user = get_userinfo()
     # Readme and test file
     shutil.copyfile(self_dir + "/templates/README.md", "README.md")
     shutil.copyfile(self_dir + "/templates/test.cpp", "./test/test_" + pkg_name + ".cpp")
@@ -262,5 +263,4 @@ def set_eclipse_project_setting():
         shutil.copy(script_dir + "/templates/language.settings.xml", "./.settings")
 
 
-user = get_userinfo()
 self_dir = get_script_root()

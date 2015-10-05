@@ -7,10 +7,12 @@ import click
 #     tmp_ws = Workspace()
 #     suggestions = tmp_ws.get_catkin_package_names()
 #     repo_list = import_repo_names()
+#     os.chdir(tmp_ws.org_dir)
 # except:
 #     suggestions = []
 #     repo_list = []
-#     self_dir = get_script_root()
+
+self_dir = get_script_root()
 
 
 ########################################################################################################################
@@ -88,6 +90,7 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
         click.echo("     --> Create  gitlab repository.... YES")
     else:
         click.echo("     --> Create  gitlab repository.... NO")
+    user = get_userinfo()
     click.echo("     --> Package Maintainer.... " + user['name'] + " <" + user['mail'] + ">")
 
     create_directories(pkg_name, pkg_type, ros)
@@ -116,14 +119,21 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
 
 @main.command()
 @click.argument("pkg_name", type=click.STRING, required=False)  # , autocompletion=suggestions)
+@click.option("--this", is_flag=True)
 @click.pass_obj
-def visualize_deps(ws, pkg_name):
+def visualize_deps(ws, pkg_name, this):
     """ Visualize dependencies of catkin packages."""
     pkg_list = ws.get_catkin_package_names()
-    ws.cd_root()
+
     if pkg_name:
         if pkg_name not in pkg_list:
             click.secho("Package not found, cant create graph", fg="red")
+            sys.exit(1)
+        pkg_list = [pkg_name]
+    elif this:
+        pkg_name = os.path.basename(ws.org_dir)
+        if pkg_name not in pkg_list:
+            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
             sys.exit(1)
         pkg_list = [pkg_name]
     else:
@@ -133,9 +143,8 @@ def visualize_deps(ws, pkg_name):
                 graph = Digraph(deps)
                 graph.plot(pkg_name, show=False)
         if click.confirm("Create complete dependency graph for workspace?", abort=True):
-            pkg_name = os.path.basename(os.getcwd())
+            pkg_name = os.path.basename(ws.root)
 
-    deps = [ws.get_dependencies(pkg_name, deep=True) for pkg_name in pkg_list]
-
+    deps = [ws.get_dependencies(pkg, deep=True) for pkg in pkg_list]
     graph = Digraph(deps)
     graph.plot(pkg_name)
