@@ -2,7 +2,8 @@ from mrt_tools.base import Workspace
 from mrt_tools.utilities import *
 
 
-@click.command(context_settings=dict(ignore_unknown_options=True, ))
+@click.command(context_settings=dict(ignore_unknown_options=True, ), short_help="A wrapper for catkin.",
+               help=subprocess.check_output(["catkin", "--help"]))
 @click.argument('action', type=click.STRING)
 @click.option('-rd', '--resolve-deps', is_flag=True, help='Check and resolve dependencies before building workspace.')
 @click.option('--eclipse', is_flag=True, help='Create a eclipse project.')

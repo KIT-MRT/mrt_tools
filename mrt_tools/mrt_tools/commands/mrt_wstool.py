@@ -7,7 +7,8 @@ import os
 ########################################################################################################################
 # WStool
 ########################################################################################################################
-@click.command(context_settings=dict(ignore_unknown_options=True, ))
+@click.command(context_settings=dict(ignore_unknown_options=True, ), short_help="A wrapper for wstool.",
+               help=subprocess.check_output(["wstool", "--help"]))
 @click.argument('action', type=click.STRING)
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 def main(action, args):
