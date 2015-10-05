@@ -21,7 +21,7 @@ def main(action, args):
         click.secho("Removing wstool database src/.rosinstall", fg="yellow")
         os.remove(".rosinstall")
         click.echo("Initializing wstool...")
-        ws.scan()
+        ws.recreate_index()
         return
 
     # Need to init wstool?
@@ -30,7 +30,7 @@ def main(action, args):
 
     if action == "update":
         # Search for unpushed commits
-        ws.scan() # Rebuild .rosinstall in case a package was deletetd manually
+        ws.recreate_index() # Rebuild .rosinstall in case a package was deletetd manually
         unpushed_repos = ws.unpushed_repos()
 
         if len(unpushed_repos) > 0:
