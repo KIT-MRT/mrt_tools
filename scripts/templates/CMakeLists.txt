@@ -152,22 +152,22 @@ catkin_package(
 @xx|x @ 
 @xx| x@ function(add_exec EXEC_NAME SEARCH_FOLDER)
 @xx| x@ 	#glob all files in this directory
-@xx| x@ 	file(GLOB PROJECT_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h")
-@xx| x@ 	file(GLOB PROJECT_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.cpp")
+@xx| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h")
+@xx| x@ 	file(GLOB EXEC_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.cpp")
 @xx| x@ 
 @xx| x@ 	if (PROJECT_SOURCE_FILES_SRC)
 @xx| x@ 		#add executable
 @xx| x@ 		add_executable(${EXEC_NAME}
-@xx| x@ 			${PROJECT_SOURCE_FILES_INC}
-@xx| x@ 			${PROJECT_SOURCE_FILES_SRC}
+@xx| x@ 			${EXEC_SOURCE_FILES_INC}
+@xx| x@ 			${EXEC_SOURCE_FILES_SRC}
 @xx| x@ 		)
 @xx| x@ 
 @ x| x@ 		# Add cmake target dependencies of the executable/library
 @ x| x@ 		# as an example, message headers may need to be generated before nodes
 @ x| x@ 		add_dependencies(${EXEC_NAME} ${catkin_EXPORTED_TARGETS})
-@ x| x@ 		if (${PROJECT_NAME}_EXPORTED_TARGETS)
+@ x| x@ 		if (${EXEC_NAME}_EXPORTED_TARGETS)
 @ x| x@ 		    add_dependencies(${EXEC_NAME} ${${EXEC_NAME}_EXPORTED_TARGETS})
-@ x| x@ 		endif (${PROJECT_NAME}_EXPORTED_TARGETS)
+@ x| x@ 		endif (${EXEC_NAME}_EXPORTED_TARGETS)
 @ x| x@ 	
 @xx| x@ 		# Specify libraries to link a library or executable target against
 @xx| x@ 		target_link_libraries(${EXEC_NAME}
