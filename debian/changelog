@@ -1,3 +1,15 @@
+mrt-build (1.1.0-ubuntu4) trusty; urgency=low
+
+  * Readme md updated
+
+ -- Johannes Beck <johannes.beck@kit.edu>  Wed, 23 Sep 2015 07:55:47 +0200
+
+mrt-build (1.1.0-ubuntu3) trusty; urgency=low
+
+  * Update of mrt_wstool and many small improvements
+
+ -- Johannes Beck <johannes.beck@kit.edu>  Wed, 16 Sep 2015 10:29:30 +0200
+
 mrt-build (1.1.0-ubuntu2) trusty; urgency=low
 
   * Added version number to CMakeLists.txt template
