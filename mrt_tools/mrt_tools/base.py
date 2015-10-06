@@ -8,7 +8,6 @@ from catkin_pkg import packages
 from builtins import object
 from builtins import next
 from builtins import str
-from PIL import Image
 import subprocess
 import gitlab
 import shutil
@@ -708,11 +707,10 @@ class Digraph(object):
         """plot a directed graph with one root node"""
         if not os.path.exists("pics"):
             os.mkdir("pics")
-        filename = "pics/deps_{0}.png".format(pkg_name)
+        filename = os.path.join(os.getcwd(),"pics/deps_{0}.png".format(pkg_name))
         self.graph.write_png(filename)
         if show:
-            image = Image.open(filename)
-            image.show()
+            subprocess.call(["xdg-open", filename])
         click.echo("Image written to: " + os.getcwd() + "/" + filename)
 
 
