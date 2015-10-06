@@ -54,7 +54,7 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xx@ #   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 @ x|xx@ 
 @ x|xx@ # Generate messages in the 'msg' folder
-@ x|xx@ file(GLOB ROS_MESSAGE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "msg/*.msg")
+@ x|xx@ file(GLOB ROS_MESSAGE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}/msg" "msg/*.msg")
 @ x|xx@ if (ROS_MESSAGE_FILES)
 @ x|xx@ 	add_message_files(
 @ x|xx@ 	  FILES
@@ -64,7 +64,7 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xx@ endif()
 @ x|xx@ 
 @ x|xx@ # Generate services in the 'srv' folder
-@ x|xx@ file(GLOB ROS_SERVICE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "srv/*.srv")
+@ x|xx@ file(GLOB ROS_SERVICE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}/srv" "srv/*.srv")
 @ x|xx@ if (ROS_SERVICE_FILES)
 @ x|xx@ 	add_service_files(
 @ x|xx@ 	  FILES
@@ -74,7 +74,7 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xx@ endif()
 @ x|xx@ 
 @ x|xx@ # Generate actions in the 'action' folder
-@ x|xx@ file(GLOB ROS_ACTION_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "action/*.action")
+@ x|xx@ file(GLOB ROS_ACTION_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}/action" "action/*.action")
 @ x|xx@ if (ROS_ACTION_FILES)
 @ x|xx@ 	add_action_files(
 @ x|xx@ 	  FILES
@@ -166,7 +166,7 @@ catkin_package(
 @ x| x@ 		# as an example, message headers may need to be generated before nodes
 @ x| x@ 		add_dependencies(${EXEC_NAME} ${catkin_EXPORTED_TARGETS})
 @ x| x@ 		if (${PROJECT_NAME}_EXPORTED_TARGETS)
-@ x| x@ 		    add_dependencies(${EXEC_NAME} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+@ x| x@ 		    add_dependencies(${EXEC_NAME} ${${EXEC_NAME}_EXPORTED_TARGETS})
 @ x| x@ 		endif (${PROJECT_NAME}_EXPORTED_TARGETS)
 @ x| x@ 	
 @xx| x@ 		# Specify libraries to link a library or executable target against
@@ -234,4 +234,3 @@ if (CATKIN_ENABLE_TESTING)
 @xx| x@ 		target_link_libraries(${PROJECT_TEST_NAME}-test ${catkin_LIBRARIES} ${mrt_LIBRARIES})
 	endforeach()
 endif()
-
