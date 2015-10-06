@@ -63,9 +63,9 @@ def main(action, args):
     # Pass the rest to wstool
     ws.cd_src()
     if len(args) == 0:
-        subprocess.call(["wstool", action])
+        subprocess.call(["wstool", "-t", ws.src, action])
     else:
-        subprocess.call(["wstool", action] + list(args))
+        subprocess.call(["wstool", "-t", ws.src, action] + list(args))
 
     if action == "status":
         ws.unpushed_repos()

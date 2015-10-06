@@ -47,7 +47,7 @@ def url_in_package_xml(ws):
         try:
             with open(pkg_name + "/.git/config", 'r') as f:
                 git_ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
-        except IOError:
+        except (IOError, StopIteration):
             git_ssh_url = None
 
         # Try to read it from package xml

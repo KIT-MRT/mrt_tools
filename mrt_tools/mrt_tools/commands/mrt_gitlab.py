@@ -24,6 +24,37 @@ def create_ssh_key():
     SSHkey().create()
 
 
+@main.command()
+@click.argument("pkg_name", type=click.STRING, required=False)
+def create_repo(pkg_name):
+    """Create new gitlab token"""
+    ws = Workspace()
+    ws.recreate_index(write=True)
+    pkg_list = ws.get_catkin_package_names()
+    pkg_dicts = ws.get_wstool_packages()
+    if not pkg_name:
+        pkg_name = os.path.basename(ws.org_dir)
+
+    if pkg_name not in pkg_list:
+        click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
+        sys.exit(1)
+
+    click.echo("Creating repo for {0}".format(pkg_name))
+    for ps in ws.config.get_config_elements():
+        if ps.get_local_name() == pkg_name:
+            click.secho("Repository has a url already: {0}".format(ps.get_path_spec().get_uri()))
+            sys.exit(1)
+
+    ws.cd_src()
+    os.chdir(pkg_name)
+    git = Git()
+    ssh_url = git.create_repo(pkg_name)
+    subprocess.call("git init", shell=True)
+    subprocess.call("git remote add origin " + ssh_url + " >/dev/null 2>&1", shell=True)
+    ws.recreate_index()
+    click.echo("You should run 'mrt fix url_in_package_xml' now")
+
+
 ########################################################################################################################
 # Permissions
 ########################################################################################################################

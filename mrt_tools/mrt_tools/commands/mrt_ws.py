@@ -125,7 +125,7 @@ def update(ws, args):
         args += ("-j10",)
 
     # Pass the rest to wstool
-    subprocess.call(["wstool", "update"] + list(args))
+    subprocess.call(["wstool", "update", "-t", ws.src] + list(args))
 
 
 
