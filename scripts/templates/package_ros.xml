@@ -13,9 +13,12 @@
   <build_depend>message_generation</build_depend>
   <exec_depend>message_runtime</exec_depend>
   <test_depend>gtest</test_depend>
+  
   <build_depend>roscpp</build_depend>
   <!-- <build_depend>rospy</build_depend> Use this instead of roscpp  when writing a python node -->
-
+  <depend>roslib</depend>
+  <depend>nodelet</depend>
+  
   <!-- 
     Documentation for dependencies:
     <build_depend>            Build-time dependency required to build 

@@ -33,55 +33,10 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xx@ ## Declare ROS messages, services and actions ##
 @ x|xx@ ################################################
 @ x|xx@ 
-@ x|xx@ # To declare and build messages, services or actions from within this
-@ x|xx@ # package, follow these steps:
-@ x|xx@ # * Let MSG_DEP_SET be the set of packages whose message types you use in
-@ x|xx@ #   your messages/services/actions (e.g. std_msgs, actionlib_msgs, ...).
-@ x|xx@ # * In the file package.xml:
-@ x|xx@ #   * add a build_depend and a run_depend tag for each package in MSG_DEP_SET
-@ x|xx@ #   * If MSG_DEP_SET isn't empty the following dependencies might have been
-@ x|xx@ #     pulled in transitively but can be declared for certainty nonetheless:
-@ x|xx@ #     * add a build_depend tag for "message_generation"
-@ x|xx@ #     * add a run_depend tag for "message_runtime"
-@ x|xx@ # * In this file (CMakeLists.txt):
-@ x|xx@ #   * add "message_generation" and every package in MSG_DEP_SET to
-@ x|xx@ #     find_package(catkin REQUIRED COMPONENTS ...)
-@ x|xx@ #   * add "message_runtime" and every package in MSG_DEP_SET to
-@ x|xx@ #     catkin_package(CATKIN_DEPENDS ...)
-@ x|xx@ #   * uncomment the add_*_files sections below as needed
-@ x|xx@ #     and list every .msg/.srv/.action file to be processed
-@ x|xx@ #   * uncomment the generate_messages entry below
-@ x|xx@ #   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
-@ x|xx@ 
-@ x|xx@ # Generate messages in the 'msg' folder
-@ x|xx@ file(GLOB ROS_MESSAGE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}/msg" "msg/*.msg")
-@ x|xx@ if (ROS_MESSAGE_FILES)
-@ x|xx@ 	add_message_files(
-@ x|xx@ 	  FILES
-@ x|xx@ 	  ${ROS_MESSAGE_FILES}
-@ x|xx@ 	)
-@ x|xx@ 	set(ROS_GENERATE_MESSAGES True)
-@ x|xx@ endif()
-@ x|xx@ 
-@ x|xx@ # Generate services in the 'srv' folder
-@ x|xx@ file(GLOB ROS_SERVICE_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}/srv" "srv/*.srv")
-@ x|xx@ if (ROS_SERVICE_FILES)
-@ x|xx@ 	add_service_files(
-@ x|xx@ 	  FILES
-@ x|xx@ 	  ${ROS_SERVICE_FILES}
-@ x|xx@ 	)
-@ x|xx@ 	set(ROS_GENERATE_MESSAGES True)
-@ x|xx@ endif()
-@ x|xx@ 
-@ x|xx@ # Generate actions in the 'action' folder
-@ x|xx@ file(GLOB ROS_ACTION_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}/action" "action/*.action")
-@ x|xx@ if (ROS_ACTION_FILES)
-@ x|xx@ 	add_action_files(
-@ x|xx@ 	  FILES
-@ x|xx@ 	  ${ROS_ACTION_FILES}
-@ x|xx@ 	)
-@ x|xx@ 	set(ROS_GENERATE_MESSAGES True)
-@ x|xx@ endif()
+@ x|xx@ # Add message, service and action files
+@ x|xx@ glob_ros_files(add_message_files msg)
+@ x|xx@ glob_ros_files(add_service_files srv)
+@ x|xx@ glob_ros_files(add_action_files action)
 @ x|xx@ 
 @ x|xx@ # Generate added messages and services with any dependencies listed here
 @ x|xx@ if (ROS_GENERATE_MESSAGES)
@@ -91,26 +46,33 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xx@ 	)
 @ x|xx@ endif()
 @ x|xx@ 
+@ x|xx@ # Generate dynamic reconfigure options
+@ x|xx@ file(GLOB CFG_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "cfg/*.cfg")
+@ x|xx@ if (CFG_FILES)
+@ x|xx@ 	generate_dynamic_reconfigure_options(${CFG_FILES})
+@ x|xx@ endif()
+@ x|xx@ 
+@ x|xx@ 
 @xx|x @ ############################
 @xx|x @ ## read source code files ##
 @xx|x @ ############################
-@xx|x @ file(GLOB PROJECT_HEADER_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "include/*.h")
+@xx|x @ file(GLOB_RECURSE PROJECT_HEADER_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "include/*.h")
 @xx|x @ file(GLOB PROJECT_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "src/*.h")
 @xx|x @ file(GLOB PROJECT_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "src/*.cpp")
 @xx|x @ 
 @xx|x @ if (PROJECT_SOURCE_FILES_SRC)
 @xx|x @ 	set(LIBRARY_NAME ${PROJECT_NAME})
 @xx|x @ endif()
-@xx|x @ 
+ 
 ###################################
 ## catkin specific configuration ##
 ###################################
-# The catkin_package macro generates cmake config files for your package
-# Declare things to be passed to dependent projects
-# INCLUDE_DIRS: uncomment this if you package contains header files
-# LIBRARIES: libraries you create in this project that dependent projects also need
-# CATKIN_DEPENDS: catkin_packages dependent projects also need
-# DEPENDS: system dependencies of this project that dependent projects also need
+@xx|x @ # The catkin_package macro generates cmake config files for your package
+@xx|x @ # Declare things to be passed to dependent projects
+@xx|x @ # INCLUDE_DIRS: uncomment this if you package contains header files
+@xx|x @ # LIBRARIES: libraries you create in this project that dependent projects also need
+@xx|x @ # CATKIN_DEPENDS: catkin_packages dependent projects also need
+@xx|x @ # DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 @xx|x @   INCLUDE_DIRS include ${mrt_EXPORT_INCLUDE_DIRS}
 @xx|x @   LIBRARIES ${LIBRARY_NAME} ${mrt_EXPORT_LIBRARIES}
@@ -165,9 +127,9 @@ catkin_package(
 @ x| x@ 		# Add cmake target dependencies of the executable/library
 @ x| x@ 		# as an example, message headers may need to be generated before nodes
 @ x| x@ 		add_dependencies(${EXEC_NAME} ${catkin_EXPORTED_TARGETS})
-@ x| x@ 		if (${EXEC_NAME}_EXPORTED_TARGETS)
-@ x| x@ 		    add_dependencies(${EXEC_NAME} ${${EXEC_NAME}_EXPORTED_TARGETS})
-@ x| x@ 		endif (${EXEC_NAME}_EXPORTED_TARGETS)
+@ x| x@ 		if (CFG_FILES)
+@ x| x@ 			add_dependencies(${EXEC_NAME} ${EXEC_NAME}_gencfg)
+@ x| x@ 		endif()
 @ x| x@ 	
 @xx| x@ 		# Specify libraries to link a library or executable target against
 @xx| x@ 		target_link_libraries(${EXEC_NAME}
@@ -229,8 +191,9 @@ if (CATKIN_ENABLE_TESTING)
 	foreach(PROJECT_TEST_FILE_SRC ${PROJECT_TEST_FILES_SRC})
 		get_filename_component(PROJECT_TEST_NAME ${PROJECT_TEST_FILE_SRC} NAME_WE)
 		
-		catkin_add_gtest(${PROJECT_TEST_NAME}-test ${PROJECT_TEST_FILES_SRC})
-@xx|x @ 		target_link_libraries(${PROJECT_TEST_NAME}-test ${LIBRARY_NAME} ${catkin_LIBRARIES} ${mrt_LIBRARIES})
-@xx| x@ 		target_link_libraries(${PROJECT_TEST_NAME}-test ${catkin_LIBRARIES} ${mrt_LIBRARIES})
+		catkin_add_gtest(${PROJECT_TEST_NAME}-test ${PROJECT_TEST_FILE_SRC})
+@xx|x @ 		target_link_libraries(${PROJECT_TEST_NAME}-test ${LIBRARY_NAME} ${catkin_LIBRARIES} ${mrt_LIBRARIES} gtest_main)
+@xx| x@ 		target_link_libraries(${PROJECT_TEST_NAME}-test ${catkin_LIBRARIES} ${mrt_LIBRARIES} gtest_main)
 	endforeach()
 endif()
+
