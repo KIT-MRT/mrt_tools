@@ -110,11 +110,13 @@ class Git(object):
         """Returns a list of all namespaces in Gitlab"""
 
         click.echo("Retrieving namespaces...")
-        namespaces = {project['namespace']['name']: project['namespace']['id'] for project in self.get_repos()}
+        namespaces = list(self.server.getall(self.server.getgroups, per_page=100))
+        namespaces = sorted(namespaces, key=lambda k: k['name'])
         user_name = self.server.currentuser()['username']
-        if user_name not in list(namespaces.keys()):
-            namespaces[user_name] = 0  # The default user namespace_id will be created with first user project
-        return namespaces
+        namespace_dict = {ns['name']: ns['id'] for ns in namespaces}
+        if user_name not in list(namespace_dict.keys()):
+            namespace_dict[user_name] = 0
+        return namespace_dict
 
     def get_repos(self):
         """Returns a list of all repositories in Gitlab"""

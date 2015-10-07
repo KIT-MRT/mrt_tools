@@ -126,7 +126,6 @@ def add_user(git):
     shutil.rmtree("/tmp/mrtgitlab_test_ws")
 
 
-
 # @permissions.command()
 # @click.pass_obj
 # def add_group(git):
@@ -171,3 +170,17 @@ def groups(git):
     group_list = sorted(group_list, key=lambda k: k['name'])
     for index, item in enumerate(group_list):
         click.echo("(" + str(index) + ") " + item['name'])
+
+
+@show.command()
+@click.pass_obj
+def namespaces(git):
+    """Display a list of available namespaces"""
+    # ns_list = list(git.server.getall(git.server.getgroups, per_page=100))
+    # ns_list = sorted(ns_list, key=lambda k: k['name'])
+    # user_name = git.server.currentuser()['username']
+    # if user_name not in ns_list:
+    #     ns_list.append({'name': user_name, 'id': 0})
+    ns_list = git.get_namespaces()
+    for index, item in enumerate(ns_list):
+        click.echo("(" + str(index) + ") " + item)
