@@ -93,8 +93,9 @@ def url_in_package_xml(ws):
 
 @main.command()
 @click.argument("package", required=False)
+@click.option("--this", is_flag=True)
 @click.pass_obj
-def update_cmakelists(ws, package):
+def update_cmakelists(ws, package, this):
     """Update CMAKELISTS"""
     catkin_packages = ws.get_catkin_package_names()
 
@@ -108,11 +109,17 @@ def update_cmakelists(ws, package):
     if not current_version:
         raise Exception("current pkg_version could not be found.")
 
+    if this:
+        package = os.path.basename(ws.org_dir)
+        if package not in catkin_packages:
+            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
+            sys.exit(1)
     if not package:
         for pkg_name in catkin_packages:
             ws.cd_src()
             check_and_update_cmakelists(pkg_name, current_version)
     else:
+        ws.cd_src()
         check_and_update_cmakelists(package, current_version)
 
     click.secho("The commit is not yet pushed, in case you didn't really test the changes yet... You "
