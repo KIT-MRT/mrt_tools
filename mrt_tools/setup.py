@@ -15,6 +15,7 @@ setup(
     description='A toolbelt full of mrt scripts',
     long_description=__doc__,
     packages=find_packages(exclude=['tests']),
+    package_data={"mrt_tools": ['templates/*']},
     include_package_data=True,
     zip_safe=False,
     platforms='any',
