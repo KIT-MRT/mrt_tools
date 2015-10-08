@@ -1,3 +1,9 @@
+mrt-build (1.1.1-ubuntu2) trusty; urgency=low
+
+  * Bugfix in CMakeLists.txt
+
+ -- Johannes Beck <johannes.beck@kit.edu>  Thu, 08 Oct 2015 13:09:32 +0200
+
 mrt-build (1.1.1-ubuntu1) trusty; urgency=low
 
   * Small formatting fixes in CMakeLists.txt
