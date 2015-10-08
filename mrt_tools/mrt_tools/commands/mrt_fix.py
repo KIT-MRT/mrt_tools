@@ -10,7 +10,12 @@ import click
 @click.pass_context
 def main(ctx):
     """Repair tools..."""
-    ctx.obj = Workspace()
+    ctx.obj = Workspace(silent=True)
+
+    if not ctx.obj.exists() and ctx.invoked_subcommand != "update_repo_cache":
+        click.secho("No catkin workspace root found.", fg="red")
+        click.echo("This command must be invoked from within a workspace")
+        sys.exit(1)
 
 
 @main.command()

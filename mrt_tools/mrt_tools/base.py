@@ -721,26 +721,11 @@ def import_repo_names():
     Try to read in repos from cached file.
     If file is older than default_repo_cache_time seconds, a new list is retrieved from server.
     """
-    import time
-    import logging
-    logging.basicConfig(filename='/home/bandera/repos/tmp_ws/example.log', level=logging.DEBUG)
-
-    now = time.time()
     try:
-        # Read in last modification time
-        last_modification = os.path.getmtime(os.path.expanduser(default_repo_cache))
+        # Read in repo list from cache
+        with open(os.path.expanduser(default_repo_cache), "r") as f:
+            repos = f.read()
+        return repos.split(",")[:-1]
     except OSError:
-        # Set modification time to 2 * default_repo_cache_time ago
-        last_modification = now - 2 * default_repo_cache_decay_time
-        logging.debug("{0} does not exist yet.".format(default_repo_cache))
-
-    # Read new repo list from server if delta_t > default_repo_cache_time
-    if (now - last_modification) > default_repo_cache_decay_time:
-        logging.debug("Last modification date of {0} too old: {1} seconds old".format(default_repo_cache,
-                                                                                      now - last_modification))
         return []
 
-    # Read in repo list from cache
-    with open(os.path.expanduser(default_repo_cache), "r") as f:
-        repos = f.read()
-    return repos.split(",")[:-1]

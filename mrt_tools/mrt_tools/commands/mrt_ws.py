@@ -17,24 +17,6 @@ def main(ctx):
         click.echo("This command must be invoked from within a workspace")
         sys.exit(1)
 
-    # For caching
-    import time
-    now = time.time()
-    try:
-        # Read in last modification time
-        last_mod_lock = os.path.getmtime(os.path.expanduser(default_cache_lock))
-    except OSError:
-        # Set modification time to 2 * default_repo_cache_time ago
-        last_mod_lock = now - 2 * default_cache_lock_decay_time
-        touch(os.path.expanduser(default_cache_lock))
-
-    # Keep caching process from spawning several times
-    if (now - last_mod_lock) > default_cache_lock_decay_time:
-        touch(os.path.expanduser(default_cache_lock))
-        devnull = open(os.devnull, 'wb')  # use this in python < 3.3; python >= 3.3 has subprocess.DEVNULL
-        subprocess.Popen(['mrt fix update_repo_cache'], shell=True, stdout=devnull, stderr=devnull)
-
-
 
 @main.command()
 @click.pass_obj
@@ -126,8 +108,3 @@ def update(ws, args):
 
     # Pass the rest to wstool
     subprocess.call(["wstool", "update", "-t", ws.src] + list(args))
-
-
-
-
-

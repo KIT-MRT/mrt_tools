@@ -10,7 +10,6 @@ import sys
 import os
 import re
 
-
 def get_script_root():
     """
     Get the path of this script.
@@ -263,4 +262,29 @@ def set_eclipse_project_setting():
         shutil.copy(script_dir + "/templates/language.settings.xml", "./.settings")
 
 
+def cache_repos():
+    # For caching
+    import time
+
+    import logging
+    logging.basicConfig(filename="/home/bandera/mrt.log",level="DEBUG")
+    logging.debug("test")
+
+    now = time.time()
+    try:
+        # Read in last modification time
+        last_mod_lock = os.path.getmtime(os.path.expanduser(default_cache_lock))
+    except OSError:
+        # Set modification time to 2 * default_repo_cache_time ago
+        last_mod_lock = now - 2 * default_cache_lock_decay_time
+        touch(os.path.expanduser(default_cache_lock))
+
+    # Keep caching process from spawning several times
+    if (now - last_mod_lock) > default_cache_lock_decay_time:
+        touch(os.path.expanduser(default_cache_lock))
+        devnull = open(os.devnull, 'wb')  # use this in python < 3.3; python >= 3.3 has subprocess.DEVNULL
+        subprocess.Popen(['mrt fix update_repo_cache'], shell=True, stdout=devnull, stderr=devnull)
+
+
 self_dir = get_script_root()
+cache_repos()
