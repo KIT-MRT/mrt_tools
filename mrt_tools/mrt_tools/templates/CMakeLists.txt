@@ -117,7 +117,7 @@ catkin_package(
 @xx| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h")
 @xx| x@ 	file(GLOB EXEC_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.cpp")
 @xx| x@ 
-@xx| x@ 	if (PROJECT_SOURCE_FILES_SRC)
+@xx| x@ 	if (EXEC_SOURCE_FILES_SRC)
 @xx| x@ 		#add executable
 @xx| x@ 		add_executable(${EXEC_NAME}
 @xx| x@ 			${EXEC_SOURCE_FILES_INC}
