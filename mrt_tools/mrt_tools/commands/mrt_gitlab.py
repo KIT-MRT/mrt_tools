@@ -40,7 +40,7 @@ def create_repo(pkg_name):
         sys.exit(1)
 
     click.echo("Creating repo for {0}".format(pkg_name))
-    for ps in ws.config.get_config_elements():
+    for ps in ws.wstool_config.get_config_elements():
         if ps.get_local_name() == pkg_name:
             click.secho("Repository has a url already: {0}".format(ps.get_path_spec().get_uri()))
             sys.exit(1)

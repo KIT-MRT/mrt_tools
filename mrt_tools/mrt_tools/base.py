@@ -1,5 +1,6 @@
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
 from requests.exceptions import ConnectionError
+from catkin_tools.context import Context
 from requests.packages import urllib3
 from mrt_tools.utilities import *
 from mrt_tools.settings import *
@@ -332,10 +333,11 @@ class Workspace(object):
     def __init__(self, silent=False):
         self.org_dir = os.getcwd()
         self.root = self.get_root()
-        self.config = None
         self.updated_apt = False
+        self.wstool_config = None
         self.wstool_pks = None
         self.wstool_pkg_names = None
+        self.catkin_config = None
         self.catkin_pkgs = None
         self.catkin_pkg_names = None
 
@@ -426,17 +428,18 @@ class Workspace(object):
 
     def load(self):
         """Read in .rosinstall from workspace"""
-        self.config = multiproject_cli.multiproject_cmd.get_config(self.src, config_filename=".rosinstall")
+        self.wstool_config = multiproject_cli.multiproject_cmd.get_config(self.src, config_filename=".rosinstall")
+        self.catkin_config = Context.load()
         self.catkin_pkgs = self.get_catkin_packages()
 
     def write(self):
         """Write to .rosinstall in workspace"""
-        config_yaml.generate_config_yaml(self.config, self.src + ".rosinstall", "")
+        config_yaml.generate_config_yaml(self.wstool_config, self.src + ".rosinstall", "")
 
     def add(self, pkg_name, url, update=True):
         """Add a repository to the workspace"""
         ps = config_yaml.PathSpec(pkg_name, "git", url)
-        self.config.add_path_spec(ps)
+        self.wstool_config.add_path_spec(ps)
         if update:
             self.write()
             self.update_only(pkg_name)
@@ -508,7 +511,7 @@ class Workspace(object):
     def test_for_changes(self, pkg_name=None, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server """
         # Parse git status messages
-        statuslist = multiproject_cmd.cmd_status(self.config, untracked=True)
+        statuslist = multiproject_cmd.cmd_status(self.wstool_config, untracked=True)
         statuslist = [{k["entry"].get_local_name(): k["status"]} for k in statuslist if k["status"] != ""]
 
         if pkg_name:
@@ -529,7 +532,7 @@ class Workspace(object):
 
     def snapshot(self, filename):
         """Writes current workspace configuration to file"""
-        source_aggregate = multiproject_cmd.cmd_snapshot(self.config)
+        source_aggregate = multiproject_cmd.cmd_snapshot(self.wstool_config)
         with open(filename, 'w') as f:
             f.writelines(yaml.safe_dump(source_aggregate))
 
@@ -544,7 +547,7 @@ class Workspace(object):
 
     def get_wstool_packages(self):
         """Returns a list of all wstool packages in ws"""
-        return self.config.get_config_elements()
+        return self.wstool_config.get_config_elements()
 
     def get_wstool_package_names(self):
         """Returns a list of all wstool packages in ws"""
@@ -633,7 +636,7 @@ class Workspace(object):
         """Goes through all directories within the workspace and checks whether the rosinstall file is up to date."""
         self.catkin_pkg_names = self.get_catkin_package_names()
 
-        self.config = wstool_config.Config([], self.src)
+        self.wstool_config = wstool_config.Config([], self.src)
         self.cd_src()
 
         for pkg in self.catkin_pkg_names:
