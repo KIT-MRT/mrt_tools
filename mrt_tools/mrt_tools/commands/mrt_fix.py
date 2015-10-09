@@ -163,7 +163,8 @@ def update_repo_cache():
         git = Git(token=token)
         repo_dicts = git.get_repos()
     except:
-        # In case the connection didn't succeed, the file is going to be flushed.
+        # In case the connection didn't succeed, the file is going to be flushed -> we don't seem to have a
+        # connection anyway and don't want old data.
         repo_dicts = []
 
     file_name = os.path.expanduser(default_repo_cache)

@@ -61,11 +61,10 @@ def main(action, args):
             args += ("--untracked",)
 
     # Pass the rest to wstool
-    ws.cd_src()
     if len(args) == 0:
-        subprocess.call(["wstool", "-t", ws.src, action])
+        subprocess.call(["wstool", action, "-t", ws.src])
     else:
-        subprocess.call(["wstool", "-t", ws.src, action] + list(args))
+        subprocess.call(["wstool", action, "-t", ws.src] + list(args))
 
     if action == "status":
         ws.unpushed_repos()
