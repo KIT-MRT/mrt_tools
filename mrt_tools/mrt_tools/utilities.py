@@ -266,10 +266,6 @@ def cache_repos():
     # For caching
     import time
 
-    import logging
-    logging.basicConfig(filename="/home/bandera/mrt.log",level="DEBUG")
-    logging.debug("test")
-
     now = time.time()
     try:
         # Read in last modification time
