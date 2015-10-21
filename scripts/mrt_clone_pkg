@@ -1,7 +1,7 @@
 #!/bin/bash
 
 if [ "$#" -ne 1 ] && [ "$#" -ne 2 ]; then
-	echo "mrt_checkout_packge <package name> [git uri]"
+	echo "mrt_checkout_packge <package name> [git uri] [https]"
 fi
 
 if [ -z "$ROS_ROOT" ]; then
@@ -40,11 +40,29 @@ if ! [ -f "src/.rosinstall" ]; then
 	wstool init ./src > /dev/null
 fi
 
+if [ "-http" == "$2" ]; then
+	useHttp=true
+	autoInstall=false
+elif [ "-httpy" == "$2" ]; then
+	useHttp=true
+	autoInstall=true
+elif [ "-y" == "$2" ]; then
+	useHttp=false
+	autoInstall=true
+else
+	useHttp=false
+	autoInstall=false
+fi
+
 #check for ssh key
-ssh -T -o "StrictHostKeyChecking=no" -o "BatchMode=yes" -o "ConnectTimeout=3" git@gitlab.mrt.uni-karlsruhe.de >/dev/null 2>&1
-if [ $? -ne 0 ]; then
-	echo "Your SSH Key does not seem to work. Have you created one and added it to gitlab?";
-	exit 1;
+if [ "$#" -eq 2 ]; then
+	if [ "$useHttp" = false ]; then
+		ssh -T -o "StrictHostKeyChecking=no" -o "BatchMode=yes" -o "ConnectTimeout=3" git@gitlab.mrt.uni-karlsruhe.de >/dev/null 2>&1
+		if [ $? -ne 0 ]; then
+			echo "Your SSH Key does not seem to work. Have you created one and added it to gitlab?";
+			exit 1;
+		fi
+	fi
 fi
 
 PACKAGE_NAME=$1
@@ -52,12 +70,16 @@ PACKAGE_NAME=$1
 if [ "$#" -eq 1 ]; then
 	GIT_REPOSITORY="git@gitlab.mrt.uni-karlsruhe.de:MRT/$PACKAGE_NAME.git"
 else
-	GIT_REPOSITORY=$2
+	if [ "$useHttp" = true ]; then
+		GIT_REPOSITORY="https://gitlab.mrt.uni-karlsruhe.de/MRT/$PACKAGE_NAME.git"
+	else
+		GIT_REPOSITORY=$2
+	fi
 fi
 
-GIT_ERROR="$(git ls-remote $GIT_REPOSITORY 2>&1 > /dev/null)"
+GIT_ERROR="$(git ls-remote $GIT_REPOSITORY)"
 
-if ! [ -z "$GIT_ERROR" ]; then
+if [[ "$GIT_ERROR" == "" ]]; then
 	echo "Git repository not found: $GIT_REPOSITORY"
 	exit 1
 fi
@@ -69,5 +91,13 @@ echo "$(tput setaf 2)Found in $GIT_REPOSITORY. Cloning.$(tput sgr0)"
 wstool update $PACKAGE_NAME -t ./src > /dev/null
 
 #resolve deps
-mrt_resolve_deps
+if [ "$autoInstall" = true ]; then
+	autoInstallParam="-y"
+fi
+
+if [ "$useHttp" = false ]; then
+	mrt_resolve_deps $autoInstallParam
+else
+	mrt_resolve_deps -http $autoInstallParam
+fi
 

@@ -1,8 +1,11 @@
 /mrtsoftware/scripts/mrt_catkin /usr/bin/mrt_catkin
+/mrtsoftware/scripts/mrt_check_pkg /usr/bin/mrt_check_pkg
+/mrtsoftware/scripts/mrt_check_ws /usr/bin/mrt_check_ws
 /mrtsoftware/scripts/mrt_clone_pkg /usr/bin/mrt_clone_pkg
 /mrtsoftware/scripts/mrt_create_pkg /usr/bin/mrt_create_pkg
 /mrtsoftware/scripts/mrt_init_workspace /usr/bin/mrt_init_workspace
 /mrtsoftware/scripts/mrt_resolve_deps /usr/bin/mrt_resolve_deps
 /mrtsoftware/scripts/mrt_wstool /usr/bin/mrt_wstool
 /mrtsoftware/scripts/mrt_setup_gitlab /usr/bin/mrt_setup_gitlab
+
 

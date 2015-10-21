@@ -48,7 +48,7 @@ def updateAptAndRosPackages():
     subprocess.check_call(["sudo", "apt-get", "install", "--only-upgrade", "mrt-cmake-modules", "--yes"], stdout=FNULL)
     subprocess.check_call(["rosdep", "update"], stdout=FNULL)
 
-def main():
+def main(useHttp, autoInstall):
     if not "LD_LIBRARY_PATH" in os.environ or not "/opt/ros" in os.environ["LD_LIBRARY_PATH"]:
         print "ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash"
         sys.exit(1)
@@ -120,12 +120,18 @@ def main():
                    
             elif len(gitlabProjects) == 1:
                 #only one project found select this on.
-                sshUrl = gitlabProjects[0]["ssh_url_to_repo"]
+                if useHttp:
+                    sshUrl = gitlabProjects[0]["http_url_to_repo"]
+                else:
+                    sshUrl = gitlabProjects[0]["ssh_url_to_repo"]
             else:
                 #multiple gitlab projects found. Prompt user.
                 print "Multiple gitlab projects found:"
                 for idx, gitlabProject in enumerate(gitlabProjects):
-                    print "[" + str(idx) + "]: " + gitlabProject["ssh_url_to_repo"]
+                    if useHttp:
+                        print "[" + str(idx) + "]: " + gitlabProject["http_url_to_repo"]
+                    else:
+                        print "[" + str(idx) + "]: " + gitlabProject["ssh_url_to_repo"]
                 
                 selectionInt = -1
                 while True:
@@ -137,8 +143,11 @@ def main():
                         break;
                     except ValueError:
                         print "Invalid input. Try again."
-                    
-                sshUrl = gitlabProjects[idx]["ssh_url_to_repo"]
+                
+                if useHttp:
+                    sshUrl = gitlabProjects[idx]["http_url_to_repo"]
+                else:
+                    sshUrl = gitlabProjects[idx]["ssh_url_to_repo"]
                 
             #add specified git repository (ignore errors because repository could be added but not checked out)
             FNULL = open(os.devnull, 'w')
@@ -147,7 +156,13 @@ def main():
             subprocess.call(["wstool", "update", missing_package, "-t", "src"], stdout=FNULL)
 
     #install missing system dependencies
-    subprocess.check_call(["rosdep", "install", "--from-paths", "src", "--ignore-src"])
+    if autoInstall:
+        subprocess.check_call(["rosdep", "install", "--from-paths", "src", "--ignore-src", "-y"])
+    else:
+        subprocess.check_call(["rosdep", "install", "--from-paths", "src", "--ignore-src"])
 
 if __name__ == "__main__":
-    main()
+    useHttp = "-http" in sys.argv
+    autoInstall = "-y" in sys.argv
+    main(useHttp, autoInstall)
+    
