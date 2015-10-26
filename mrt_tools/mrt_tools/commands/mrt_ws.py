@@ -108,17 +108,3 @@ def update(ws, args):
 
     # Pass the rest to wstool
     subprocess.call(["wstool", "update", "-t", ws.src] + list(args))
-
-
-@main.command()
-@click.pass_obj
-def source(ws):
-    """Sources the setup.bash of the current ws"""
-    if ws.catkin_config.install:
-        # Source setup.bash from install folder
-        click.echo("Sourcing install/setup.bash")
-        subprocess.call(["/bin/bash", os.path.join(ws.src, "install", "setup.bash")], shell=True)
-    else:
-        # Source setup.bash from devel folder
-        click.echo("Sourcing devel/setup.bash")
-        subprocess.call(["/bin/bash", os.path.join(ws.src, "devel", "setup.bash")], shell=True)
