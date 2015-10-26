@@ -112,9 +112,9 @@ def zip_files(files, archive):
 
 
 def check_naming(pkg_name):
-    while re.match("^[a-z][a-z_]+$", pkg_name) is None:
+    while re.match("^[a-z][a-z_0-9]+$", pkg_name) is None:
         pkg_name = str(
-            input("Please enter a package name containing only [a-z] and _ (First char must be a letter): "))
+            input("Please enter a package name containing only [a-z], [0-9] and _ (First char must be a letter): "))
 
     # Fail safe
     if pkg_name[-4:] == "_ros":
