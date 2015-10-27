@@ -65,11 +65,11 @@ class Git(object):
             local_keys = self.get_local_ssh_keys()
             user_choice = get_user_choice([key.name for key in local_keys], extra="Create new key.",
                                           prompt="No ssh key match found. Which ssh key should we use?")
-            if user_choice is None:
+            if user_choice[1] == "Create new key.":
                 self.ssh_key = SSHkey()
                 self.ssh_key.create()
             else:
-                self.ssh_key = local_keys[user_choice]
+                self.ssh_key = local_keys[user_choice[0]]
             self.upload_ssh_key()
 
     def connect(self):
@@ -153,8 +153,8 @@ class Git(object):
                                           prompt="More than one repo with \"" + str(
                                               pkg_name) + "\" found. Please choose")
 
-        ssh_url = exact_hits[user_choice]['ssh_url_to_repo']
-        click.secho("Found " + exact_hits[user_choice]['path_with_namespace'], fg='green')
+        ssh_url = exact_hits[user_choice[0]]['ssh_url_to_repo']
+        click.secho("Found " + exact_hits[user_choice[0]]['path_with_namespace'], fg='green')
 
         return ssh_url
 

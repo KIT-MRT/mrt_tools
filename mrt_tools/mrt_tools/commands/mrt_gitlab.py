@@ -76,16 +76,15 @@ def add_user(git):
     repo_dicts = git.get_repos()
     repo_dicts = sorted(repo_dicts, key=lambda k: k['path_with_namespace'])
     user_choice = get_user_choice([user["name"] for user in users], prompt="Please choose a user")
-    user = users[user_choice]
+    user = users[user_choice[0]]
     repo_choice = get_user_choice([repo["path_with_namespace"] for repo in repo_dicts], prompt="Please choose a repo.")
-    repo = repo_dicts[repo_choice]
+    repo = repo_dicts[repo_choice[0]]
     roles = ["Guest", "Reporter", "Developer", "Master", "Owner"]
     role_choice = get_user_choice(roles, prompt='Please choose a role for the user.', default=2)
-    role = roles[role_choice]
 
     click.echo("\nAdding user {0} to repo {1} with role {2}\n".format(user["name"].upper(),
                                                                       repo["path_with_namespace"].upper(),
-                                                                      roles[role_choice].upper()))
+                                                                      role_choice[1].upper()))
     git.server.addprojectmember(repo["id"], user["id"], role)
     if not click.confirm("Should I test dependencies?", default=True):
         return
@@ -119,8 +118,7 @@ def add_user(git):
                                                             r.upper()))
         repo_id = [s["id"] for s in repo_dicts if s["name"] == r]
         role_choice = get_user_choice(roles, prompt='Please choose a role for the user for this repo.', default=2)
-        role = roles[role_choice]
-        git.server.addprojectmember(repo_id[0], user["id"], role)
+        git.server.addprojectmember(repo_id[0], user["id"], role_choice[1])
 
     # Add user as well
     os.chdir(org_dir)

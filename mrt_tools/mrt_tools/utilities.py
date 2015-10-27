@@ -10,6 +10,7 @@ import sys
 import os
 import re
 
+
 def get_script_root():
     """
     Get the path of this script.
@@ -64,25 +65,24 @@ def get_userinfo():
 
 
 def get_user_choice(items, extra=None, prompt="Please choose a number", default=None):
-    # Print choices
-    valid_choices = []
-    for index, item in enumerate(items):
-        valid_choices.append(index)
-        click.echo("(" + str(valid_choices[-1]) + ") " + item)
-    valid_choices = list(range(0, len(items)))
+    # Test for extra choices
+    if not extra:
+        extra = []
+    if not isinstance(extra, list):
+        extra = [extra]
 
-    # Add default choice
-    if extra:
-        valid_choices.append(len(items))
-        click.echo("(" + str(valid_choices[-1]) + ") " + str(extra))
+    # Create choices
+    choices = {index: item for index, item in enumerate(items + extra)}
+
+    # Print choices
+    for key, value in choices.items():
+        click.echo("(" + str(key) + ") " + str(value))
+
+    # Get choice
     while True:
-        user_choice = click.prompt(prompt + ' [0-' + str(valid_choices[-1]) + ']', type=int, default=default)
-        if user_choice in valid_choices:
-            if extra is not None and user_choice is valid_choices[-1]:
-                # Return None if default was chosen
-                return None
-            else:
-                return user_choice
+        user_choice = click.prompt(prompt + ' [0-' + str(choices.keys()[-1]) + ']', type=int, default=default)
+        if user_choice in choices.keys():
+            return user_choice, choices[user_choice]
 
 
 def touch(filename, times=None):
