@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+#update rosdep
+source /opt/ros/jade/setup.bash
+rosdep update
+
+#add credential helper for git
+mkdir ~/.git
+git config --global credential.helper store
+
+#copy token file
+mkdir ~/.mrtgitlab
+cp /tmp/.mrtgitlab/.token ~/.mrtgitlab/.token
+
+#create new workspace and clone package
+cd ~
+mkdir ws
+cd ws
+
+mrt_init_workspace
+mrt_clone_pkg $@ -httpy
+mrt_catkin build --release
+
