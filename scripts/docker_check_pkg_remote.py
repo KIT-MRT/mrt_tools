@@ -1,4 +1,4 @@
-#!/usr/bin/bash
+#!/usr/bin/python
 
 import paramiko
 import getpass
