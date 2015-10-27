@@ -143,13 +143,6 @@ def recreate_rosinstall(ws):
 
 
 @main.command()
-@click.pass_obj
-def resolve_deps(ws):
-    """Resolve dependencies for packages"""
-    ws.resolve_dependencies()
-
-
-@main.command()
 def update_repo_cache():
     """
     Read repo list from server and write it into caching file.

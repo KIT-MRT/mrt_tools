@@ -108,3 +108,10 @@ def update(ws, args):
 
     # Pass the rest to wstool
     subprocess.call(["wstool", "update", "-t", ws.src] + list(args))
+
+
+@main.command()
+@click.pass_obj
+def resolve_deps(ws):
+    """Resolve dependencies for packages"""
+    ws.resolve_dependencies()
