@@ -133,7 +133,7 @@ def update_cmakelists(ws, package, this):
 
 @main.command()
 @click.pass_obj
-def recreate_rosinstall(ws):
+def update_rosinstall(ws):
     """Reinitialise the workspace index"""
     ws.cd_src()
     click.secho("Removing wstool database src/.rosinstall", fg="yellow")

@@ -179,9 +179,9 @@ class Git(object):
         # Dialog to choose namespace
         click.echo("Available namespaces in gitlab, please select one for your new project:")
         namespaces = self.get_namespaces()
-        choice_index = get_user_choice(namespaces.keys())
-        click.echo("Using namespace '" + list(namespaces.keys())[int(choice_index)] + "'")
-        ns_id = list(namespaces.values())[int(choice_index)]
+        choice_index, choice_value = get_user_choice(namespaces.keys())
+        click.echo("Using namespace '" + choice_value + "'")
+        ns_id = namespaces[choice_value]
 
         # Check whether repo exists
         url = self.find_repo(pkg_name, list(namespaces.keys())[int(choice_index)])
@@ -200,8 +200,8 @@ class Git(object):
             sys.exit(1)
 
         # Return URL
-        click.echo("Repository URL is: " + response[self.url_string])
-        return response[self.url_string]
+        click.echo("Repository URL is: " + response[self.get_url_string()])
+        return response[self.get_url_string()]
 
     @staticmethod
     def get_local_ssh_keys(path=SSH_PATH):

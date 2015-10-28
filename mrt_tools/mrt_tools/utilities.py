@@ -279,7 +279,7 @@ def cache_repos():
     if (now - last_mod_lock) > CACHE_LOCK_DECAY_TIME:
         touch(os.path.expanduser(CACHE_LOCK_FILE))
         devnull = open(os.devnull, 'wb')  # use this in python < 3.3; python >= 3.3 has subprocess.DEVNULL
-        subprocess.Popen(['mrt fix update_repo_cache'], shell=True, stdout=devnull, stderr=devnull)
+        subprocess.Popen(['mrt maintenance update_repo_cache'], shell=True, stdout=devnull, stderr=devnull)
 
 
 self_dir = get_script_root()
