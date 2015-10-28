@@ -54,6 +54,11 @@ def add(ws, pkg_name):
 @click.pass_obj
 def remove(ws, pkg_name):
     """Delete package from workspace."""
+    pkg_list = ws.get_catkin_package_names()
+    if pkg_name:
+        if pkg_name not in pkg_list:
+            click.secho("Package does not exist.", fg="red")
+            sys.exit(1)
     ws.test_for_changes(pkg_name)
     ws.cd_src()
     click.echo("Removing {0}".format(pkg_name))
