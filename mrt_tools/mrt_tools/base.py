@@ -467,12 +467,13 @@ class Workspace(object):
         """Add a repository to the workspace"""
         ps = config_yaml.PathSpec(pkg_name, "git", url)
         self.wstool_config.add_path_spec(ps)
-        # Fix for issue #9 to make ros cfg files executable
-        subprocess.call("find "+os.path.join(self.src, pkg_name)+" -name \*.cfg -exec chmod 755 {} \;",
-                        shell=True)
+
         if update:
             self.write()
             self.update_only(pkg_name)
+            # Fix for issue #9 to make ros cfg files executable
+            subprocess.call("find "+os.path.join(self.src, pkg_name)+" -name \*.cfg -exec chmod 755 {} \;",
+                            shell=True)
 
     def find(self, pkg_name):
         """Test whether package exists"""
@@ -638,7 +639,7 @@ class Workspace(object):
                 # Search for package in gitlab
                 url = git.find_repo(missing_package)
                 if url:
-                    self.add(missing_package, url, update=False)
+                    self.add(missing_package, url, update=True)
                     gitlab_packages.append(missing_package)
                 else:
                     # no Gitlab project found
@@ -657,7 +658,6 @@ class Workspace(object):
                         sys.exit(1)
             # Load new gitlab packages
             self.write()
-            self.update_only(gitlab_packages)
 
         # install missing system dependencies
         subprocess.check_call(["rosdep", "install", "--from-paths", self.src, "--ignore-src"])

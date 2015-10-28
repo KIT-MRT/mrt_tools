@@ -29,7 +29,7 @@ def create_default_config():
 
     config.add_section('Gitlab')
     config.set('Gitlab', 'HOST_URL', "https://gitlab.mrt.uni-karlsruhe.de")
-    config.set('Gitlab', 'GIT_CACHE_TIMEOUT', "3600")
+    config.set('Gitlab', 'GIT_CACHE_TIMEOUT', "900")   # in seconds
 
     config.add_section('Snapshot')
     config.set('Snapshot', 'FILE_ENDING', ".snapshot")
