@@ -1,14 +1,20 @@
 #!/usr/bin/python
 import ConfigParser
+import shutil
+import click
+import sys
 import os
 
 CONFIG_FILE = os.path.expanduser("~/.mrtgitlab/mrt.cfg")
 config = ConfigParser.ConfigParser()
 
-if not os.path.exists(CONFIG_FILE):
+def create_default_config():
+    click.echo("Creating new config file with default values.")
+
     # Create config file with default settings
     config.add_section('Token')
     config.set('Token', 'TOKEN_PATH', os.path.expanduser("~/.mrtgitlab/.token"))
+    config.set('Token', 'SAVE_TOKEN', "True")
 
     config.add_section('SSH')
     config.set('SSH', 'USE_SSH', "False")
@@ -36,29 +42,41 @@ if not os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, 'wb') as configfile:
         config.write(configfile)
 
-# Read in config file
-config.read(CONFIG_FILE)
+try:
+    if not os.path.exists(CONFIG_FILE):
+        create_default_config()
 
-# Token
-TOKEN_PATH = config.get('Token', 'TOKEN_PATH')
-# SSH Keys
-USE_SSH = config.getboolean('SSH', 'USE_SSH')
-SSH_PATH = config.get('SSH', 'SSH_PATH')
-SSH_KEY_NAME = config.get('SSH', 'SSH_KEY_NAME')
-# Cache
-CACHE_FILE = config.get('Cache', 'CACHE_FILE')
-CACHE_LOCK_FILE = config.get('Cache', 'CACHE_LOCK_FILE')
-CACHE_DECAY_TIME = config.getint('Cache', 'CACHE_DECAY_TIME')
-CACHE_LOCK_DECAY_TIME = config.getint('Cache', 'CACHE_LOCK_DECAY_TIME')
+    # Read in config file
+    config.read(CONFIG_FILE)
 
-# Gitlab
-HOST_URL = config.get('Gitlab', 'HOST_URL')
-GIT_CACHE_TIMEOUT = config.getint('Gitlab', 'GIT_CACHE_TIMEOUT')
+    # Token
+    TOKEN_PATH = config.get('Token', 'TOKEN_PATH')
+    SAVE_TOKEN = config.getboolean('Token', 'SAVE_TOKEN')
 
-# Snapshot
-FILE_ENDING = config.get('Snapshot', 'FILE_ENDING')
-SNAPSHOT_VERSION = config.get('Snapshot', 'SNAPSHOT_VERSION')
-VERSION_FILE = config.get('Snapshot', 'VERSION_FILE')
+    # SSH Keys
+    USE_SSH = config.getboolean('SSH', 'USE_SSH')
+    SSH_PATH = config.get('SSH', 'SSH_PATH')
+    SSH_KEY_NAME = config.get('SSH', 'SSH_KEY_NAME')
+    # Cache
+    CACHE_FILE = config.get('Cache', 'CACHE_FILE')
+    CACHE_LOCK_FILE = config.get('Cache', 'CACHE_LOCK_FILE')
+    CACHE_DECAY_TIME = config.getint('Cache', 'CACHE_DECAY_TIME')
+    CACHE_LOCK_DECAY_TIME = config.getint('Cache', 'CACHE_LOCK_DECAY_TIME')
+
+    # Gitlab
+    HOST_URL = config.get('Gitlab', 'HOST_URL')
+    GIT_CACHE_TIMEOUT = config.getint('Gitlab', 'GIT_CACHE_TIMEOUT')
+
+    # Snapshot
+    FILE_ENDING = config.get('Snapshot', 'FILE_ENDING')
+    SNAPSHOT_VERSION = config.get('Snapshot', 'SNAPSHOT_VERSION')
+    VERSION_FILE = config.get('Snapshot', 'VERSION_FILE')
+
+except ConfigParser.Error:
+    if click.confirm("There was an error reading the config. Recreate with default values?"):
+        click.echo("Removing config file. Please try again now.")
+        os.remove(CONFIG_FILE)
+    sys.exit(1)
 
 
 def print_config():

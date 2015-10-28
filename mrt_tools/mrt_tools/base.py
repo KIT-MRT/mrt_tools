@@ -299,6 +299,15 @@ class Token(object):
         Read in the token from a specified path
         """
         try:
+            # If token is not to be stored on the system
+            # TODO This is not completely safe yet.
+            if not SAVE_TOKEN:
+                import time
+                now = time.time()
+                # Read in last modification time
+                last_mod = os.path.getmtime(path)
+                if (now - last_mod) > GIT_CACHE_TIMEOUT:
+                    os.remove(path)
             return os.read(os.open(path, 0), 20)
         except (IOError, OSError):
             return ""
@@ -327,7 +336,11 @@ class Token(object):
                 click.secho("No connection to server. Are you connected to the internet?", fg="red")
 
         self.token = gitlab_user['private_token']
-        self.write()
+
+        if not USE_SSH:
+            subprocess.call("git config credential.https://example.com.username myusername", shell=True)
+        if SAVE_TOKEN:
+            self.write()
 
     def write(self):
         """Write to file"""
