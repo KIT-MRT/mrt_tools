@@ -30,13 +30,13 @@ except KeyError:
 
 
 class Git(object):
-    def __init__(self, token=None, host=default_host, use_ssh=False):
+    def __init__(self, token=None, host=HOST_URL):
         # Host URL
         self.host = host
         self.token = token
         self.server = None
         self.ssh_key = None
-        self.use_ssh = use_ssh
+        self.use_ssh = USE_SSH
 
         if is_bashcompletion:
             self.connect()
@@ -204,7 +204,7 @@ class Git(object):
         return response[self.url_string]
 
     @staticmethod
-    def get_local_ssh_keys(path=default_ssh_path):
+    def get_local_ssh_keys(path=SSH_PATH):
         path = os.path.expanduser(path)
         keys = []
         try:
@@ -220,7 +220,7 @@ class Git(object):
 class SSHkey(object):
     """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
 
-    def __init__(self, name=default_ssh_key_name, key="", dir_path=default_ssh_path):
+    def __init__(self, name=SSH_KEY_NAME, key="", dir_path=SSH_PATH):
         self.name = name
         self.secret_key = ""
         self.dir_path = os.path.expanduser(dir_path)
@@ -284,7 +284,7 @@ class Token(object):
     The token file is an authentication key for communicating with the gitlab server through the python API.
     """
 
-    def __init__(self, path=default_token_path, allow_creation=True):
+    def __init__(self, path=TOKEN_PATH, allow_creation=True):
         self.path = os.path.expanduser(path)
         self.token = self.load(self.path)
         if not self and allow_creation:
@@ -311,7 +311,7 @@ class Token(object):
         """
         click.echo("No existing gitlab token file found. Creating new one...")
 
-        tmp_git_obj = gitlab.Gitlab(default_host)
+        tmp_git_obj = gitlab.Gitlab(HOST_URL)
         gitlab_user = None
         while gitlab_user is None:
             try:
@@ -739,7 +739,7 @@ def import_repo_names():
     """
     try:
         # Read in repo list from cache
-        with open(os.path.expanduser(default_repo_cache), "r") as f:
+        with open(os.path.expanduser(CACHE_FILE), "r") as f:
             repos = f.read()
         return repos.split(",")[:-1]
     except OSError:

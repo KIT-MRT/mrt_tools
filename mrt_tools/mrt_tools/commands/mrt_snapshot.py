@@ -23,7 +23,7 @@ def create(name):
     The .rosinstall file pins every repository to the commit it is at right now.
     """
     suffix = "_" + time.strftime("%y%m%d")
-    snapshot_name = name + suffix + file_ending
+    snapshot_name = name + suffix + FILE_ENDING
     filename = os.path.join(os.getcwd(), snapshot_name)
 
     # First test whether it's safe to create a snapshot
@@ -35,13 +35,13 @@ def create(name):
     ws.snapshot(filename=".rosinstall")
 
     # Create archive
-    with open(version_file, "w") as f:
-        f.write(snapshot_version)
-    files = [('.rosinstall', 'src/.rosinstall'), '.catkin_tools', version_file]
+    with open(VERSION_FILE, "w") as f:
+        f.write(SNAPSHOT_VERSION)
+    files = [('.rosinstall', 'src/.rosinstall'), '.catkin_tools', VERSION_FILE]
     files += [os.path.join(dp, f) for dp, dn, fn in os.walk(".catkin_tools") for f in fn]
     zip_files(files, filename)
     os.remove(".rosinstall")
-    os.remove(version_file)
+    os.remove(VERSION_FILE)
     click.secho("Wrote snapshot to " + filename, fg="green")
 
 
@@ -62,10 +62,10 @@ def restore(name):
     try:
         zf = zipfile.ZipFile(filename, "r", zipfile.ZIP_DEFLATED)
         # file_list = [f.filename for f in zf.filelist]
-        version = zf.read(version_file)
+        version = zf.read(VERSION_FILE)
     except IOError:
         click.echo(os.getcwd())
-        click.secho("Can't find file: '" + name + file_ending + "'", fg="red")
+        click.secho("Can't find file: '" + name + FILE_ENDING + "'", fg="red")
         sys.exit()
 
     if version == "0.1.0":
@@ -82,7 +82,7 @@ def restore(name):
 
         # Extract archive
         zf.extractall(path=workspace)
-        os.remove(os.path.join(workspace, version_file))
+        os.remove(os.path.join(workspace, VERSION_FILE))
 
         # Clone packages
         click.secho("Cloning packages", fg="green")

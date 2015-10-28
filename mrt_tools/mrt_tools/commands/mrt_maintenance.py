@@ -20,8 +20,8 @@ def main(ctx):
 
 @main.command()
 @click.pass_obj
-def url_in_package_xml(ws):
-    """Inserts missing URL into package.xml"""
+def update_url_in_package_xml(ws):
+    """Updates missing or wrong URL into package.xml"""
 
     def insert_url(file_name, url):
         with open(file_name, 'r') as f:
@@ -152,7 +152,7 @@ def update_repo_cache():
     # -> Just exit when something is not ok.
     try:
         # Connect
-        token = Token(path=default_token_path, allow_creation=False)
+        token = Token(path=TOKEN_PATH, allow_creation=False)
         git = Git(token=token)
         repo_dicts = git.get_repos()
     except:
@@ -160,7 +160,7 @@ def update_repo_cache():
         # connection anyway and don't want old data.
         repo_dicts = []
 
-    file_name = os.path.expanduser(default_repo_cache)
+    file_name = os.path.expanduser(CACHE_FILE)
     dir_name = os.path.dirname(file_name)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)

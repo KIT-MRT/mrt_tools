@@ -16,8 +16,8 @@ def test_create_sshkey_default(runner):
         curr_dir = os.getcwd()
         ssh = SSHkey(dir_path=curr_dir)
         ssh.create()
-        assert os.path.isfile(os.path.join(curr_dir, default_ssh_key_name))
-        assert os.path.isfile(os.path.join(curr_dir, default_ssh_key_name + ".pub"))
+        assert os.path.isfile(os.path.join(curr_dir, SSH_KEY_NAME))
+        assert os.path.isfile(os.path.join(curr_dir, SSH_KEY_NAME + ".pub"))
 
 
 def test_create_sshkey_custom_name(runner):
