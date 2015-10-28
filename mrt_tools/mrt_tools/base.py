@@ -30,17 +30,24 @@ except KeyError:
 
 
 class Git(object):
-    def __init__(self, token=None, host=default_host):
+    def __init__(self, token=None, host=default_host, use_ssh=False):
         # Host URL
         self.host = host
         self.token = token
         self.server = None
         self.ssh_key = None
+        self.use_ssh = use_ssh
 
         if is_bashcompletion:
             self.connect()
         else:
             self.test_and_connect()
+
+    def get_url_string(self):
+        if self.use_ssh:
+            return "ssh_url_to_repo"
+        else:
+            return "http_url_to_repo"
 
     def test_and_connect(self):
         # Token
@@ -60,16 +67,20 @@ class Git(object):
         self.connect()
 
         # Test ssh key
-        if not self.check_ssh_key():
+        if self.use_ssh and not self.check_ssh_key():
             # SSH Key not on server yet. Ask user
             local_keys = self.get_local_ssh_keys()
-            user_choice = get_user_choice([key.name for key in local_keys], extra="Create new key.",
-                                          prompt="No ssh key match found. Which ssh key should we use?")
-            if user_choice[1] == "Create new key.":
+            choice_idx, choice_value = get_user_choice([key.name for key in local_keys],
+                                                       extra=["Create new key.", "Use https instead of a ssh key"],
+                                                       prompt="No ssh key match found. Which ssh key should we use?")
+            if choice_value == "Use https instead of a ssh key":
+                self.use_ssh = False
+                return
+            elif choice_value == "Create new key.":
                 self.ssh_key = SSHkey()
                 self.ssh_key.create()
             else:
-                self.ssh_key = local_keys[user_choice[0]]
+                self.ssh_key = local_keys[choice_idx]
             self.upload_ssh_key()
 
     def connect(self):
@@ -108,8 +119,7 @@ class Git(object):
         self.server.addsshkey(self.ssh_key.name, self.ssh_key.public_key)
 
     def get_namespaces(self):
-        """Returns a list of all namespaces in Gitlab"""
-
+        """Returns a dict {name:id} of all namespaces in Gitlab"""
         click.echo("Retrieving namespaces...")
         namespaces = list(self.server.getall(self.server.getgroups, per_page=100))
         namespaces = sorted(namespaces, key=lambda k: k['name'])
@@ -126,19 +136,22 @@ class Git(object):
 
     def find_repo(self, pkg_name, ns=None):
         """Search for a repository within gitlab."""
-
         click.secho("Search for package " + pkg_name, fg='red')
+        # Results is a dict or a list of dicts, depending on how many results were found
         results = self.server.searchproject(pkg_name)
 
-        if ns is not None:
+        # If we declared a namespace, there will only be one result with this name in this namespace
+        if ns:
             try:
                 return next(
-                    x["ssh_url_to_repo"] for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
+                    x[self.get_url_string()] for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
             except StopIteration:
                 return None
-
-        exact_hits = [res for res in results if res["name"] == pkg_name]
-        count = len(exact_hits)
+        else:
+            # The searchproject command will also find the query as a substring in repo names, therefor we have to
+            # check again.
+            matching_repos = [res for res in results if res["name"] == pkg_name]
+            count = len(matching_repos)
 
         if count is 0:
             # None found
@@ -146,17 +159,17 @@ class Git(object):
             return None
         if count is 1:
             # Only one found
-            user_choice = 0
+            choice = 0
         else:
             # Multiple found
-            user_choice = get_user_choice([item["path_with_namespace"] for item in exact_hits],
-                                          prompt="More than one repo with \"" + str(
-                                              pkg_name) + "\" found. Please choose")
+            choice = get_user_choice([item["path_with_namespace"] for item in matching_repos],
+                                     prompt="More than one repo with \"" + str(
+                                         pkg_name) + "\" found. Please choose")
 
-        ssh_url = exact_hits[user_choice[0]]['ssh_url_to_repo']
-        click.secho("Found " + exact_hits[user_choice[0]]['path_with_namespace'], fg='green')
+        url = matching_repos[choice][self.get_url_string()]
+        click.secho("Found " + matching_repos[choice]['path_with_namespace'], fg='green')
 
-        return ssh_url
+        return url
 
     def create_repo(self, pkg_name):
         """
@@ -166,15 +179,15 @@ class Git(object):
         # Dialog to choose namespace
         click.echo("Available namespaces in gitlab, please select one for your new project:")
         namespaces = self.get_namespaces()
-        user_choice = get_user_choice(namespaces)
-        click.echo("Using namespace '" + list(namespaces.keys())[int(user_choice)] + "'")
-        ns_id = list(namespaces.values())[int(user_choice)]
+        choice_index = get_user_choice(namespaces.keys())
+        click.echo("Using namespace '" + list(namespaces.keys())[int(choice_index)] + "'")
+        ns_id = list(namespaces.values())[int(choice_index)]
 
         # Check whether repo exists
-        ssh_url = self.find_repo(pkg_name, list(namespaces.keys())[int(user_choice)])
+        url = self.find_repo(pkg_name, list(namespaces.keys())[int(choice_index)])
 
-        if ssh_url is not None:
-            click.secho("    ERROR Repo exist already: " + ssh_url, fg='red')
+        if url is not None:
+            click.secho("    ERROR Repo exist already: " + url, fg='red')
             sys.exit(1)
 
         # Create repo
@@ -187,8 +200,8 @@ class Git(object):
             sys.exit(1)
 
         # Return URL
-        click.echo("Repository URL is: " + response['ssh_url_to_repo'])
-        return response['ssh_url_to_repo']
+        click.echo("Repository URL is: " + response[self.url_string])
+        return response[self.url_string]
 
     @staticmethod
     def get_local_ssh_keys(path=default_ssh_path):
@@ -712,7 +725,7 @@ class Digraph(object):
         """plot a directed graph with one root node"""
         if not os.path.exists("pics"):
             os.mkdir("pics")
-        filename = os.path.join(os.getcwd(),"pics/deps_{0}.png".format(pkg_name))
+        filename = os.path.join(os.getcwd(), "pics/deps_{0}.png".format(pkg_name))
         self.graph.write_png(filename)
         if show:
             subprocess.call(["xdg-open", filename])
@@ -731,4 +744,3 @@ def import_repo_names():
         return repos.split(",")[:-1]
     except OSError:
         return []
-

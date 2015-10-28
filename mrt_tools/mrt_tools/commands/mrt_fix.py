@@ -51,47 +51,47 @@ def url_in_package_xml(ws):
         # Try reading it from git repo
         try:
             with open(pkg_name + "/.git/config", 'r') as f:
-                git_ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
+                git_url = next(line[7:-1] for line in f if line.startswith("\turl"))
         except (IOError, StopIteration):
-            git_ssh_url = None
+            git_url = None
 
         # Try to read it from package xml
         try:
             if len(ws.catkin_pkgs[pkg_name].urls) > 1:
                 raise IndexError
-            xml_ssh_url = ws.catkin_pkgs[pkg_name].urls[0].url
+            xml_url = ws.catkin_pkgs[pkg_name].urls[0].url
         except IndexError:
-            xml_ssh_url = None
+            xml_url = None
 
         # Testing all cases:
-        if xml_ssh_url is not None and git_ssh_url is not None:
-            if xml_ssh_url != git_ssh_url:
+        if xml_url is not None and git_url is not None:
+            if xml_url != git_url:
                 click.secho("WARNING in {0}: URL declared in src/{1}/package.xml, differs from the git repo url for {"
                             "0}!".format(pkg_name.upper(), pkg_name),
                             fg="red")
-                click.echo("PackageXML: {0}".format(xml_ssh_url))
-                click.echo("Git repo  : {0}".format(git_ssh_url))
+                click.echo("PackageXML: {0}".format(xml_url))
+                click.echo("Git repo  : {0}".format(git_url))
                 if click.confirm("Replace the url in package.xml with the correct one?"):
                     subprocess.call("sed -i -e '/  <url/d' {0}".format(filename), shell=True)
-                    insert_url(filename, git_ssh_url)
-        if xml_ssh_url is not None and git_ssh_url is None:
+                    insert_url(filename, git_url)
+        if xml_url is not None and git_url is None:
             click.secho("WARNING in {0}: URL declared in package.xml, but {1} does not seem to be a remote "
                         "repository!".format(pkg_name.upper(), pkg_name), fg="yellow")
             if click.confirm("Remove the url in package.xml?"):
                 click.secho("Fixing...", fg="green")
                 subprocess.call("sed -i -e '/  <url/d' {0}".format(filename), shell=True)
-        if xml_ssh_url is None and git_ssh_url is not None:
+        if xml_url is None and git_url is not None:
             click.secho("WARNING in {0}: No URL (or multiple) defined in package.xml!".format(pkg_name.upper()),
                         fg="yellow")
             if click.confirm("Insert (Replace) the url in package.xml with the correct one?"):
                 subprocess.call("sed -i -e '/  <url/d' {0}".format(filename), shell=True)
-                insert_url(filename, git_ssh_url)
-        if xml_ssh_url is None and git_ssh_url is None:
+                insert_url(filename, git_url)
+        if xml_url is None and git_url is None:
             click.secho("INFO in {0}: Does not seem to be a git repository. You should use Version Control for your "
                         "code!".format(pkg_name.upper()), fg="cyan")
 
-        if git_ssh_url is not None:
-            ws.add(pkg_name, git_ssh_url, update=False)
+        if git_url is not None:
+            ws.add(pkg_name, git_url, update=False)
 
     ws.write()
 

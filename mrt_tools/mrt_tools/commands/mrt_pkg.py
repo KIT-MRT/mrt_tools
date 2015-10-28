@@ -98,21 +98,21 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
 
     if create_git_repo:
         git = Git()
-        ssh_url = git.create_repo(pkg_name)
+        url = git.create_repo(pkg_name)
         subprocess.call("sed -i " +
-                        "-e 's#\${PACKAGE_REPOSITORY_URL}#" + ssh_url + "#g' " +
+                        "-e 's#\${PACKAGE_REPOSITORY_URL}#" + url + "#g' " +
                         "package.xml", shell=True)
         # Initialize repository
         ws.cd_src()
         os.chdir(pkg_name)
         subprocess.call("git init", shell=True)
-        subprocess.call("git remote add origin " + ssh_url + " >/dev/null 2>&1", shell=True)
+        subprocess.call("git remote add origin " + url + " >/dev/null 2>&1", shell=True)
         with open('.gitignore', 'w') as f:
             f.write("*~")
         subprocess.call("git add . >/dev/null 2>&1", shell=True)
         subprocess.call("git commit -m 'Initial commit' >/dev/null 2>&1", shell=True)
         subprocess.call("git push -u origin master >/dev/null 2>&1", shell=True)
-        ws.add(pkg_name, ssh_url)
+        ws.add(pkg_name, url)
     else:
         subprocess.call("sed -i -e '/  <url/d' package.xml", shell=True)
 
