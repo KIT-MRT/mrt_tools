@@ -167,3 +167,12 @@ def update_repo_cache():
     with open(file_name, "w") as f:
         for r in repo_dicts:
             f.write(r["name"] + ",")
+
+
+@main.command()
+def settings():
+    """
+    Change the default configuration of mrt tools.
+    """
+    from mrt_tools.settings import CONFIG_FILE
+    subprocess.call("gedit {}".format(CONFIG_FILE), shell=True)
