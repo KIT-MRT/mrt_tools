@@ -23,6 +23,7 @@ if not os.path.exists(CONFIG_FILE):
 
     config.add_section('Gitlab')
     config.set('Gitlab', 'HOST_URL', "https://gitlab.mrt.uni-karlsruhe.de")
+    config.set('Gitlab', 'GIT_CACHE_TIMEOUT', "3600")
 
     config.add_section('Snapshot')
     config.set('Snapshot', 'FILE_ENDING', ".snapshot")
@@ -52,6 +53,7 @@ CACHE_LOCK_DECAY_TIME = config.getint('Cache', 'CACHE_LOCK_DECAY_TIME')
 
 # Gitlab
 HOST_URL = config.get('Gitlab', 'HOST_URL')
+GIT_CACHE_TIMEOUT = config.getint('Gitlab', 'GIT_CACHE_TIMEOUT')
 
 # Snapshot
 FILE_ENDING = config.get('Snapshot', 'FILE_ENDING')

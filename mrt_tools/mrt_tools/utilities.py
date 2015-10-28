@@ -61,6 +61,11 @@ def get_userinfo():
             name = click.prompt("Please enter new email:")
         subprocess.call("git config --global user.email '" + email + "'", shell=True)
 
+    # Set git caching helper to save credentials
+    if not USE_SSH:
+        subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(GIT_CACHE_TIMEOUT),
+                        shell=True)
+
     return {'name': name[:-1], 'mail': email[:-1]}
 
 
