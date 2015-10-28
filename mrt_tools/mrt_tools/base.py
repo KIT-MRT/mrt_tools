@@ -453,6 +453,9 @@ class Workspace(object):
         """Add a repository to the workspace"""
         ps = config_yaml.PathSpec(pkg_name, "git", url)
         self.wstool_config.add_path_spec(ps)
+        # Fix for issue #9 to make ros cfg files executable
+        subprocess.call("find "+os.path.join(self.src, pkg_name)+" -name \*.cfg -exec chmod 755 {} \;",
+                        shell=True)
         if update:
             self.write()
             self.update_only(pkg_name)
