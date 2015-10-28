@@ -10,18 +10,24 @@ import click
 @click.pass_context
 def main(ctx):
     """A collection of tools to perform on a catkin workspace"""
-    ctx.obj = Workspace(silent=True)
-
-    if not ctx.obj.exists() and ctx.invoked_subcommand != "init":
-        click.secho("No catkin workspace root found.", fg="red")
-        click.echo("This command must be invoked from within a workspace")
-        sys.exit(1)
+    if ctx.invoked_subcommand == "init":
+        ctx.obj = Workspace(silent=True)
+    else:
+        ctx.obj = Workspace()
 
 
 @main.command()
+@click.argument('ws_name', required=False, type=click.STRING)
 @click.pass_obj
-def init(ws):
+def init(ws, ws_name):
     """ Initialize a catkin workspace. """
+    if ws_name:
+        try:
+            os.makedirs(ws_name)
+            os.chdir(ws_name)
+        except:
+            click.secho("Can not initialize new ws, directory exists already.", fg="red")
+            sys.exit(1)
     ws.create()
 
 

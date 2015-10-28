@@ -7,20 +7,12 @@ import click
 # Fixes
 ########################################################################################################################
 @click.group()
-@click.pass_context
-def main(ctx):
+def main():
     """Repair tools..."""
-    ctx.obj = Workspace(silent=True)
-
-    if not ctx.obj.exists() and ctx.invoked_subcommand != "update_repo_cache":
-        click.secho("No catkin workspace root found.", fg="red")
-        click.echo("This command must be invoked from within a workspace")
-        sys.exit(1)
 
 
 @main.command()
-@click.pass_obj
-def update_url_in_package_xml(ws):
+def update_url_in_package_xml():
     """Updates missing or wrong URL into package.xml"""
 
     def insert_url(file_name, url):
@@ -42,6 +34,7 @@ def update_url_in_package_xml(ws):
             subprocess.call("git commit -m 'Added repository url to package.xml'", shell=True)
             os.chdir(org_dir)
 
+    ws = Workspace()
     ws.catkin_pkg_names = ws.get_catkin_package_names()
     ws.config = wstool_config.Config([], ws.src)
     ws.cd_src()
@@ -99,9 +92,9 @@ def update_url_in_package_xml(ws):
 @main.command()
 @click.argument("package", required=False)
 @click.option("--this", is_flag=True)
-@click.pass_obj
-def update_cmakelists(ws, package, this):
+def update_cmakelists(package, this):
     """Update CMAKELISTS"""
+    ws = Workspace()
     catkin_packages = ws.get_catkin_package_names()
 
     # Read in newest CMakeLists.txt
@@ -132,9 +125,9 @@ def update_cmakelists(ws, package, this):
 
 
 @main.command()
-@click.pass_obj
-def update_rosinstall(ws):
+def update_rosinstall():
     """Reinitialise the workspace index"""
+    ws = Workspace()
     ws.cd_src()
     click.secho("Removing wstool database src/.rosinstall", fg="yellow")
     os.remove(".rosinstall")

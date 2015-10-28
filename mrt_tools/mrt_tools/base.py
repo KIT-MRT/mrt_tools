@@ -366,7 +366,9 @@ class Workspace(object):
                 self.recreate_index()
             self.cd_root()
         elif not silent:
-            raise Exception("No catkin workspace root found.")
+            click.secho("No catkin workspace root found.", fg="red")
+            click.echo("This command must be invoked from within a workspace")
+            sys.exit(1)
 
     def create(self):
         """Initialize new catkin workspace"""
@@ -377,7 +379,6 @@ class Workspace(object):
 
         # Test whether directory is empty
         if os.listdir("."):
-            click.echo(os.listdir("."))
             if not click.confirm("The repository folder is not empty. Would you like to continue?"):
                 sys.exit(0)
 
