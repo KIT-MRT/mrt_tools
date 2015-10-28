@@ -1,10 +1,9 @@
 PyYAML==3.11
 catkin-pkg==0.2.10
 catkin-tools==0.3.0
--e git+git@github.com:cbandera/click.git@8e18d48f925c312f47d2075e1392d49dc4818c95#egg=click-origin/feature/parameter_autocompletion
+git+https://github.com/cbandera/click.git@8e18d48f925c312f47d2075e1392d49dc4818c95#egg=1.0
 docutils==0.12
 future==0.15.2
-mrt==2.0.0
 pyapi-gitlab==7.8.5
 pycrypto==2.6.1
 pydot2==1.0.33
