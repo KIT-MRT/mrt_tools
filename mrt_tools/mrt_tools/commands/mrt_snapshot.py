@@ -13,15 +13,15 @@ def main():
     pass
 
 
-@main.command()
+@main.command(short_help="Create a snapshot of the current workspace.",
+              help="This command creates a zip file, containing the catkin configuration of the current "
+                   "workspace the rosinstall file with the version of the repos pinned to the current commit. Before "
+                   "doing so, the workspace is tested for uncommited and unpushed changes. Of course this only works, "
+                   "if every package in your workspace is a repository and has a remote on the gitlab server. Please "
+                   "note, that no other files, than those commited in the repo can be restored.")
 @click.argument("name", type=click.STRING, required=True)
 def create(name):
     """Create a snapshot of the current workspace."""
-    """
-    This function creates a zip file, containing the workspace configuration '.catkin_tools' and a '.rosinstall' file.
-    The workspace configuration contains build settings like whether 'install' was specified.
-    The .rosinstall file pins every repository to the commit it is at right now.
-    """
     suffix = "_" + time.strftime("%y%m%d")
     snapshot_name = name + suffix + FILE_ENDING
     filename = os.path.join(os.getcwd(), snapshot_name)
@@ -45,15 +45,15 @@ def create(name):
     click.secho("Wrote snapshot to " + filename, fg="green")
 
 
-@main.command()
+@main.command(short_help="Restore a catkin workspace from a snapshot.",
+              help="This command creates a new workspace with the name of the given snapshot file, initializes it, "
+                   "copies the config files and then uses wstool update functionality to clone all repos with the "
+                   "specified commit into the workspace. Finally, catkin build is called, in order to compile the "
+                   "workspace. NOTE: Packages in this workspace are pinned to the specified commit. Therefor wstool "
+                   "update will always reset the repo to this commit!")
 @click.argument("name", type=click.STRING, required=True)
 def restore(name):
     """Restore a catkin workspace from a snapshot"""
-    """
-    This function takes a zip file as created in create_snapshot and tries to restore it.
-    Therefor a new workspace is initiated, the settings and .rosinstall file are copied from the snapshot.
-    Next, the specified commits are cloned into the workspace and the whole workspace is build.
-    """
     org_dir = os.getcwd()
     filename = os.path.join(org_dir, name)
     workspace = os.path.join(org_dir, os.path.basename(name).split(".")[0] + "_snapshot_ws")

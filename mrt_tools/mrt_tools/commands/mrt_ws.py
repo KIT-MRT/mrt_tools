@@ -16,7 +16,9 @@ def main(ctx):
         ctx.obj = Workspace()
 
 
-@main.command()
+@main.command(short_help="Initialize a catkin workspace.",
+              help="This command initializes a new catkin workspace in the current directory or the one (optionally) "
+                   "specified.")
 @click.argument('ws_name', required=False, type=click.STRING)
 @click.pass_obj
 def init(ws, ws_name):
@@ -31,29 +33,30 @@ def init(ws, ws_name):
     ws.create()
 
 
-@main.command()
+@main.command(short_help="Delete everything in current workspace.",
+              help="ATTENTION!: This command deletes everything within the current workspace. This is intended for "
+                   "development use, when test workspaces are often initialized and removed again. PS: Of course it "
+                   "is first tested for uncommited and unpushed changes.")
 @click.pass_obj
 def remove(ws):
     """Delete everything in current workspace."""
     ws.clean()
 
 
-@main.command()
-@click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
+@main.command(short_help="Delete compiled code.",
+              help="This is a convenient wrapper around 'mrt catkin clean -a' and removes all build files and "
+                   "binaries.")
 @click.pass_obj
-def clean(ws, catkin_args):
+def clean(ws):
     """Delete compiled code."""
     ws.cd_root()
-    if not catkin_args:
-        catkin_args = ("-a",)
-
-    if len(catkin_args) == 0:
-        subprocess.call(["catkin", "clean"])
-    else:
-        subprocess.call(["catkin", "clean"] + list(catkin_args))
+    catkin_args = ("-a",)
+    subprocess.call(["catkin", "clean"] + list(catkin_args))
 
 
-@main.command()
+@main.command(short_help="Print the git status of files in workspace.",
+              help="This is a convenient wrapper around 'mrt wstool status', which tells you which files are modified "
+                   "or untracked in your current workspace. Additionally it checks for unpushed commits.")
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 @click.pass_obj
 def status(ws, args):
@@ -73,7 +76,9 @@ def status(ws, args):
     ws.unpushed_repos()
 
 
-@main.command()
+@main.command(short_help="List all git repos and their status.",
+              help="This is a convenient wrapper around 'mrt wstool info', which gives you a nice overview over "
+                   "repos, their status, current commit and url.")
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 @click.pass_obj
 def info(ws, args):
@@ -91,7 +96,10 @@ def info(ws, args):
         subprocess.call(["wstool", "info"] + list(args))
 
 
-@main.command()
+@main.command(short_help="Perform a git push & pull on every repo.",
+              help="This is a convenient wrapper around 'mrt wstool update', which performs a git pull in 10 "
+                   "parallel threads on every repo within your workspace. Additionally it checks for unpushed commits "
+                   "and asks you whether to push them.")
 @click.argument('args', nargs=-1, type=click.UNPROCESSED)
 @click.pass_obj
 def update(ws, args):
@@ -116,7 +124,11 @@ def update(ws, args):
     subprocess.call(["wstool", "update", "-t", ws.src] + list(args))
 
 
-@main.command()
+@main.command(short_help="Resolve dependencies for packages.",
+              help="This command resolves all dependencies specified in the packages manifest files (package.xml) by "
+                   "installing or cloning them into your current workspace. NOTE!: This fails, if you have already "
+                   "sourced a different workspace containing one of the dependencies in your current terminal before "
+                   "(e.g. in you bashrc).")
 @click.pass_obj
 def resolve_deps(ws):
     """Resolve dependencies for packages"""

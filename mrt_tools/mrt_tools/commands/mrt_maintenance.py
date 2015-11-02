@@ -11,7 +11,11 @@ def main():
     """Repair tools..."""
 
 
-@main.command()
+@main.command(short_help="Updates missing or wrong URL into package.xml",
+              help="This command will test, whether your git URL is the same as the URL specified in "
+                   "package.xml. If not, it will ask you whether to change it and asks you to specify a line number. "
+                   "NOTE: Up to now, normally the ssh URL is specified in the package.xml. If you are working with "
+                   "https you might get asked to change the URL in every package!")
 def update_url_in_package_xml():
     """Updates missing or wrong URL into package.xml"""
 
@@ -43,6 +47,8 @@ def update_url_in_package_xml():
         filename = os.path.join(ws.src, pkg_name, "package.xml")
         # Try reading it from git repo
         try:
+            # TODO Maybe try to always get the https/ssh url? Right now, it is only checked against how YOU have it
+            # configured.
             with open(pkg_name + "/.git/config", 'r') as f:
                 git_url = next(line[7:-1] for line in f if line.startswith("\turl"))
         except (IOError, StopIteration):
@@ -89,7 +95,12 @@ def update_url_in_package_xml():
     ws.write()
 
 
-@main.command()
+@main.command(short_help="Update CMakeLists.txt",
+              help="This command will compare the Version tag of a projects CMakeLists with the newest template. If "
+                   "they differ, a new CMakeLists.txt is created from the template and the diff tool 'meld' is "
+                   "launched, so you can see the differences. Please take special care, to port all functionality, "
+                   "that might have been add to the old CMake file to the new file. NOTE: You need to have 'meld' "
+                   "installed.")
 @click.argument("package", required=False)
 @click.option("--this", is_flag=True)
 def update_cmakelists(package, this):
@@ -124,7 +135,9 @@ def update_cmakelists(package, this):
                 "didn't, right? Ok, so go ahead and test them and then run 'mrt wstool update'", fg="yellow")
 
 
-@main.command()
+@main.command(short_help="Reinitialise the workspace index",
+              help="This command recreates the '.rosinstall' file, which is used by catkin and wstool. This might be "
+                   "necessary, when you altered it, or removed packages by hand but did not delete their config entry.")
 def update_rosinstall():
     """Reinitialise the workspace index"""
     ws = Workspace()
@@ -135,7 +148,10 @@ def update_rosinstall():
     ws.recreate_index(write=True)
 
 
-@main.command()
+@main.command(short_help="Updates the cached list of repos.",
+              help="This command loads the current list of repos from the server and caches them in a file for bash "
+                   "autocompletion. This command is run every time you use the mrt tools, so normally there is no "
+                   "need to call this manually.")
 def update_repo_cache():
     """
     Read repo list from server and write it into caching file.
@@ -162,7 +178,10 @@ def update_repo_cache():
             f.write(r["name"] + ",")
 
 
-@main.command()
+@main.command(short_help="Change the default configuration of mrt tools.",
+              help="This command starts gedit to let you edit the configuration file. You can specify whether to use "
+                   "https or ssh, whether to save your private API token locally, and for how long to cache your git "
+                   "credentials.")
 def settings():
     """
     Change the default configuration of mrt tools.

@@ -12,22 +12,32 @@ def main():
     pass
 
 
-@main.command()
+@main.command(short_help="Create new gitlab token",
+              help="A Gitlab token is a private keyfile, that is needed to communicate via the Gitlab API to the "
+                   "server. The keyfile is stored in '~/.mrtgitlab/.token'. You can specify whether you want the "
+                   "token to be saved on the system in the setttings.")
 def create_token():
     """Create new gitlab token"""
     Token(allow_creation=True)
 
 
-@main.command()
+@main.command(short_help="Create new ssh key",
+              help="A ssh key is a private keyfile, that is needed to communicate to the server via a secure "
+                   "connection without login credentials. This function creates such a key from your username and "
+                   "password, stores it locally and uploads the publickey to the server. You don't need to use a "
+                   "ssh key, you can specify whether to use ssh or https in the settings.")
 def create_ssh_key():
     """Create new ssh key"""
     SSHkey().create()
 
 
-@main.command()
+@main.command(short_help="Create new gitlab repo",
+              help="This command let's you create a new Gitlab repo for an existing package in your workspace. It will "
+                   "let you choose a namespace and check whether it collides with existing repos. Finally it "
+                   "configures the local repo to track the remote repository.")
 @click.argument("pkg_name", type=click.STRING, required=False)
 def create_repo(pkg_name):
-    """Create new gitlab token"""
+    """Create new gitlab repo"""
     ws = Workspace()
     ws.recreate_index(write=True)
     pkg_list = ws.get_catkin_package_names()
@@ -65,7 +75,13 @@ def permissions(ctx):
     ctx.obj = Git()
 
 
-@permissions.command()
+@permissions.command(short_help="Add a user to a repository",
+                     help="This command let's you grant permissions to individual users for repos. You get to choose "
+                          "user, repo, and role. If desired, permissions can automatically be set for all "
+                          "dependencies. NOTE: At the moment this implementation is still rudimentary, cases in which "
+                          "the user exists in the repo with different permissions already, are not accounted for. "
+                          "For checking the dependencies, the whole project plus dependencies is cloned into /tmp "
+                          "and removed afterwards.")
 @click.pass_obj
 def add_user(git):
     """Add a user to a repository"""
@@ -141,7 +157,8 @@ def show(ctx):
     ctx.obj = Git()
 
 
-@show.command()
+@show.command(short_help="Display a list of user names",
+              help="This command will display a list of all users on Gitlab.")
 @click.pass_obj
 def users(git):
     """Display a list of user names"""
@@ -151,7 +168,8 @@ def users(git):
         click.echo("(" + str(index) + ") " + item['name'])
 
 
-@show.command()
+@show.command(short_help="Display a list of repositories",
+              help="This command will display a list of all repositories, you have access to on Gitlab.")
 @click.pass_obj
 def repos(git):
     """Display a list of repositories"""
@@ -161,17 +179,19 @@ def repos(git):
         click.echo("(" + str(index) + ") " + item['name'])
 
 
-@show.command()
+@show.command(short_help="Display a list of group names",
+              help="This command will display a list of all groups that you can see on Gitlab.")
 @click.pass_obj
 def groups(git):
-    """Display a list of user names"""
+    """Display a list of group names"""
     group_list = list(git.server.getall(git.server.getgroups, per_page=100))
     group_list = sorted(group_list, key=lambda k: k['name'])
     for index, item in enumerate(group_list):
         click.echo("(" + str(index) + ") " + item['name'])
 
 
-@show.command()
+@show.command(short_help="Display a list of namespaces",
+              help="This command will display a list of all namespaces that you can see on Gitlab.")
 @click.pass_obj
 def namespaces(git):
     """Display a list of available namespaces"""
