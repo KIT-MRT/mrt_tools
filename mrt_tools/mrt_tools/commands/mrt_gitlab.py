@@ -80,11 +80,11 @@ def add_user(git):
     repo_choice = get_user_choice([repo["path_with_namespace"] for repo in repo_dicts], prompt="Please choose a repo.")
     repo = repo_dicts[repo_choice[0]]
     roles = ["Guest", "Reporter", "Developer", "Master", "Owner"]
-    role_choice = get_user_choice(roles, prompt='Please choose a role for the user.', default=2)
+    _, role = get_user_choice(roles, prompt='Please choose a role for the user.', default=2)
 
     click.echo("\nAdding user {0} to repo {1} with role {2}\n".format(user["name"].upper(),
                                                                       repo["path_with_namespace"].upper(),
-                                                                      role_choice[1].upper()))
+                                                                      role.upper()))
     git.server.addprojectmember(repo["id"], user["id"], role)
     if not click.confirm("Should I test dependencies?", default=True):
         return
@@ -117,8 +117,8 @@ def add_user(git):
         click.echo("\nAdding user {0} to repo {1}\n".format(user["name"].upper(),
                                                             r.upper()))
         repo_id = [s["id"] for s in repo_dicts if s["name"] == r]
-        role_choice = get_user_choice(roles, prompt='Please choose a role for the user for this repo.', default=2)
-        git.server.addprojectmember(repo_id[0], user["id"], role_choice[1])
+        _, role = get_user_choice(roles, prompt='Please choose a role for the user for this repo.', default=2)
+        git.server.addprojectmember(repo_id[0], user["id"], role)
 
     # Add user as well
     os.chdir(org_dir)
