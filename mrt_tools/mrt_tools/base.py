@@ -162,7 +162,7 @@ class Git(object):
             choice = 0
         else:
             # Multiple found
-            choice = get_user_choice([item["path_with_namespace"] for item in matching_repos],
+            choice, _ = get_user_choice([item["path_with_namespace"] for item in matching_repos],
                                      prompt="More than one repo with \"" + str(
                                          pkg_name) + "\" found. Please choose")
 

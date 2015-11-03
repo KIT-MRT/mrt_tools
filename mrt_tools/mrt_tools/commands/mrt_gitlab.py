@@ -91,10 +91,11 @@ def add_user(git):
     users = sorted(users, key=lambda k: k['name'])
     repo_dicts = git.get_repos()
     repo_dicts = sorted(repo_dicts, key=lambda k: k['path_with_namespace'])
-    user_choice = get_user_choice([user["name"] for user in users], prompt="Please choose a user")
-    user = users[user_choice[0]]
-    repo_choice = get_user_choice([repo["path_with_namespace"] for repo in repo_dicts], prompt="Please choose a repo.")
-    repo = repo_dicts[repo_choice[0]]
+    user_choice, _ = get_user_choice([user["name"] for user in users], prompt="Please choose a user")
+    user = users[user_choice]
+    repo_choice, _ = get_user_choice([repo["path_with_namespace"] for repo in repo_dicts], prompt="Please choose a "
+                                                                                                 "repo.")
+    repo = repo_dicts[repo_choice]
     roles = ["Guest", "Reporter", "Developer", "Master", "Owner"]
     _, role = get_user_choice(roles, prompt='Please choose a role for the user.', default=2)
 
