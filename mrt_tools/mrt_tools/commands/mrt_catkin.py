@@ -21,18 +21,18 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
         catkin_args += ("-DCMAKE_BUILD_TYPE=Debug",)
 
     if release:
-        catkin_args += (" -DCMAKE_BUILD_TYPE=RelWithDebInfo",)
+        catkin_args += ("-DCMAKE_BUILD_TYPE=RelWithDebInfo",)
 
     if verbose:
-        catkin_args += (" -v",)
-        catkin_args += (" --make-args",)
-        catkin_args += (" VERBOSE=1",)
+        catkin_args += ("-v",)
+        catkin_args += ("--make-args",)
+        catkin_args += ("VERBOSE=1",)
 
     build_eclipse = False
     if eclipse:
         build_eclipse = True
-        catkin_args += (" --force-cmake",)
-        catkin_args += (" -GEclipse CDT4 - Unix Makefiles",)
+        catkin_args += ("--force-cmake",)
+        catkin_args += ("-GEclipse CDT4 - Unix Makefiles",)
 
     if resolve_deps:
         ws.resolve_dependencies()
