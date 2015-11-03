@@ -1,192 +1,133 @@
-# MRT tools
-The mrt tools, are a collection of scripts and programs to make software development in your everyday life easier.
+# MRT Build Tools
 
-It provides tools for:
-
- * handling and creating big workspaces full of git repos
- * creating new catkin packages
- * visualising and resolving dependencies
-
-At the core of the mrt build tools, lies the idea of a unified build system. The system of our choice is **cmake**.
- We combine cmake with a powerfull wrapper for workspace handling and compiling. **catkin**.
-The version control system (VCS) of our choice is **git**, with the graphical webinterface provided by **gitlab**.
-
-Apart from these major components, some smaller tools are used to bring these tools together. Namely **wstool** for
-handling huge workspaces full of git repositories and **rosdep** for handling dependency management and interaction
-with the OS package management, **apt-get**.
-
-Finally, **mrt tools** wrap all of these things up and automate many common workflows.
+The *MRT tools* are a collection of usefull command-line tools for developing, working with and distributing code at the MRT.  If there are any errors, please contact [Claudio](claudio.bandera@kit.edu) or have a look at [the Gitlab issue site](https///gitlab.mrt.uni-karlsruhe.de/MRT/mrt_build/issues).
 
 
-## MRT build reference
+## Installation
 
-### Installation
-Setup is as simple as:
-1. Connect to the mrt VPN
-2. Run the init script to install all prerequisits.
+The *MRT tools* are automatically installed when the mrt_init script is executed. See the [install instructions](software/mrt_build_system/installation) for more infos.
+If you have run the init script before and your apt-get repos are set up, you can install the *MRT tools* with:
+    $ sudo apt-get install mrt-build
+    
+## Getting Started
+
+Using the *MRT tools* is as easy as typing:
+    $ mrt
+
+### Getting help
+
+You can always get help by appending `--help` to any command, e.g.
 ```bash
-  $ /mrt/staff/wiss/repositories/mrt_build/mrt_init.run
-```
-3. Run ```mrt --help``` to get help. Btw: You can run any command with the ```--help``` flag, to get information
-about the function call. Also, you can always use [TAB] to use autocompletion. Example help output:
-```
-    Usage: mrt [OPTIONS] COMMAND [ARGS]...
+$ mrt --help
+Usage: mrt [OPTIONS] COMMAND [ARGS]...
 
-      A toolbelt full of mrt scripts.
+    A toolbelt full of mrt scripts.
 
-    Options:
-      --help  Show this message and exit.
+Options:
+ 1. -help  Show this message and exit.
 
-    Commands:
-      catkin          A wrapper for catkin.
-      clone_pkg       Clone catkin packages from gitlab.
-      create_pkg      Create a new catkin package
-      init_workspace  Initialize a catkin workspace.
-      resolve_deps    Resolve all dependencies in this workspace.
-      snapshot
-      visualize_deps  Visualize dependencies of catkin packages.
-      wstool          A wrapper for wstool.
-```
+Commands:
+    catkin       A wrapper for catkin.
+    gitlab       Gitlab related tools
+    maintenance  Repair tools...
+    pkg          Package related tasks...
+    snapshot     Save or restore the current state of the...
+    ws           A collection of tools to perform on a catkin...
+    wstool       A wrapper for wstool.
+``` 
+### Example usage
 
-
-### Setting up a new workspace
-
-To set up a new workspace, in which to work on code, simply run:
+#### Day 1:
+First of, you want to get started by creating a new workspace. The toolset contains a bunch of tools to operate on workspaces you can get a list by typing `mrt ws --help`
+ ```bash
+    $ mkdir catkin_ws
+    $ cd catkin_ws
+    $ mrt ws init
+``` 
+or in short
 ```bash
-  $ mrt init_workspace
-```
-This will create a new mrt workspace by initialising catkin and wstool. Run this script in the place you would like
-to create your workspace. The folder should be empty.
+    $ mrt ws init catkin_ws 
+``` 
+This will initialize a new catkin workspace in the `catkin_ws` directory.
 
-### Getting code
-
-Once you have set up your catkin workspace, work becomes easy. Clone any repository from the MRT Gitlab server into
-your workspace, by running
+Next, you want to grab some existing software from the MRT-Gitlab. You can find a bunch of tools for working with (code-)packages via the `mrt pkg --help` command. Let's download the "calib_tool".
 ```bash
-  $ mrt clone_pkg PKG_NAME
-```
-Where PKG_NAME is one of the gitlab repositories. (In a future release, we'll have bash completion in order to give
-you suggestions on which repos exist.)
+    $ mrt pkg add calib_tool
+``` 
+This will download and install all dependencies required for compiling the desired package.\\
 
-This command will automatically resolve dependencies and install every other required library or apt package. See
-next section for more infos.
+**Hint:** Try using bash autocompletion on any of these command. For `mrt pkg add` it will present you with a list of all packages you have access to.
 
-### Resolving dependencies
-
-One huge problem, when working with someone elses code are dependencies to other libraries. This often gets you
-caught up in a x hour marathon to track down and install all dependencies. The mrt build tool, assist you in this
-task, by automatically resolving all dependencies from your packages.
-
-These dependencies can either be other repositories, or rosdep dependencies (apt-get packages). If you ever find that
- your projects has external dependencies, that are not available through apt-get yet, see **mrt cmake-modules** for
- creating you own debian packages.
-
-Dependencies are always resolved when cloning new packages. But you can also trigger it manually via:
+Now let's go ahead and compile the code. Therefor we are going to use `mrt catkin`, which adds a convenient wrapper around the `catkin` tools. This makes it inrelevant in which directory you are. Further more, you can pass special flags like `-rd`(resolve dependecies) or `--verbose` additional to the normal `catkin` flags to it.
 ```bash
-  $ mrt resolve_deps
-```
-Or while compiling:
+    $ mrt catkin build
+``` 
+
+#### Day 2:
+
+Welcome back, before we start of, let's see whether someone else might have worked on the code in the meanwhile. `cd` to your workspace and perform a
 ```bash
-  $ mrt catkin build -rd
-```
+    $ mrt ws update
+``` 
+This will perform a `git pull` in every package within your workspaces "src" folder. This comes in handy, once you have a lot of repos in there.\\
 
-Please be aware, that dependencies have to be declared within the ```package.xml``` file. See "Creating new packages"
- for more infos.
+**Hint:** There's also `mrt ws info` and `mrt ws status` to get information on any changed filed, or unpushed commits in your repos. 
 
-### Visualizing dependencies
+If you are looking for even more functionallity to operate on a large set on repositories, have a look at `mrt wstool` which is a wrapper for the `wstool` suite.
 
-#### For single packages
-Every now and then you find yourself surprised to see that your package requires a vast amount of other packages. To
-assist you in understanding these connections, you can use
+Let us create a new package now. Creating a new C++ catkin package called "your_package" can be done via 
 ```bash
-  $ mrt visualize_deps PKG_NAME
-```
-This will create a full-depth graph of this packages dependency graph. The images will be stored in
-```<workspace root>/pics/```. Green nodes symbolize gitlab repos, red nodes symbolize external dependencies.
+    $ mrt pkg create your_package
+``` 
+It will ask you whether to create a library or an executable, whether it should be a ROS package and whether you want to create a new Gitlab repository with it. You'll end up with a new package in your workspace's "src" folder, containing a sample "CMakeLists.txt", "package.xml" and a sample test. For more infos on these files, see [MRT cmake modules](software/mrt_build_system/mrt_cmake_modules).
 
-#### For the whole workspace
-When invoked without arguments, **mrt visualize_deps** can create dependency graphs for every single package within
-the workspace and/or one overall graph off all packages.
+#### Day 3:
 
+Ok, now you have created a bunch of code, got it all up and running and want to perform a demonstration on one of the cars? Perfect!
 
-### Compiling code
-The MRT tools rely on a common build system. The system of choice is cmake, combined with
-[catkin](https://catkin-tools.readthedocs.org/en/latest/) as a powerful wrapper. When you use the mrt tools, you
-have to use cmake. Even though this might mean some more work at the beginning, it gives you lots of benefits in the
-long run. See "Creating new packages" for more infos.
-
-To compile code in your workspace, use
+Let me present to you the `mrt snapshot` functionality. With this you can easily capture the momentary state of your workspace and preserve it (hopefully) until eternity. 
 ```bash
-  $ mrt catkin build
-```
+    $ mrt snapshot create the_big_demo
+``` 
+will create a "the_big_demo_[date].snapshot" file, which you can restore on any machine using:
+```bash
+    $ mrt snapshot restore "the_big_demo_[date].snapshot"
+``` 
+    
+We are storing all snapshot files on "/mrtstorage/demo_snapshots".
 
+#### Day X:
 
+Now that you are used to the *MRT tools*, have a look at all the other commands, e.g.
+```bash
+    $ mrt gitlab ...
+    $ mrt maintenance ...
+``` 
+    
 
-//Build the current workspace.//
-This script is a light wrapper around [[https://catkin-tools.readthedocs.org/en/latest/|catkin]] to solve repetitive tasks.
-=== Usage ===
-<code bash>mrt_catkin [-option] <command></code>
-=== Arguments ===
-The additional ''option'' flags, which are handled by mrt_catkin are:
-  * **%%--%%eclipse** -- Builds a eclipse project file, which can be imported into Eclipse
-  * **%%--%%debug** -- Build in debug mode
-  * **%%--%%release** -- Build in release mode
-  * **%%--%%resolve-deps** -- Release and install all missing dependencies for the given workspace before building.
-  * **-rd** -- Equivalent to %%--%%resolve-deps
+## Configuration
 
-The ''commands'' are passed to and handled by [[https://catkin-tools.readthedocs.org/en/latest/|catkin]]. Here are some examples:
-  * **build** -- Build packages in a catkin workspace
-  * **config** -- Configure a catkin workspace’s layout and settings
-  * **clean** -- Clean products generated in a catkin workspace
-  * **create** -- Create structrures like Catkin packages
-  * **init** -- Initialize a catkin workspace
-  * **list** -- Find and list information about catkin packages in a workspace
-  * **profile** -- Manage different named configuration profiles
-=== Additional Infos ===
-If you would like to use eclipse, you have to do install and configure eclipse to get the indexing with c++14 right. See [[wissenswertes:ubuntu:eclipse_einrichten|Setup eclipse]] for further instructions.
+After installation, *MRT tools* are configured with the default settings. These are for example:
 
-----
-### Creating own software
-===== mrt_create_pkg =====
-//Creates a new package in the current workspace.// \\
-Sets up the correct directory structure and creates required files for cmake and dependency management. Optionally it can also set up a new gitlab repository.
-=== Usage ===
-<code bash>mrt_create_pkg [options] <name></code>
-=== Arguments ===
-If you do not specify any parameters then the script is run in interactive mode.
+*  "https" is used instead of "ssh"
 
-The following options can be passed
-  * **-h** -- Display help
-  * **-t** -- [//lib/////exec//] Specifies the type, can be library or executable
-  * **-r** -- (optional) Create ROS Package
-  * **-g** -- (optional) Create GitLab repository
+*  Your private token file is saved locally
 
-**<name>** defines the name for the new Package.
-### Recording the state of a workspace
-### Handling workspaces
-//Manages git repositories.// \\
-This script is a light wrapper around wstool to solve repetitive tasks.
-=== Usage ===
-<code bash>mrt_wstool <command></code>
-=== Arguments ===
-  * **help** -- provide help for commands
-  * **init** -- set up a directory as workspace
-  * **set** -- add or changes one entry from your workspace config
-  * **merge** -- merges your workspace with another config set
-  * **remove** -- remove an entry from your workspace config, without deleting files
-  * **update** -- updates info an existing repositories, checks for unpushed commits and performs a git pull on each repo.
-  * **update push** -- Same as above, but wont ask before pushing
-  * **info** -- Overview of some entries
-  * **status** -- print the change status of files in some SCM controlled entries
-  * **diff** -- print a diff over some SCM controlled entries
-=== Additional Infos ===
-Repository info is stored in ''src/.rosinstall''
+*  Git credentials are cached for 1 hour.
 
+*  Default ssh path...
+You can change these and other settings by using
+```bash
+    $ mrt maintenance settings
+``` 
 
+## Further reading
 
-### Further reading
-  * ROS catkin: http://docs.ros.org/api/catkin/html/Catkin
-  * ROS dep: http://docs.ros.org/independent/api/rosdep/html/
-  * wstool: http://wiki.ros.org/wstool
-  * rosinstall: http://docs.ros.org/independent/api/rosinstall/html/
+*  ROS catkin: [http://docs.ros.org/api/catkin/html/Catkin](http://docs.ros.org/api/catkin/html/Catkin)
+
+*  ROS dep: [http://docs.ros.org/independent/api/rosdep/html/](http://docs.ros.org/independent/api/rosdep/html/)
+
+*  wstool: [http://wiki.ros.org/wstool](http://wiki.ros.org/wstool)
+
+*  rosinstall: [http://docs.ros.org/independent/api/rosinstall/html/](http://docs.ros.org/independent/api/rosinstall/html/)
 
