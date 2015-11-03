@@ -1,29 +1,5 @@
 #!/bin/bash
-
-DIR=$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )
-
-if [ -z "$LD_LIBRARY_PATH" ] || ! [[ $LD_LIBRARY_PATH =~ .*\/opt\/ros\/[^\/]+\/lib.* ]]; then
-	echo "ROS not set. Maybe forgotten to source /opt/ros/<dist>/setup.bash file."
-	exit 1
-fi
-
-INIT_REPO=true
-
-if [[ -n "$(ls -A $PWD)" ]]; then
-   read -p "The repository folder is not empty. Would you like to continue? [y/N] " yn 
-   yn="${yn:=n}" # Default answer
-   case ${yn^^} in      
-        [Y]* ) INIT_REPO=true; break;;
-        * ) INIT_REPO=false;;
-   esac
-fi
-
-if [ $INIT_REPO == true ]; then
-	mkdir src
-	catkin init
-	cd src
-	wstool init
-	cd ..
-	$DIR/mrt_catkin build
-fi
-
+SELF="$(readlink /proc/$$/fd/255)" || SELF="$0" # Eigener Pfad (besseres $0)
+old_name=$(basename $SELF)
+new_name="mrt ws init"
+echo "$(tput bold)$(tput setf 1)WARNING:$(tput sgr0) '$old_name' is deprecated. Please use $(tput bold)'$new_name'$(tput sgr0) instead.'"
