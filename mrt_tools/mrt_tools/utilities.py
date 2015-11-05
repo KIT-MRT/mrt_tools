@@ -51,14 +51,14 @@ def get_userinfo():
         click.echo("Git not found, installing...")
         subprocess.call("sudo apt-get install git", shell=True)
     if name_err is not None or name == "":
-        name = click.prompt("Git user name not configured. Please enter name")
+        name = click.prompt("Git user name not configured. Please enter your first and last name")
         while not click.confirm("Use '" + name + "'as git user name?"):
-            name = click.prompt("Please enter new name:")
+            name = click.prompt("Please enter new name")
         subprocess.call("git config --global user.name '" + name + "'", shell=True)
     if mail_err is not None or email == "":
         email = click.prompt("Git user email not configured. Please enter email")
         while not click.confirm("Use '" + email + "'as git user email?"):
-            name = click.prompt("Please enter new email:")
+            email = click.prompt("Please enter new email")
         subprocess.call("git config --global user.email '" + email + "'", shell=True)
 
     # Set git caching helper to save credentials
@@ -213,8 +213,8 @@ def create_files(pkg_name, pkg_type, ros):
     subprocess.call("sed -i " +
                     "-e 's/\${PACKAGE_NAME}/" + pkg_name + "/g' " +
                     "-e 's/\${CMAKE_PACKAGE_NAME}/" + pkg_name.upper() + "/g' " +
-                    "-e 's/\${USER_NAME}/" + user['name'] + "/g' " +
-                    "-e 's/\${USER_EMAIL}/" + user['mail'] + "/g' " +
+                    "-e 's/\${USER_NAME}/" + user['name'].decode("utf8") + "/g' " +
+                    "-e 's/\${USER_EMAIL}/" + user['mail'].decode("utf8") + "/g' " +
                     "package.xml", shell=True)
 
     create_cmakelists(pkg_name, pkg_type, ros, self_dir)
