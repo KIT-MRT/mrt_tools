@@ -1,4 +1,6 @@
+from mrt_tools.utilities import test_git_credentials
 from mrt_tools.base import Workspace
+from mrt_tools.settings import *
 import subprocess
 import click
 import os
@@ -30,6 +32,10 @@ def main(action, args):
         ws.write()
 
     if action == "update":
+        # Test git credentials to avoid several prompts
+        if ws.contains_https():
+            test_git_credentials()
+
         # Search for unpushed commits
         ws.recreate_index() # Rebuild .rosinstall in case a package was deletetd manually
         unpushed_repos = ws.unpushed_repos()
@@ -45,19 +51,10 @@ def main(action, args):
         if not [a for a in args if a.startswith("-j")]:
             args += ("-j10",)
 
-    if action == "status" or action == "info":
-        # Show untracked files as well
-        if not ("--untracked" in args or "-u" in args):
-            args += ("--untracked",)
-
     if action == "fetch":
         # Search for unpushed commits
         ws.fetch()
         action = "info"
-
-    # if action == "status" or action == "info":
-    #     # Show untracked files as well
-    #     if not ("--untracked" in args or "-u" in args):
     #         args += ("--untracked",)
 
     # Pass the rest to wstool

@@ -326,6 +326,9 @@ class Token(object):
             try:
                 username = click.prompt("Gitlab user name")
                 password = click.prompt("Gitlab password", hide_input=True)
+                # If we are not using ssh, give those credentials directly to git
+                if not USE_SSH:
+                    set_git_credentials(username, password)
                 tmp_git_obj.login(username, password)
                 gitlab_user = tmp_git_obj.currentuser()
             except gitlab.exceptions.HttpError:
@@ -470,6 +473,8 @@ class Workspace(object):
 
         if update:
             self.write()
+            if url.startswith("https"):
+                test_git_credentials()
             self.update_only(pkg_name)
             # Fix for issue #9 to make ros cfg files executable
             subprocess.call("find "+os.path.join(self.src, pkg_name)+" -name \*.cfg -exec chmod 755 {} \;",
@@ -481,6 +486,8 @@ class Workspace(object):
 
     def update(self):
         """Update this workspace"""
+        if self.contains_https():
+            test_git_credentials()
         subprocess.call("wstool update -t {0} -j 10".format(self.src), shell=True)
 
     def update_only(self, pkgs):
@@ -681,6 +688,12 @@ class Workspace(object):
         # Create rosinstall file from config
         if write:
             self.write()
+
+    def contains_https(self):
+        for ps in self.wstool_config.get_config_elements():
+            if ps.get_path_spec().get_uri().startswith("https"):
+                return True
+        return False
 
 
 class Digraph(object):

@@ -83,17 +83,7 @@ def status(ws, args):
 @click.pass_obj
 def info(ws, args):
     """List all git repos and their status."""
-    ws.cd_src()
-
-    # Show untracked files as well
-    if not ("--untracked" in args or "-u" in args):
-        args += ("--untracked",)
-
-    # Pass the rest to wstool
-    if len(args) == 0:
-        subprocess.call(["wstool", "info"])
-    else:
-        subprocess.call(["wstool", "info"] + list(args))
+    subprocess.call(['mrt wstool info'], shell=True)
 
 
 @main.command(short_help="Perform a git push & pull on every repo.",
@@ -104,24 +94,7 @@ def info(ws, args):
 @click.pass_obj
 def update(ws, args):
     """Perform a git push & pull on every repo"""
-    ws.cd_src()
-    # Search for unpushed commits
-    ws.recreate_index()  # Rebuild .rosinstall in case a package was deletetd manually
-    unpushed_repos = ws.unpushed_repos()
-
-    if len(unpushed_repos) > 0:
-        if click.confirm("Push them now?"):
-            for x in unpushed_repos:
-                ws.cd_src()
-                os.chdir(x)
-                subprocess.call("git push", shell=True)
-
-    # Speedup the pull process by parallelization
-    if not [a for a in args if a.startswith("-j")]:
-        args += ("-j10",)
-
-    # Pass the rest to wstool
-    subprocess.call(["wstool", "update", "-t", ws.src] + list(args))
+    subprocess.call(['mrt wstool update'], shell=True)
 
 
 @main.command(short_help="Resolve dependencies for packages.",

@@ -1,12 +1,12 @@
 #!/usr/bin/python
 import ConfigParser
-import shutil
 import click
 import sys
 import os
 
 CONFIG_FILE = os.path.expanduser("~/.mrtgitlab/mrt.cfg")
 config = ConfigParser.ConfigParser()
+
 
 def create_default_config():
     click.echo("Creating new config file with default values.")
@@ -29,7 +29,7 @@ def create_default_config():
 
     config.add_section('Gitlab')
     config.set('Gitlab', 'HOST_URL', "https://gitlab.mrt.uni-karlsruhe.de")
-    config.set('Gitlab', 'GIT_CACHE_TIMEOUT', "900")   # in seconds
+    config.set('Gitlab', 'GIT_CACHE_TIMEOUT', "900")  # in seconds
 
     config.add_section('Snapshot')
     config.set('Snapshot', 'FILE_ENDING', ".snapshot")
@@ -41,6 +41,7 @@ def create_default_config():
         os.makedirs(os.path.dirname(CONFIG_FILE))
     with open(CONFIG_FILE, 'wb') as configfile:
         config.write(configfile)
+
 
 try:
     if not os.path.exists(CONFIG_FILE):
@@ -77,10 +78,3 @@ except ConfigParser.Error:
         click.echo("Removing config file. Please try again now.")
         os.remove(CONFIG_FILE)
     sys.exit(1)
-
-
-def print_config():
-    from pprint import pprint
-    for section, values in config._sections.iteritems():
-        print section
-        pprint(dict(values))

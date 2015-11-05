@@ -287,5 +287,26 @@ def cache_repos():
         subprocess.Popen(['mrt maintenance update_repo_cache'], shell=True, stdout=devnull, stderr=devnull)
 
 
+def set_git_credentials(username, password):
+    if HOST_URL.startswith("https://"):
+        host = HOST_URL[8:]
+    elif HOST_URL.startswith("http://"):
+        host = HOST_URL[7:]
+    else:
+        host = HOST_URL
+    git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
+    git_process.communicate(
+        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
+
+
+def test_git_credentials():
+    # Test whether git credentials are still stored:
+    if not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
+        click.echo("Gitlab credentials not in cache. Please enter:")
+        username = click.prompt("Username")
+        password = click.prompt("Password", hide_input=True)
+        set_git_credentials(username, password)
+
+
 self_dir = get_script_root()
 cache_repos()
