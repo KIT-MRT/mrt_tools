@@ -52,10 +52,10 @@ def main(action, args):
             args += ("-j10",)
 
     if action == "fetch":
-        # Search for unpushed commits
-        ws.fetch()
-        action = "info"
-    #         args += ("--untracked",)
+        if ws.contains_https():
+            test_git_credentials()
+        action = "foreach"
+        args = ("git fetch", )
 
     # Pass the rest to wstool
     if len(args) == 0:

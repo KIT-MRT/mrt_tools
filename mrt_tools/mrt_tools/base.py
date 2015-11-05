@@ -528,24 +528,6 @@ class Workspace(object):
         os.chdir(self.org_dir)
         return unpushed_repos
 
-    def fetch(self, pkg_name=None):
-        """Perform a git fetch in every repo"""
-        # Read in again
-        self.catkin_pkg_names = self.get_catkin_package_names()
-        self.wstool_pkg_names = self.get_wstool_package_names()
-        for pkg in self.wstool_pkg_names:
-            # If we are only looking for one specific pkg:
-            if pkg_name and pkg != pkg_name:
-                continue
-
-            try:
-                os.chdir(self.src + pkg)
-                click.echo("Fetching in {0}...".format(pkg))
-                subprocess.call("git fetch --quiet", shell=True)
-            except OSError:  # Directory does not exist (repo not cloned yet)
-                pass
-        os.chdir(self.org_dir)
-
     def test_for_changes(self, pkg_name=None, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server """
         # Parse git status messages
