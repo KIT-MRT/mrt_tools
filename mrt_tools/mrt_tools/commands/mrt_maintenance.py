@@ -121,7 +121,7 @@ def update_cmakelists(package, this):
     if this:
         package = os.path.basename(ws.org_dir)
         if package not in catkin_packages:
-            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
+            click.secho("{0} does not seem to be a catkin package.".format(package), fg="red")
             sys.exit(1)
     if not package:
         for pkg_name in catkin_packages:
