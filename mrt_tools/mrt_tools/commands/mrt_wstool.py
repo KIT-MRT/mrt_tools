@@ -55,10 +55,10 @@ def main(action, args):
         ws.fetch()
         action = "info"
 
-    if action == "status" or action == "info":
-        # Show untracked files as well
-        if not ("--untracked" in args or "-u" in args):
-            args += ("--untracked",)
+    # if action == "status" or action == "info":
+    #     # Show untracked files as well
+    #     if not ("--untracked" in args or "-u" in args):
+    #         args += ("--untracked",)
 
     # Pass the rest to wstool
     if len(args) == 0:
