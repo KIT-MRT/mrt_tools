@@ -152,7 +152,8 @@ def update_rosinstall():
               help="This command loads the current list of repos from the server and caches them in a file for bash "
                    "autocompletion. This command is run every time you use the mrt tools, so normally there is no "
                    "need to call this manually.")
-def update_repo_cache():
+@click.option("--quiet", is_flag=True)
+def update_repo_cache(quiet):
     """
     Read repo list from server and write it into caching file.
     :rtype : object
@@ -161,19 +162,27 @@ def update_repo_cache():
     # -> Just exit when something is not ok.
     try:
         # Connect
-        token = Token(path=TOKEN_PATH, allow_creation=False)
+        if quiet:
+            token = Token(path=TOKEN_PATH, allow_creation=False)
+        else:
+            token = Token(path=TOKEN_PATH, allow_creation=True)
         git = Git(token=token)
         repo_dicts = git.get_repos()
+        if not quiet:
+            click.echo("Update was successful")
     except:
         # In case the connection didn't succeed, the file is going to be flushed -> we don't seem to have a
         # connection anyway and don't want old data.
+        if not quiet:
+            click.echo("There was an error during update.")
         repo_dicts = []
+        # Remove lock file, so that it will soon be tried again.
+        os.remove(CACHE_LOCK_FILE)
 
-    file_name = os.path.expanduser(CACHE_FILE)
-    dir_name = os.path.dirname(file_name)
+    dir_name = os.path.dirname(CACHE_FILE)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
-    with open(file_name, "w") as f:
+    with open(CACHE_FILE, "w") as f:
         for r in repo_dicts:
             f.write(r["name"] + ",")
 

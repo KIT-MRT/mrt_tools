@@ -274,17 +274,17 @@ def cache_repos():
     now = time.time()
     try:
         # Read in last modification time
-        last_mod_lock = os.path.getmtime(os.path.expanduser(CACHE_LOCK_FILE))
+        last_mod_lock = os.path.getmtime(CACHE_LOCK_FILE)
     except OSError:
         # Set modification time to 2 * default_repo_cache_time ago
         last_mod_lock = now - 2 * CACHE_LOCK_DECAY_TIME
-        touch(os.path.expanduser(CACHE_LOCK_FILE))
+        touch(CACHE_LOCK_FILE)
 
     # Keep caching process from spawning several times
     if (now - last_mod_lock) > CACHE_LOCK_DECAY_TIME:
-        touch(os.path.expanduser(CACHE_LOCK_FILE))
+        touch(CACHE_LOCK_FILE)
         devnull = open(os.devnull, 'wb')  # use this in python < 3.3; python >= 3.3 has subprocess.DEVNULL
-        subprocess.Popen(['mrt maintenance update_repo_cache'], shell=True, stdout=devnull, stderr=devnull)
+        subprocess.Popen(['mrt maintenance update_repo_cache --quiet'], shell=True, stdout=devnull, stderr=devnull)
 
 
 def set_git_credentials(username, password):

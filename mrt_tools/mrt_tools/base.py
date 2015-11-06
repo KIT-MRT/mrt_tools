@@ -131,7 +131,6 @@ class Git(object):
 
     def get_repos(self):
         """Returns a list of all repositories in Gitlab"""
-
         return list(self.server.getall(self.server.getprojects, per_page=100))
 
     def find_repo(self, pkg_name, ns=None):
@@ -340,8 +339,6 @@ class Token(object):
 
         self.token = gitlab_user['private_token']
 
-        if not USE_SSH:
-            subprocess.call("git config credential.https://example.com.username myusername", shell=True)
         if SAVE_TOKEN:
             self.write()
 
