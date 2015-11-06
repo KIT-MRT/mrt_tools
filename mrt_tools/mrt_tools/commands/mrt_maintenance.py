@@ -116,7 +116,8 @@ def update_cmakelists(package, this):
                 current_version = line[:-1]
                 break
     if not current_version:
-        raise Exception("current pkg_version could not be found.")
+        click.secho("current pkg_version could not be found.", fg='red')
+        sys.exit(1)
 
     if this:
         package = os.path.basename(ws.org_dir)

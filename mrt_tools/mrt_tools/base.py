@@ -107,7 +107,8 @@ class Git(object):
             sys.exit(1)
 
         if remote_keys is False:
-            raise Exception("There was a problem with gitlab...")
+            click.secho("There was a problem with gitlab... Exiting", fg="red")
+            sys.exit(1)
         if [key for key in local_keys if key.public_key in [r["key"] for r in remote_keys]]:
             return True
         else:
@@ -596,7 +597,7 @@ class Workspace(object):
         # Test whether ros is sourced
         if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRARY_PATH"]:
             click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
-            raise Exception("ROS_ROOT not set.")
+            sys.exit(1)
 
         if not git:
             git = Git()
