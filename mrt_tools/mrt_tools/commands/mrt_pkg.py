@@ -166,3 +166,58 @@ def visualize_deps(ws, pkg_name, this):
     deps = [ws.get_dependencies(pkg, deep=True) for pkg in pkg_list]
     graph = Digraph(deps)
     graph.plot(pkg_name)
+
+
+@main.command(short_help="List dependencies of catkin packages.",
+              help="This will list all dependencies of a named catkin package.")
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
+@click.option("--this", is_flag=True)
+@click.pass_obj
+def list_deps(ws, pkg_name, this):
+    """ Visualize dependencies of catkin packages."""
+    pkg_list = ws.get_catkin_package_names()
+
+    if not pkg_name and not this:
+        click.secho("Please specify a package or use the '--this' flag.", fg="red")
+        sys.exit(1)
+    if this:
+        pkg_name = os.path.basename(ws.org_dir)
+        if pkg_name not in pkg_list:
+            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
+            sys.exit(1)
+
+    dep_dict = ws.get_dependencies(pkg_name, deep=True)
+    dep_list = dep_dict[pkg_name]
+    git_deps = set()
+    apt_deps = set()
+
+    found_one = True
+    while found_one:
+        found_one = False
+        for obj in dep_list:
+            if isinstance(obj, basestring):
+                found_one = True
+                apt_deps.add(obj)
+            elif isinstance(obj, dict):
+                found_one = True
+                git_deps.update(set(obj.keys()))
+                dep_list += obj.values()
+            elif isinstance(obj, list):
+                found_one = True
+                dep_list += obj
+            if found_one:
+                dep_list.remove(obj)
+
+    click.echo("")
+    click.echo("Dependencies for {}".format(pkg_name))
+    click.echo("")
+    click.echo("Gitlab dependencies")
+    click.echo("===================")
+    for dep in git_deps:
+
+        click.echo(dep)
+    click.echo("")
+    click.echo("Apt-get dependencies")
+    click.echo("====================")
+    for dep in apt_deps:
+        click.echo(dep)
