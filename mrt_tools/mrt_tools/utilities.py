@@ -45,6 +45,8 @@ def get_userinfo():
                                         stdout=subprocess.PIPE).communicate()
     (email, mail_err) = subprocess.Popen("git config --get user.email", shell=True,
                                          stdout=subprocess.PIPE).communicate()
+    (credential_helper, credential_err) = subprocess.Popen("git config --get credential.helper", shell=True,
+                                                           stdout=subprocess.PIPE).communicate()
 
     # Check wether git is configured
     if dpkg_err is not None:
@@ -60,9 +62,8 @@ def get_userinfo():
         while not click.confirm("Use '" + email + "'as git user email?"):
             email = click.prompt("Please enter new email")
         subprocess.call("git config --global user.email '" + email + "'", shell=True)
-
-    # Set git caching helper to save credentials
-    if not USE_SSH:
+    if USE_GIT_CREDENTIAL_CACHE and credential_helper != "cache --timeout={}".format(GIT_CACHE_TIMEOUT):
+        # Set git caching helper to save credentials
         subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(GIT_CACHE_TIMEOUT),
                         shell=True)
 

@@ -1,80 +1,80 @@
 #!/usr/bin/python
 import ConfigParser
-import click
-import sys
 import os
 
 CONFIG_FILE = os.path.expanduser("~/.mrtgitlab/mrt.cfg")
-config = ConfigParser.ConfigParser()
 
+# Default settings
+settings = {
+    'Token': {
+        'TOKEN_PATH': os.path.expanduser("~/.mrtgitlab/.token"),
+        'SAVE_TOKEN': True
+    },
+    'SSH': {
+        'USE_SSH': False,
+        'SSH_PATH': os.path.expanduser("~/.ssh"),
+        'SSH_KEY_NAME': "mrtgitlab"
+    },
+    'Cache': {
+        'CACHE_FILE': os.path.expanduser("~/.mrtgitlab/repo_cache"),
+        'CACHE_LOCK_FILE': os.path.expanduser("~/.mrtgitlab/.repo_cache_lock"),
+        'CACHE_DECAY_TIME': 300,  # in seconds
+        'CACHE_LOCK_DECAY_TIME': 30  # in seconds
+    },
+    'Gitlab': {
+        'HOST_URL': "https://gitlab.mrt.uni-karlsruhe.de",
+        'GIT_CACHE_TIMEOUT': 900,  # in seconds
+        'USE_GIT_CREDENTIAL_CACHE': True
+    },
+    'Snapshot': {
+        'FILE_ENDING': ".snapshot",
+        'SNAPSHOT_VERSION': "0.1.0",
+        'VERSION_FILE': "snapshot.version"
+    }
+}
 
-def create_default_config():
-    click.echo("Creating new config file with default values.")
+config = ConfigParser.SafeConfigParser()
 
-    # Create config file with default settings
-    config.add_section('Token')
-    config.set('Token', 'TOKEN_PATH', os.path.expanduser("~/.mrtgitlab/.token"))
-    config.set('Token', 'SAVE_TOKEN', "True")
+# Read in config file
+config.read(CONFIG_FILE)
 
-    config.add_section('SSH')
-    config.set('SSH', 'USE_SSH', "False")
-    config.set('SSH', 'SSH_PATH', os.path.expanduser("~/.ssh"))
-    config.set('SSH', 'SSH_KEY_NAME', "mrtgitlab")
+# Test for sections
+for section, section_dict in settings.iteritems():
+    # Test for section
+    if not config.has_section(section):
+        config.add_section(section)
+    # Go through keys
+    for key, value in section_dict.iteritems():
+        if config.has_option(section, key):
+            # Update our default settings dict with loaded data
+            if isinstance(value, bool):
+                settings[section][key] = config.getboolean(section, key)
+            elif isinstance(value, int):
+                settings[section][key] = config.getint(section, key)
+            else:
+                settings[section][key] = config.get(section, key)
+        else:
+            # click.echo("Key '{}' in section '{}' not found. Adding it to config file.".format(key, section))
+            config.set(section, key, str(value))
 
-    config.add_section('Cache')
-    config.set('Cache', 'CACHE_FILE', os.path.expanduser("~/.mrtgitlab/repo_cache"))
-    config.set('Cache', 'CACHE_LOCK_FILE', os.path.expanduser("~/.mrtgitlab/.repo_cache_lock"))
-    config.set('Cache', 'CACHE_DECAY_TIME', "300")  # in seconds
-    config.set('Cache', 'CACHE_LOCK_DECAY_TIME', "30")  # in seconds
+# Writing our configuration file
+if not os.path.exists(os.path.dirname(CONFIG_FILE)):
+    os.makedirs(os.path.dirname(CONFIG_FILE))
+with open(CONFIG_FILE, 'wb') as configfile:
+    config.write(configfile)
 
-    config.add_section('Gitlab')
-    config.set('Gitlab', 'HOST_URL', "https://gitlab.mrt.uni-karlsruhe.de")
-    config.set('Gitlab', 'GIT_CACHE_TIMEOUT', "900")  # in seconds
-
-    config.add_section('Snapshot')
-    config.set('Snapshot', 'FILE_ENDING', ".snapshot")
-    config.set('Snapshot', 'SNAPSHOT_VERSION', "0.1.0")
-    config.set('Snapshot', 'VERSION_FILE', "snapshot.version")
-
-    # Writing our configuration file
-    if not os.path.exists(os.path.dirname(CONFIG_FILE)):
-        os.makedirs(os.path.dirname(CONFIG_FILE))
-    with open(CONFIG_FILE, 'wb') as configfile:
-        config.write(configfile)
-
-
-try:
-    if not os.path.exists(CONFIG_FILE):
-        create_default_config()
-
-    # Read in config file
-    config.read(CONFIG_FILE)
-
-    # Token
-    TOKEN_PATH = config.get('Token', 'TOKEN_PATH')
-    SAVE_TOKEN = config.getboolean('Token', 'SAVE_TOKEN')
-
-    # SSH Keys
-    USE_SSH = config.getboolean('SSH', 'USE_SSH')
-    SSH_PATH = config.get('SSH', 'SSH_PATH')
-    SSH_KEY_NAME = config.get('SSH', 'SSH_KEY_NAME')
-    # Cache
-    CACHE_FILE = config.get('Cache', 'CACHE_FILE')
-    CACHE_LOCK_FILE = config.get('Cache', 'CACHE_LOCK_FILE')
-    CACHE_DECAY_TIME = config.getint('Cache', 'CACHE_DECAY_TIME')
-    CACHE_LOCK_DECAY_TIME = config.getint('Cache', 'CACHE_LOCK_DECAY_TIME')
-
-    # Gitlab
-    HOST_URL = config.get('Gitlab', 'HOST_URL')
-    GIT_CACHE_TIMEOUT = config.getint('Gitlab', 'GIT_CACHE_TIMEOUT')
-
-    # Snapshot
-    FILE_ENDING = config.get('Snapshot', 'FILE_ENDING')
-    SNAPSHOT_VERSION = config.get('Snapshot', 'SNAPSHOT_VERSION')
-    VERSION_FILE = config.get('Snapshot', 'VERSION_FILE')
-
-except ConfigParser.Error:
-    if click.confirm("There was an error reading the config. Recreate with default values?"):
-        click.echo("Removing config file. Please try again now.")
-        os.remove(CONFIG_FILE)
-    sys.exit(1)
+TOKEN_PATH = settings['Token']['TOKEN_PATH']
+SAVE_TOKEN = settings['Token']['SAVE_TOKEN']
+USE_SSH = settings['SSH']['USE_SSH']
+SSH_PATH = settings['SSH']['SSH_PATH']
+SSH_KEY_NAME = settings['SSH']['SSH_KEY_NAME']
+CACHE_FILE = settings['Cache']['CACHE_FILE']
+CACHE_LOCK_FILE = settings['Cache']['CACHE_LOCK_FILE']
+CACHE_DECAY_TIME = settings['Cache']['CACHE_DECAY_TIME']
+CACHE_LOCK_DECAY_TIME = settings['Cache']['CACHE_LOCK_DECAY_TIME']
+HOST_URL = settings['Gitlab']['HOST_URL']
+GIT_CACHE_TIMEOUT = settings['Gitlab']['GIT_CACHE_TIMEOUT']
+USE_GIT_CREDENTIAL_CACHE = settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE']
+FILE_ENDING = settings['Snapshot']['FILE_ENDING']
+SNAPSHOT_VERSION = settings['Snapshot']['SNAPSHOT_VERSION']
+VERSION_FILE = settings['Snapshot']['VERSION_FILE']

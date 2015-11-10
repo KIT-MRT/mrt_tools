@@ -377,6 +377,7 @@ class Workspace(object):
             if not set(self.catkin_pkg_names).issubset(set(self.wstool_pkg_names)):
                 # click.secho("INFO: wstool and catkin found different packages! Maybe you should run 'ws fix "
                 #             "url_in_package_xml'", fg='yellow')
+                # TODO Maybe not so smart to change rosinstall file every time -> snapshots!
                 self.recreate_index()
             self.cd_root()
         elif not silent:
@@ -660,8 +661,8 @@ class Workspace(object):
             # Try reading it from git repo
             try:
                 with open(pkg + "/.git/config", 'r') as f:
-                    git_ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
-                    self.add(pkg, git_ssh_url, update=False)
+                    git_url = next(line[7:-1] for line in f if line.startswith("\turl"))
+                    self.add(pkg, git_url, update=False)
             except (IOError, StopIteration):
                 pass
 
