@@ -44,5 +44,4 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
         subprocess.call(["catkin", action]+list(catkin_args))
 
     if build_eclipse:
-        ws.cd_root()
-        set_eclipse_project_setting()
+        set_eclipse_project_setting(ws.root)

@@ -251,9 +251,9 @@ def check_and_update_cmakelists(pkg_name, current_version):
                 subprocess.call("git commit -m 'Update CMakeLists.txt to {0}'".format(current_version), shell=True)
 
 
-def set_eclipse_project_setting():
-    os.chdir("build")
-    for project in find_by_pattern(".project", "build"):
+def set_eclipse_project_setting(ws_root):
+    build_dir = os.path.join(ws_root, "build")
+    for project in find_by_pattern(".project", build_dir):
         os.chdir(os.path.dirname(project))
         # set environment variables
         subprocess.call(
