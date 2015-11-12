@@ -327,7 +327,7 @@ class Token(object):
                 username = click.prompt("Gitlab user name")
                 password = click.prompt("Gitlab password", hide_input=True)
                 # If we are not using ssh, give those credentials directly to git
-                if not USE_SSH:
+                if USE_GIT_CREDENTIAL_CACHE:
                     set_git_credentials(username, password)
                 tmp_git_obj.login(username, password)
                 gitlab_user = tmp_git_obj.currentuser()
