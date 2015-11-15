@@ -5,7 +5,7 @@ import os
 CONFIG_FILE = os.path.expanduser("~/.mrtgitlab/mrt.cfg")
 
 # Default settings
-settings = {
+default_settings = {
     'Token': {
         'TOKEN_PATH': os.path.expanduser("~/.mrtgitlab/.token"),
         'SAVE_TOKEN': True
@@ -33,36 +33,41 @@ settings = {
     }
 }
 
-config = ConfigParser.SafeConfigParser()
 
-# Read in config file
-config.read(CONFIG_FILE)
+def rw_config(settings, config_file):
+    # Read in config file
+    config = ConfigParser.SafeConfigParser()
+    config.read(config_file)
 
-# Test for sections
-for section, section_dict in settings.iteritems():
-    # Test for section
-    if not config.has_section(section):
-        config.add_section(section)
-    # Go through keys
-    for key, value in section_dict.iteritems():
-        if config.has_option(section, key):
-            # Update our default settings dict with loaded data
-            if isinstance(value, bool):
-                settings[section][key] = config.getboolean(section, key)
-            elif isinstance(value, int):
-                settings[section][key] = config.getint(section, key)
+    # Test for sections
+    for section, section_dict in settings.iteritems():
+        # Test for section
+        if not config.has_section(section):
+            config.add_section(section)
+        # Go through keys
+        for key, value in section_dict.iteritems():
+            if config.has_option(section, key):
+                # Update our default settings dict with loaded data
+                if isinstance(value, bool):
+                    settings[section][key] = config.getboolean(section, key)
+                elif isinstance(value, int):
+                    settings[section][key] = config.getint(section, key)
+                else:
+                    settings[section][key] = config.get(section, key)
             else:
-                settings[section][key] = config.get(section, key)
-        else:
-            # click.echo("Key '{}' in section '{}' not found. Adding it to config file.".format(key, section))
-            config.set(section, key, str(value))
+                # click.echo("Key '{}' in section '{}' not found. Adding it to config file.".format(key, section))
+                config.set(section, key, str(value))
 
-# Writing our configuration file
-if not os.path.exists(os.path.dirname(CONFIG_FILE)):
-    os.makedirs(os.path.dirname(CONFIG_FILE))
-with open(CONFIG_FILE, 'wb') as configfile:
-    config.write(configfile)
+    # Writing our configuration file
+    if not os.path.exists(os.path.dirname(config_file)):
+        os.makedirs(os.path.dirname(config_file))
+    with open(config_file, 'wb') as configfile:
+        config.write(configfile)
 
+
+# Copy settings into default variables
+settings = default_settings
+rw_config(settings, CONFIG_FILE)
 TOKEN_PATH = settings['Token']['TOKEN_PATH']
 SAVE_TOKEN = settings['Token']['SAVE_TOKEN']
 USE_SSH = settings['SSH']['USE_SSH']

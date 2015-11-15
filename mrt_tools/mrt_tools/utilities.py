@@ -67,7 +67,7 @@ def get_userinfo():
         subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(GIT_CACHE_TIMEOUT),
                         shell=True)
 
-    return {'name': name[:-1], 'mail': email[:-1]}
+    return {'name': name[:-1], 'email': email[:-1]}
 
 
 def get_user_choice(items, extra=None, prompt="Please choose a number", default=None):
@@ -215,7 +215,7 @@ def create_files(pkg_name, pkg_type, ros):
                     "-e 's/\${PACKAGE_NAME}/" + pkg_name + "/g' " +
                     "-e 's/\${CMAKE_PACKAGE_NAME}/" + pkg_name.upper() + "/g' " +
                     "-e 's/\${USER_NAME}/" + user['name'].decode("utf8") + "/g' " +
-                    "-e 's/\${USER_EMAIL}/" + user['mail'].decode("utf8") + "/g' " +
+                    "-e 's/\${USER_EMAIL}/" + user['email'].decode("utf8") + "/g' " +
                     "package.xml", shell=True)
 
     create_cmakelists(pkg_name, pkg_type, ros, self_dir)
