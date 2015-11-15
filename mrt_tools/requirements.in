@@ -5,6 +5,6 @@ requests
 pyapi-gitlab
 future
 wstool
-Crypto
+pycrypto
 pydot2
--e git+https://github.com/cbandera/click.git@8e18d48f925c312f47d2075e1392d49dc4818c95#egg=1.0
+-e git+https://github.com/cbandera/click.git@8e18d48f925c312f47d2075e1392d49dc4818c95#egg=click
