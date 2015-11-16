@@ -8,9 +8,10 @@
 argparse==1.4.0           # via catkin-pkg
 catkin-pkg==0.2.10
 catkin-tools==0.3.0
-configparser==3.3.0.r2
+configparser==3.3.0.post2
 docutils==0.12            # via catkin-pkg
 future==0.15.2
+hashlib==20081119
 pyapi-gitlab==7.8.5
 pycrypto==2.6.1
 pydot2==1.0.33

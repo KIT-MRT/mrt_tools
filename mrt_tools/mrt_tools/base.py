@@ -600,6 +600,10 @@ class Workspace(object):
             click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
             sys.exit(1)
 
+        if changed_base_yaml():
+            click.secho("Base YAML file changed, running 'rosdep update'.", fg="green")
+            subprocess.call("rosdep update",shell=True)
+
         if not git:
             git = Git()
 

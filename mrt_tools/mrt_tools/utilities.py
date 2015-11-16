@@ -309,5 +309,41 @@ def test_git_credentials():
         set_git_credentials(username, password)
 
 
+def changed_base_yaml():
+    click.echo("Testing for changes in rosdeps...")
+    import hashlib
+    hasher = hashlib.md5()
+
+    # Read hashes
+    try:
+        with open(BASE_YAML_FILE, 'rb') as f:
+            buf = f.read()
+            hasher.update(buf)
+            new_hash = hasher.hexdigest()
+    except IOError:
+        new_hash = ""
+        click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(BASE_YAML_FILE), fg="red")
+
+    try:
+        with open(BASE_YAML_HASH_FILE,'r') as f:
+            old_hash = f.read()
+    except IOError:
+        old_hash = ""
+        if not os.path.exists(os.path.dirname(BASE_YAML_HASH_FILE)):
+            os.makedirs(os.path.dirname(BASE_YAML_HASH_FILE))
+        with open(BASE_YAML_HASH_FILE, 'wb') as f:
+            f.write("")
+
+    # Compare hashes
+    if old_hash == new_hash:
+        return False
+    else:
+        with open(BASE_YAML_HASH_FILE,'w') as f:
+            f.truncate()
+            f.write(new_hash)
+        return True
+
+
 self_dir = get_script_root()
 cache_repos()
+

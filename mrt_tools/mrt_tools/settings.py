@@ -30,6 +30,10 @@ default_settings = {
         'FILE_ENDING': ".snapshot",
         'SNAPSHOT_VERSION': "0.1.0",
         'VERSION_FILE': "snapshot.version"
+    },
+    'Other': {
+        'BASE_YAML_FILE': "/mrtsoftware/pkg/share/ros/base.yaml",
+        'BASE_YAML_HASH_FILE': os.path.expanduser("~/.mrtgitlab/base_yaml_hash"),
     }
 }
 
@@ -83,3 +87,5 @@ USE_GIT_CREDENTIAL_CACHE = settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE']
 FILE_ENDING = settings['Snapshot']['FILE_ENDING']
 SNAPSHOT_VERSION = settings['Snapshot']['SNAPSHOT_VERSION']
 VERSION_FILE = settings['Snapshot']['VERSION_FILE']
+BASE_YAML_FILE = settings['Other']['BASE_YAML_FILE']
+BASE_YAML_HASH_FILE = settings['Other']['BASE_YAML_HASH_FILE']
