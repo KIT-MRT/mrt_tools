@@ -30,7 +30,7 @@ except KeyError:
 
 
 class Git(object):
-    def __init__(self, token=None, host=HOST_URL):
+    def __init__(self, token=None, host=HOST_URL, quiet=False):
         # Host URL
         self.host = host
         self.token = token
@@ -38,7 +38,7 @@ class Git(object):
         self.ssh_key = None
         self.use_ssh = USE_SSH
 
-        if is_bashcompletion:
+        if is_bashcompletion or quiet:
             self.connect()
         else:
             self.test_and_connect()
@@ -286,15 +286,15 @@ class Token(object):
 
     def __init__(self, path=TOKEN_PATH, allow_creation=True):
         self.path = os.path.expanduser(path)
-        self.token = self.load(self.path)
+        self.token = None
+        self.load()
         if not self and allow_creation:
             self.create()
 
     def __bool__(self):
         return self.token != ""
 
-    @staticmethod
-    def load(path):
+    def load(self):
         """
         Read in the token from a specified path
         """
@@ -305,12 +305,12 @@ class Token(object):
                 import time
                 now = time.time()
                 # Read in last modification time
-                last_mod = os.path.getmtime(path)
+                last_mod = os.path.getmtime(self.path)
                 if (now - last_mod) > GIT_CACHE_TIMEOUT:
-                    os.remove(path)
-            return os.read(os.open(path, 0), 20)
+                    os.remove(self.path)
+            self.token = os.read(os.open(self.path, 0), 20)
         except (IOError, OSError):
-            return ""
+            self.token = ""
 
     def create(self):
         """
@@ -318,25 +318,29 @@ class Token(object):
         Normally this function has to be called only once.
         From then on, the persistent token file is used to communicate with the server.
         """
-        click.echo("No existing gitlab token file found. Creating new one...")
+        click.echo("No existing Gitlab token file found. Creating new one...")
 
-        tmp_git_obj = gitlab.Gitlab(HOST_URL)
         gitlab_user = None
-        while gitlab_user is None:
-            try:
-                username = click.prompt("Gitlab user name")
-                password = click.prompt("Gitlab password", hide_input=True)
-                # If we are not using ssh, give those credentials directly to git
-                if USE_GIT_CREDENTIAL_CACHE:
-                    set_git_credentials(username, password)
-                tmp_git_obj.login(username, password)
-                gitlab_user = tmp_git_obj.currentuser()
-            except gitlab.exceptions.HttpError:
-                click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
-            except ValueError:
-                click.secho("No connection to server. Did you connect to VPN?", fg="red")
-            except ConnectionError:
-                click.secho("No connection to server. Are you connected to the internet?", fg="red")
+        tmp_git_obj = gitlab.Gitlab(HOST_URL)
+        username = click.prompt("Gitlab user name")
+        passwd = click.prompt("Gitlab password", hide_input=True)
+        try:
+            click.echo("Retrieving token from server...")
+            # If we are not using ssh, give those credentials directly to git
+            if USE_GIT_CREDENTIAL_CACHE:
+                set_git_credentials(username, passwd)
+            tmp_git_obj.login(username, passwd)
+            gitlab_user = tmp_git_obj.currentuser()
+        except gitlab.exceptions.HttpError:
+            click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
+        except ValueError:
+            click.secho("No connection to server. Did you connect to VPN?", fg="red")
+        except ConnectionError:
+            click.secho("No connection to server. Are you connected to the internet?", fg="red")
+
+        if gitlab_user is None:
+            click.secho("Could not create token. Exiting...", fg="red")
+            sys.exit(1)
 
         self.token = gitlab_user['private_token']
 
@@ -431,8 +435,7 @@ class Workspace(object):
         """Test whether workspace exists"""
         return self.get_root() is not None
 
-    @staticmethod
-    def get_root():
+    def get_root(self):
         """Find the root directory of a workspace, starting from '.' """
         org_dir = os.getcwd()
         current_dir = org_dir

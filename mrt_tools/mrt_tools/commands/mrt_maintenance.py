@@ -163,11 +163,7 @@ def update_repo_cache(quiet):
     # -> Just exit when something is not ok.
     try:
         # Connect
-        if quiet:
-            token = Token(path=TOKEN_PATH, allow_creation=False)
-        else:
-            token = Token(path=TOKEN_PATH, allow_creation=True)
-        git = Git(token=token)
+        git = Git(quiet=quiet)
         repo_dicts = git.get_repos()
         if not quiet:
             click.echo("Update was successful")
