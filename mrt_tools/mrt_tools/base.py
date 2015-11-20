@@ -85,6 +85,8 @@ class Git(object):
 
     def connect(self):
         """Connects to the server"""
+        if self.token is None:
+            self.token = Token(allow_creation=False)
         try:
             self.server = gitlab.Gitlab(self.host, token=self.token.token)
         except gitlab.exceptions.HttpError:
