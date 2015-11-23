@@ -174,10 +174,4 @@ check_output rosdep update
 #python-pip: Used to install further python packages
 check_output sudo apt-get install mrt-build python-rosinstall python-catkin-tools python-rosdep python-rosinstall-generator python-wstool python-yaml python-pip --yes > /dev/null
 
-#install pip python modules
-#pyapi-gitlab: Used to communicate with the gitlab server (e.g. creating a project)
-check_output sudo pip install pyapi-gitlab colorama 
-
-#install gitlab private token
-mrt_setup_gitlab
-
+curl https://raw.githubusercontent.com/mitsuhiko/pipsi/master/get-pipsi.py | python
