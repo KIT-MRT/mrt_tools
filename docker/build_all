@@ -5,6 +5,9 @@ set -e
 BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 FLAGS="--force-rm=true --no-cache=true"
 
+#update ubuntu 14.04
+docker pull ubuntu:14.04
+
 cd $BASE/mrt_base
 docker build $FLAGS -t mrt_base .
 

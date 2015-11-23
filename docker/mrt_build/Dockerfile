@@ -8,14 +8,14 @@ RUN sudo apt-key adv --keyserver pool.sks-keyservers.net --recv-key 0x66FF02D7
 RUN echo "deb [arch=amd64] http://mrtdeb/deb trusty main" | sudo tee "/etc/apt/sources.list.d/mrt.list" > /dev/null
 
 #install build system stuff
-RUN sudo apt-get update && sudo apt-get install cmake git
+RUN sudo apt-get update && sudo apt-get install -y cmake git
 
 #install python stuff
-RUN sudo apt-get update && sudo apt-get install python-yaml python-pip --yes
+RUN sudo apt-get update && sudo apt-get install -y python-yaml python-pip --yes
 
 #install mrt build system related stuff
 RUN sudo pip install pyapi-gitlab colorama
-RUN sudo apt-get update && sudo apt-get install mrt-cmake-modules mrt-build
+RUN sudo apt-get update && sudo apt-get install -y mrt-cmake-modules mrt-build
 
 RUN sudo echo "yaml file:///mrtsoftware/pkg/share/ros/base.yaml" | sudo tee --append "/etc/ros/rosdep/sources.list.d/20-default.list" > /dev/null
 
