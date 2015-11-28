@@ -62,7 +62,7 @@ def create_repo(pkg_name):
     subprocess.call("git init", shell=True)
     subprocess.call("git remote add origin " + ssh_url + " >/dev/null 2>&1", shell=True)
     ws.recreate_index()
-    click.echo("You should run 'mrt fix url_in_package_xml' now")
+    click.echo("You should run 'mrt maintenance update_url_in_package_xml' now")
 
 
 ########################################################################################################################
