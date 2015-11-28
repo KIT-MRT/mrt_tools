@@ -28,7 +28,7 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 
 #manually resolve removed dependend packages
 #find_package(...)
-
+@ x|xx@
 @ x|xx@ ################################################
 @ x|xx@ ## Declare ROS messages, services and actions ##
 @ x|xx@ ################################################
@@ -79,20 +79,20 @@ catkin_package(
 @xx|x @   CATKIN_DEPENDS ${catkin_EXPORT_DEPENDS}
 )
 
-@xx|xx@ ###########
-@xx|xx@ ## Build ##
-@xx|xx@ ###########
-@xx|xx@ # Add include and library directories
-@xx|xx@ include_directories(
+###########
+## Build ##
+###########
+# Add include and library directories
+include_directories(
 @xx|x @   include/${LIBRARY_NAME}
-@xx|xx@   ${mrt_INCLUDE_DIRS} 
-@xx|xx@   ${catkin_INCLUDE_DIRS}
-@xx|xx@ )
-@xx|xx@ 
-@xx|xx@ link_directories(
-@xx|xx@   ${mrt_LIBRARY_DIRS}
-@xx|xx@ )
-@xx|xx@ 
+  ${mrt_INCLUDE_DIRS} 
+  ${catkin_INCLUDE_DIRS}
+)
+
+link_directories(
+  ${mrt_LIBRARY_DIRS}
+)
+
 @xx|x @ if (PROJECT_SOURCE_FILES_SRC)
 @xx|x @ 	# Declare a cpp library
 @xx|x @ 	add_library(${LIBRARY_NAME}
@@ -117,7 +117,7 @@ catkin_package(
 @xx| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h")
 @xx| x@ 	file(GLOB EXEC_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.cpp")
 @xx| x@ 
-@xx| x@ 	if (PROJECT_SOURCE_FILES_SRC)
+@xx| x@ 	if (EXEC_SOURCE_FILES_SRC)
 @xx| x@ 		#add executable
 @xx| x@ 		add_executable(${EXEC_NAME}
 @xx| x@ 			${EXEC_SOURCE_FILES_INC}
@@ -157,7 +157,6 @@ catkin_package(
 @xx| x@ 	#no subfolder found, add executable for src folder
 @xx| x@ 	add_exec(${PROJECT_NAME} "src")
 @xx| x@ endif()
-@xx| x@ 
 
 #############
 ## Install ##

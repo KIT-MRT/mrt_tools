@@ -45,45 +45,50 @@ def get_userinfo():
                                         stdout=subprocess.PIPE).communicate()
     (email, mail_err) = subprocess.Popen("git config --get user.email", shell=True,
                                          stdout=subprocess.PIPE).communicate()
+    (credential_helper, credential_err) = subprocess.Popen("git config --get credential.helper", shell=True,
+                                                           stdout=subprocess.PIPE).communicate()
 
     # Check wether git is configured
     if dpkg_err is not None:
         click.echo("Git not found, installing...")
         subprocess.call("sudo apt-get install git", shell=True)
     if name_err is not None or name == "":
-        name = click.prompt("Git user name not configured. Please enter name")
+        name = click.prompt("Git user name not configured. Please enter your first and last name")
         while not click.confirm("Use '" + name + "'as git user name?"):
-            name = click.prompt("Please enter new name:")
+            name = click.prompt("Please enter new name")
         subprocess.call("git config --global user.name '" + name + "'", shell=True)
     if mail_err is not None or email == "":
         email = click.prompt("Git user email not configured. Please enter email")
         while not click.confirm("Use '" + email + "'as git user email?"):
-            name = click.prompt("Please enter new email:")
+            email = click.prompt("Please enter new email")
         subprocess.call("git config --global user.email '" + email + "'", shell=True)
+    if USE_GIT_CREDENTIAL_CACHE and credential_helper != "cache --timeout={}".format(GIT_CACHE_TIMEOUT):
+        # Set git caching helper to save credentials
+        subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(GIT_CACHE_TIMEOUT),
+                        shell=True)
 
-    return {'name': name[:-1], 'mail': email[:-1]}
+    return {'name': name[:-1], 'email': email[:-1]}
 
 
 def get_user_choice(items, extra=None, prompt="Please choose a number", default=None):
-    # Print choices
-    valid_choices = []
-    for index, item in enumerate(items):
-        valid_choices.append(index)
-        click.echo("(" + str(valid_choices[-1]) + ") " + item)
-    valid_choices = list(range(0, len(items)))
+    # Test for extra choices
+    if not extra:
+        extra = []
+    if not isinstance(extra, list):
+        extra = [extra]
 
-    # Add default choice
-    if extra:
-        valid_choices.append(len(items))
-        click.echo("(" + str(valid_choices[-1]) + ") " + str(extra))
+    # Create choices
+    choices = {index: item for index, item in enumerate(items + extra)}
+
+    # Print choices
+    for key, value in choices.items():
+        click.echo("(" + str(key) + ") " + str(value))
+
+    # Get choice
     while True:
-        user_choice = click.prompt(prompt + ' [0-' + str(valid_choices[-1]) + ']', type=int, default=default)
-        if user_choice in valid_choices:
-            if extra is not None and user_choice is valid_choices[-1]:
-                # Return None if default was chosen
-                return None
-            else:
-                return user_choice
+        user_choice = click.prompt(prompt + ' [0-' + str(choices.keys()[-1]) + ']', type=int, default=default)
+        if user_choice in choices.keys():
+            return user_choice, choices[user_choice]
 
 
 def touch(filename, times=None):
@@ -113,9 +118,9 @@ def zip_files(files, archive):
 
 
 def check_naming(pkg_name):
-    while re.match("^[a-z][a-z_]+$", pkg_name) is None:
+    while re.match("^[a-z][a-z_0-9]+$", pkg_name) is None:
         pkg_name = str(
-            input("Please enter a package name containing only [a-z] and _ (First char must be a letter): "))
+            input("Please enter a package name containing only [a-z], [0-9] and _ (First char must be a letter): "))
 
     # Fail safe
     if pkg_name[-4:] == "_ros":
@@ -209,8 +214,8 @@ def create_files(pkg_name, pkg_type, ros):
     subprocess.call("sed -i " +
                     "-e 's/\${PACKAGE_NAME}/" + pkg_name + "/g' " +
                     "-e 's/\${CMAKE_PACKAGE_NAME}/" + pkg_name.upper() + "/g' " +
-                    "-e 's/\${USER_NAME}/" + user['name'] + "/g' " +
-                    "-e 's/\${USER_EMAIL}/" + user['mail'] + "/g' " +
+                    "-e 's/\${USER_NAME}/" + user['name'].decode("utf8") + "/g' " +
+                    "-e 's/\${USER_EMAIL}/" + user['email'].decode("utf8") + "/g' " +
                     "package.xml", shell=True)
 
     create_cmakelists(pkg_name, pkg_type, ros, self_dir)
@@ -246,9 +251,9 @@ def check_and_update_cmakelists(pkg_name, current_version):
                 subprocess.call("git commit -m 'Update CMakeLists.txt to {0}'".format(current_version), shell=True)
 
 
-def set_eclipse_project_setting():
-    os.chdir("build")
-    for project in find_by_pattern(".project", "build"):
+def set_eclipse_project_setting(ws_root):
+    build_dir = os.path.join(ws_root, "build")
+    for project in find_by_pattern(".project", build_dir):
         os.chdir(os.path.dirname(project))
         # set environment variables
         subprocess.call(
@@ -263,4 +268,82 @@ def set_eclipse_project_setting():
         shutil.copy(script_dir + "/templates/language.settings.xml", "./.settings")
 
 
+def cache_repos():
+    # For caching
+    import time
+
+    now = time.time()
+    try:
+        # Read in last modification time
+        last_mod_lock = os.path.getmtime(CACHE_LOCK_FILE)
+    except OSError:
+        # Set modification time to 2 * default_repo_cache_time ago
+        last_mod_lock = now - 2 * CACHE_LOCK_DECAY_TIME
+        touch(CACHE_LOCK_FILE)
+
+    # Keep caching process from spawning several times
+    if (now - last_mod_lock) > CACHE_LOCK_DECAY_TIME:
+        touch(CACHE_LOCK_FILE)
+        devnull = open(os.devnull, 'wb')  # use this in python < 3.3; python >= 3.3 has subprocess.DEVNULL
+        subprocess.Popen(['mrt maintenance update_repo_cache --quiet'], shell=True, stdout=devnull, stderr=devnull)
+
+
+def set_git_credentials(username, password):
+    if HOST_URL.startswith("https://"):
+        host = HOST_URL[8:]
+    elif HOST_URL.startswith("http://"):
+        host = HOST_URL[7:]
+    else:
+        host = HOST_URL
+    git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
+    git_process.communicate(
+        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
+
+
+def test_git_credentials():
+    # Test whether git credentials are still stored:
+    if not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
+        click.echo("Gitlab credentials not in cache. Please enter:")
+        username = click.prompt("Username")
+        password = click.prompt("Password", hide_input=True)
+        set_git_credentials(username, password)
+
+
+def changed_base_yaml():
+    click.echo("Testing for changes in rosdeps...")
+    import hashlib
+    hasher = hashlib.md5()
+
+    # Read hashes
+    try:
+        with open(BASE_YAML_FILE, 'rb') as f:
+            buf = f.read()
+            hasher.update(buf)
+            new_hash = hasher.hexdigest()
+    except IOError:
+        new_hash = ""
+        click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(BASE_YAML_FILE), fg="red")
+
+    try:
+        with open(BASE_YAML_HASH_FILE,'r') as f:
+            old_hash = f.read()
+    except IOError:
+        old_hash = ""
+        if not os.path.exists(os.path.dirname(BASE_YAML_HASH_FILE)):
+            os.makedirs(os.path.dirname(BASE_YAML_HASH_FILE))
+        with open(BASE_YAML_HASH_FILE, 'wb') as f:
+            f.write("")
+
+    # Compare hashes
+    if old_hash == new_hash:
+        return False
+    else:
+        with open(BASE_YAML_HASH_FILE,'w') as f:
+            f.truncate()
+            f.write(new_hash)
+        return True
+
+
 self_dir = get_script_root()
+cache_repos()
+

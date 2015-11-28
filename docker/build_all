@@ -1,0 +1,25 @@
+#!/bin/bash
+
+set -e
+
+BASE="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
+FLAGS="--force-rm=true --no-cache=true"
+
+#update ubuntu 14.04
+docker pull ubuntu:14.04
+
+cd $BASE/mrt_base
+docker build $FLAGS -t mrt_base .
+
+cd $BASE/mrt_ros_desktop_full
+docker build $FLAGS -t mrt_ros_desktop_full .
+
+cd $BASE/mrt_build
+docker build $FLAGS -t mrt_build .
+
+cd $BASE/mrt_build_check_pkg
+docker build $FLAGS -t mrt_build_check_pkg .
+
+cd $BASE/mrt_build_check_ws
+docker build $FLAGS -t mrt_build_check_ws .
+

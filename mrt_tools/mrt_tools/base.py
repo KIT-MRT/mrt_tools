@@ -1,5 +1,6 @@
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
 from requests.exceptions import ConnectionError
+from catkin_tools.context import Context
 from requests.packages import urllib3
 from mrt_tools.utilities import *
 from mrt_tools.settings import *
@@ -8,7 +9,6 @@ from catkin_pkg import packages
 from builtins import object
 from builtins import next
 from builtins import str
-from PIL import Image
 import subprocess
 import gitlab
 import shutil
@@ -30,17 +30,24 @@ except KeyError:
 
 
 class Git(object):
-    def __init__(self, token=None, host=default_host):
+    def __init__(self, token=None, host=HOST_URL, quiet=False):
         # Host URL
         self.host = host
         self.token = token
         self.server = None
         self.ssh_key = None
+        self.use_ssh = USE_SSH
 
-        if is_bashcompletion:
+        if is_bashcompletion or quiet:
             self.connect()
         else:
             self.test_and_connect()
+
+    def get_url_string(self):
+        if self.use_ssh:
+            return "ssh_url_to_repo"
+        else:
+            return "http_url_to_repo"
 
     def test_and_connect(self):
         # Token
@@ -60,22 +67,30 @@ class Git(object):
         self.connect()
 
         # Test ssh key
-        if not self.check_ssh_key():
+        if self.use_ssh and not self.check_ssh_key():
             # SSH Key not on server yet. Ask user
             local_keys = self.get_local_ssh_keys()
-            user_choice = get_user_choice([key.name for key in local_keys], extra="Create new key.",
-                                          prompt="No ssh key match found. Which ssh key should we use?")
-            if user_choice is None:
+            choice_idx, choice_value = get_user_choice([key.name for key in local_keys],
+                                                       extra=["Create new key.", "Use https instead of a ssh key"],
+                                                       prompt="No ssh key match found. Which ssh key should we use?")
+            if choice_value == "Use https instead of a ssh key":
+                self.use_ssh = False
+                return
+            elif choice_value == "Create new key.":
                 self.ssh_key = SSHkey()
                 self.ssh_key.create()
             else:
-                self.ssh_key = local_keys[user_choice]
+                self.ssh_key = local_keys[choice_idx]
             self.upload_ssh_key()
 
     def connect(self):
         """Connects to the server"""
+        if self.token is None:
+            self.token = Token(allow_creation=False)
         try:
             self.server = gitlab.Gitlab(self.host, token=self.token.token)
+            # Test connection
+            self.server.currentuser()
         except gitlab.exceptions.HttpError:
             click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
             sys.exit(1)
@@ -96,7 +111,8 @@ class Git(object):
             sys.exit(1)
 
         if remote_keys is False:
-            raise Exception("There was a problem with gitlab...")
+            click.secho("There was a problem with gitlab... Exiting", fg="red")
+            sys.exit(1)
         if [key for key in local_keys if key.public_key in [r["key"] for r in remote_keys]]:
             return True
         else:
@@ -108,35 +124,38 @@ class Git(object):
         self.server.addsshkey(self.ssh_key.name, self.ssh_key.public_key)
 
     def get_namespaces(self):
-        """Returns a list of all namespaces in Gitlab"""
-
+        """Returns a dict {name:id} of all namespaces in Gitlab"""
         click.echo("Retrieving namespaces...")
-        namespaces = {project['namespace']['name']: project['namespace']['id'] for project in self.get_repos()}
+        namespaces = list(self.server.getall(self.server.getgroups, per_page=100))
+        namespaces = sorted(namespaces, key=lambda k: k['name'])
         user_name = self.server.currentuser()['username']
-        if user_name not in list(namespaces.keys()):
-            namespaces[user_name] = 0  # The default user namespace_id will be created with first user project
-        return namespaces
+        namespace_dict = {ns['name']: ns['id'] for ns in namespaces}
+        if user_name not in list(namespace_dict.keys()):
+            namespace_dict[user_name] = 0
+        return namespace_dict
 
     def get_repos(self):
         """Returns a list of all repositories in Gitlab"""
-
         return list(self.server.getall(self.server.getprojects, per_page=100))
 
     def find_repo(self, pkg_name, ns=None):
         """Search for a repository within gitlab."""
-
         click.secho("Search for package " + pkg_name, fg='red')
+        # Results is a dict or a list of dicts, depending on how many results were found
         results = self.server.searchproject(pkg_name)
 
-        if ns is not None:
+        # If we declared a namespace, there will only be one result with this name in this namespace
+        if ns:
             try:
                 return next(
-                    x["ssh_url_to_repo"] for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
+                    x[self.get_url_string()] for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
             except StopIteration:
                 return None
-
-        exact_hits = [res for res in results if res["name"] == pkg_name]
-        count = len(exact_hits)
+        else:
+            # The searchproject command will also find the query as a substring in repo names, therefor we have to
+            # check again.
+            matching_repos = [res for res in results if res["name"] == pkg_name]
+            count = len(matching_repos)
 
         if count is 0:
             # None found
@@ -144,17 +163,17 @@ class Git(object):
             return None
         if count is 1:
             # Only one found
-            user_choice = 0
+            choice = 0
         else:
             # Multiple found
-            user_choice = get_user_choice([item["path_with_namespace"] for item in exact_hits],
-                                          prompt="More than one repo with \"" + str(
-                                              pkg_name) + "\" found. Please choose")
+            choice, _ = get_user_choice([item["path_with_namespace"] for item in matching_repos],
+                                     prompt="More than one repo with \"" + str(
+                                         pkg_name) + "\" found. Please choose")
 
-        ssh_url = exact_hits[user_choice]['ssh_url_to_repo']
-        click.secho("Found " + exact_hits[user_choice]['path_with_namespace'], fg='green')
+        url = matching_repos[choice][self.get_url_string()]
+        click.secho("Found " + matching_repos[choice]['path_with_namespace'], fg='green')
 
-        return ssh_url
+        return url
 
     def create_repo(self, pkg_name):
         """
@@ -164,15 +183,15 @@ class Git(object):
         # Dialog to choose namespace
         click.echo("Available namespaces in gitlab, please select one for your new project:")
         namespaces = self.get_namespaces()
-        user_choice = get_user_choice(namespaces)
-        click.echo("Using namespace '" + list(namespaces.keys())[int(user_choice)] + "'")
-        ns_id = list(namespaces.values())[int(user_choice)]
+        choice_index, choice_value = get_user_choice(namespaces.keys())
+        click.echo("Using namespace '" + choice_value + "'")
+        ns_id = namespaces[choice_value]
 
         # Check whether repo exists
-        ssh_url = self.find_repo(pkg_name, list(namespaces.keys())[int(user_choice)])
+        url = self.find_repo(pkg_name, list(namespaces.keys())[int(choice_index)])
 
-        if ssh_url is not None:
-            click.secho("    ERROR Repo exist already: " + ssh_url, fg='red')
+        if url is not None:
+            click.secho("    ERROR Repo exist already: " + url, fg='red')
             sys.exit(1)
 
         # Create repo
@@ -185,11 +204,11 @@ class Git(object):
             sys.exit(1)
 
         # Return URL
-        click.echo("Repository URL is: " + response['ssh_url_to_repo'])
-        return response['ssh_url_to_repo']
+        click.echo("Repository URL is: " + response[self.get_url_string()])
+        return response[self.get_url_string()]
 
     @staticmethod
-    def get_local_ssh_keys(path=default_ssh_path):
+    def get_local_ssh_keys(path=SSH_PATH):
         path = os.path.expanduser(path)
         keys = []
         try:
@@ -205,7 +224,7 @@ class Git(object):
 class SSHkey(object):
     """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
 
-    def __init__(self, name=default_ssh_key_name, key="", dir_path=default_ssh_path):
+    def __init__(self, name=SSH_KEY_NAME, key="", dir_path=SSH_PATH):
         self.name = name
         self.secret_key = ""
         self.dir_path = os.path.expanduser(dir_path)
@@ -269,24 +288,33 @@ class Token(object):
     The token file is an authentication key for communicating with the gitlab server through the python API.
     """
 
-    def __init__(self, path=default_token_path, allow_creation=True):
+    def __init__(self, path=TOKEN_PATH, allow_creation=True):
         self.path = os.path.expanduser(path)
-        self.token = self.load(self.path)
+        self.token = None
+        self.load()
         if not self and allow_creation:
             self.create()
 
     def __bool__(self):
         return self.token != ""
 
-    @staticmethod
-    def load(path):
+    def load(self):
         """
         Read in the token from a specified path
         """
         try:
-            return os.read(os.open(path, 0), 20)
+            # If token is not to be stored on the system
+            # TODO This is not completely safe yet.
+            if not SAVE_TOKEN:
+                import time
+                now = time.time()
+                # Read in last modification time
+                last_mod = os.path.getmtime(self.path)
+                if (now - last_mod) > GIT_CACHE_TIMEOUT:
+                    os.remove(self.path)
+            self.token = os.read(os.open(self.path, 0), 20)
         except (IOError, OSError):
-            return ""
+            self.token = ""
 
     def create(self):
         """
@@ -294,25 +322,34 @@ class Token(object):
         Normally this function has to be called only once.
         From then on, the persistent token file is used to communicate with the server.
         """
-        click.echo("No existing gitlab token file found. Creating new one...")
+        click.echo("No existing Gitlab token file found. Creating new one...")
 
-        tmp_git_obj = gitlab.Gitlab(default_host)
         gitlab_user = None
-        while gitlab_user is None:
-            try:
-                username = click.prompt("Gitlab user name")
-                password = click.prompt("Gitlab password", hide_input=True)
-                tmp_git_obj.login(username, password)
-                gitlab_user = tmp_git_obj.currentuser()
-            except gitlab.exceptions.HttpError:
-                click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
-            except ValueError:
-                click.secho("No connection to server. Did you connect to VPN?", fg="red")
-            except ConnectionError:
-                click.secho("No connection to server. Are you connected to the internet?", fg="red")
+        tmp_git_obj = gitlab.Gitlab(HOST_URL)
+        username = click.prompt("Gitlab user name")
+        passwd = click.prompt("Gitlab password", hide_input=True)
+        try:
+            click.echo("Retrieving token from server...")
+            # If we are not using ssh, give those credentials directly to git
+            if USE_GIT_CREDENTIAL_CACHE:
+                set_git_credentials(username, passwd)
+            tmp_git_obj.login(username, passwd)
+            gitlab_user = tmp_git_obj.currentuser()
+        except gitlab.exceptions.HttpError:
+            click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
+        except ValueError:
+            click.secho("No connection to server. Did you connect to VPN?", fg="red")
+        except ConnectionError:
+            click.secho("No connection to server. Are you connected to the internet?", fg="red")
+
+        if gitlab_user is None:
+            click.secho("Could not create token. Exiting...", fg="red")
+            sys.exit(1)
 
         self.token = gitlab_user['private_token']
-        self.write()
+
+        if SAVE_TOKEN:
+            self.write()
 
     def write(self):
         """Write to file"""
@@ -331,10 +368,11 @@ class Workspace(object):
     def __init__(self, silent=False):
         self.org_dir = os.getcwd()
         self.root = self.get_root()
-        self.config = None
         self.updated_apt = False
+        self.wstool_config = None
         self.wstool_pks = None
         self.wstool_pkg_names = None
+        self.catkin_config = None
         self.catkin_pkgs = None
         self.catkin_pkg_names = None
 
@@ -347,10 +385,13 @@ class Workspace(object):
             if not set(self.catkin_pkg_names).issubset(set(self.wstool_pkg_names)):
                 # click.secho("INFO: wstool and catkin found different packages! Maybe you should run 'ws fix "
                 #             "url_in_package_xml'", fg='yellow')
+                # TODO Maybe not so smart to change rosinstall file every time -> snapshots!
                 self.recreate_index()
             self.cd_root()
         elif not silent:
-            raise Exception("No catkin workspace root found.")
+            click.secho("No catkin workspace root found.", fg="red")
+            click.echo("This command must be invoked from within a workspace")
+            sys.exit(1)
 
     def create(self):
         """Initialize new catkin workspace"""
@@ -361,7 +402,6 @@ class Workspace(object):
 
         # Test whether directory is empty
         if os.listdir("."):
-            click.echo(os.listdir("."))
             if not click.confirm("The repository folder is not empty. Would you like to continue?"):
                 sys.exit(0)
 
@@ -399,8 +439,7 @@ class Workspace(object):
         """Test whether workspace exists"""
         return self.get_root() is not None
 
-    @staticmethod
-    def get_root():
+    def get_root(self):
         """Find the root directory of a workspace, starting from '.' """
         org_dir = os.getcwd()
         current_dir = org_dir
@@ -425,20 +464,27 @@ class Workspace(object):
 
     def load(self):
         """Read in .rosinstall from workspace"""
-        self.config = multiproject_cli.multiproject_cmd.get_config(self.src, config_filename=".rosinstall")
+        self.wstool_config = multiproject_cli.multiproject_cmd.get_config(self.src, config_filename=".rosinstall")
+        self.catkin_config = Context.load()
         self.catkin_pkgs = self.get_catkin_packages()
 
     def write(self):
         """Write to .rosinstall in workspace"""
-        config_yaml.generate_config_yaml(self.config, self.src + ".rosinstall", "")
+        config_yaml.generate_config_yaml(self.wstool_config, self.src + ".rosinstall", "")
 
     def add(self, pkg_name, url, update=True):
         """Add a repository to the workspace"""
         ps = config_yaml.PathSpec(pkg_name, "git", url)
-        self.config.add_path_spec(ps)
+        self.wstool_config.add_path_spec(ps)
+
         if update:
             self.write()
+            if url.startswith("https"):
+                test_git_credentials()
             self.update_only(pkg_name)
+            # Fix for issue #9 to make ros cfg files executable
+            subprocess.call("find "+os.path.join(self.src, pkg_name)+" -name \*.cfg -exec chmod 755 {} \;",
+                            shell=True)
 
     def find(self, pkg_name):
         """Test whether package exists"""
@@ -446,6 +492,8 @@ class Workspace(object):
 
     def update(self):
         """Update this workspace"""
+        if self.contains_https():
+            test_git_credentials()
         subprocess.call("wstool update -t {0} -j 10".format(self.src), shell=True)
 
     def update_only(self, pkgs):
@@ -486,28 +534,10 @@ class Workspace(object):
         os.chdir(self.org_dir)
         return unpushed_repos
 
-    def fetch(self, pkg_name=None):
-        """Perform a git fetch in every repo"""
-        # Read in again
-        self.catkin_pkg_names = self.get_catkin_package_names()
-        self.wstool_pkg_names = self.get_wstool_package_names()
-        for pkg in self.wstool_pkg_names:
-            # If we are only looking for one specific pkg:
-            if pkg_name and pkg != pkg_name:
-                continue
-
-            try:
-                os.chdir(self.src + pkg)
-                click.echo("Fetching in {0}...".format(pkg))
-                subprocess.call("git fetch --quiet", shell=True)
-            except OSError:  # Directory does not exist (repo not cloned yet)
-                pass
-        os.chdir(self.org_dir)
-
     def test_for_changes(self, pkg_name=None, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server """
         # Parse git status messages
-        statuslist = multiproject_cmd.cmd_status(self.config, untracked=True)
+        statuslist = multiproject_cmd.cmd_status(self.wstool_config, untracked=True)
         statuslist = [{k["entry"].get_local_name(): k["status"]} for k in statuslist if k["status"] != ""]
 
         if pkg_name:
@@ -528,7 +558,7 @@ class Workspace(object):
 
     def snapshot(self, filename):
         """Writes current workspace configuration to file"""
-        source_aggregate = multiproject_cmd.cmd_snapshot(self.config)
+        source_aggregate = multiproject_cmd.cmd_snapshot(self.wstool_config)
         with open(filename, 'w') as f:
             f.writelines(yaml.safe_dump(source_aggregate))
 
@@ -543,7 +573,7 @@ class Workspace(object):
 
     def get_wstool_packages(self):
         """Returns a list of all wstool packages in ws"""
-        return self.config.get_config_elements()
+        return self.wstool_config.get_config_elements()
 
     def get_wstool_package_names(self):
         """Returns a list of all wstool packages in ws"""
@@ -575,7 +605,11 @@ class Workspace(object):
         # Test whether ros is sourced
         if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRARY_PATH"]:
             click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
-            raise Exception("ROS_ROOT not set.")
+            sys.exit(1)
+
+        if changed_base_yaml():
+            click.secho("Base YAML file changed, running 'rosdep update'.", fg="green")
+            subprocess.call("rosdep update",shell=True)
 
         if not git:
             git = Git()
@@ -604,7 +638,7 @@ class Workspace(object):
                 # Search for package in gitlab
                 url = git.find_repo(missing_package)
                 if url:
-                    self.add(missing_package, url, update=False)
+                    self.add(missing_package, url, update=True)
                     gitlab_packages.append(missing_package)
                 else:
                     # no Gitlab project found
@@ -623,7 +657,6 @@ class Workspace(object):
                         sys.exit(1)
             # Load new gitlab packages
             self.write()
-            self.update_only(gitlab_packages)
 
         # install missing system dependencies
         subprocess.check_call(["rosdep", "install", "--from-paths", self.src, "--ignore-src"])
@@ -632,21 +665,27 @@ class Workspace(object):
         """Goes through all directories within the workspace and checks whether the rosinstall file is up to date."""
         self.catkin_pkg_names = self.get_catkin_package_names()
 
-        self.config = wstool_config.Config([], self.src)
+        self.wstool_config = wstool_config.Config([], self.src)
         self.cd_src()
 
         for pkg in self.catkin_pkg_names:
             # Try reading it from git repo
             try:
                 with open(pkg + "/.git/config", 'r') as f:
-                    git_ssh_url = next(line[7:-1] for line in f if line.startswith("\turl"))
-                    self.add(pkg, git_ssh_url, update=False)
+                    git_url = next(line[7:-1] for line in f if line.startswith("\turl"))
+                    self.add(pkg, git_url, update=False)
             except (IOError, StopIteration):
                 pass
 
         # Create rosinstall file from config
         if write:
             self.write()
+
+    def contains_https(self):
+        for ps in self.wstool_config.get_config_elements():
+            if ps.get_path_spec().get_uri().startswith("https"):
+                return True
+        return False
 
 
 class Digraph(object):
@@ -708,11 +747,10 @@ class Digraph(object):
         """plot a directed graph with one root node"""
         if not os.path.exists("pics"):
             os.mkdir("pics")
-        filename = "pics/deps_{0}.png".format(pkg_name)
+        filename = os.path.join(os.getcwd(), "pics/deps_{0}.png".format(pkg_name))
         self.graph.write_png(filename)
         if show:
-            image = Image.open(filename)
-            image.show()
+            subprocess.call(["xdg-open", filename])
         click.echo("Image written to: " + os.getcwd() + "/" + filename)
 
 
@@ -721,26 +759,10 @@ def import_repo_names():
     Try to read in repos from cached file.
     If file is older than default_repo_cache_time seconds, a new list is retrieved from server.
     """
-    import time
-    import logging
-    logging.basicConfig(filename='/home/bandera/repos/tmp_ws/example.log', level=logging.DEBUG)
-
-    now = time.time()
     try:
-        # Read in last modification time
-        last_modification = os.path.getmtime(os.path.expanduser(default_repo_cache))
+        # Read in repo list from cache
+        with open(os.path.expanduser(CACHE_FILE), "r") as f:
+            repos = f.read()
+        return repos.split(",")[:-1]
     except OSError:
-        # Set modification time to 2 * default_repo_cache_time ago
-        last_modification = now - 2 * default_repo_cache_decay_time
-        logging.debug("{0} does not exist yet.".format(default_repo_cache))
-
-    # Read new repo list from server if delta_t > default_repo_cache_time
-    if (now - last_modification) > default_repo_cache_decay_time:
-        logging.debug("Last modification date of {0} too old: {1} seconds old".format(default_repo_cache,
-                                                                                      now - last_modification))
         return []
-
-    # Read in repo list from cache
-    with open(os.path.expanduser(default_repo_cache), "r") as f:
-        repos = f.read()
-    return repos.split(",")[:-1]

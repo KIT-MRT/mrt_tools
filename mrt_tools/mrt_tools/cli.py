@@ -31,8 +31,3 @@ cli = MyCLI(help='A toolbelt full of mrt scripts.')
 
 if __name__ == '__main__':
     cli()
-
-# TODO add source setup.bash to bashrc when installing
-# TODO port mrt init
-# TODO create apt package
-# TODO Add documentation where needed

@@ -1,6 +1,5 @@
 #!/bin/bash
 SELF="$(readlink /proc/$$/fd/255)" || SELF="$0" # Eigener Pfad (besseres $0)
 old_name=$(basename $SELF)
-new_name="${old_name/"mrt_"/"mrt "}"
+new_name="mrt pkg add"
 echo "$(tput bold)$(tput setf 1)WARNING:$(tput sgr0) '$old_name' is deprecated. Please use $(tput bold)'$new_name'$(tput sgr0) instead.'"
-echo "This message will be removed in a future release."

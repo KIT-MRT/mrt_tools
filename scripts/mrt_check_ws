@@ -1,0 +1,46 @@
+#!/usr/bin/python
+import os
+import sys
+import subprocess
+
+def getWorkspaceRootFolder(currentDir):
+    curDir = currentDir
+    found = False
+    while (curDir != "/" and curDir != ""):
+        if ".catkin_tools" in os.listdir(curDir):
+            found = True
+            break
+        
+        curDir = os.path.dirname(curDir)
+    
+    if not found:
+        raise Exception("No catkin workspace root found.")
+       
+    return curDir
+
+def getGitlabTokenFile():
+    homeFolder = os.path.expanduser("~")
+    tokenFileName = os.path.join(homeFolder, ".mrtgitlab", ".token")
+    if not os.path.isfile(tokenFileName):
+        subprocess.check_call(["mrt_setup_gitlab"])
+    
+    if not os.path.isfile(tokenFileName):
+        raise RuntimeError("Internal error: gitlab file not found")
+        
+    return tokenFileName
+
+
+def main():
+    workspaceFolder = getWorkspaceRootFolder(os.getcwd())
+    workspaceSrcPath = os.path.join(workspaceFolder, "src")
+    tokenFileName = getGitlabTokenFile()
+    scriptPath = os.path.dirname(os.path.realpath(__file__))
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "local":
+        subprocess.check_call(["python", os.path.join(scriptPath, "docker_check_ws.py"), tokenFileName, workspaceSrcPath] + sys.argv[2:])
+    else:
+        subprocess.check_call(["python", os.path.join(scriptPath, "docker_check_ws_remote.py"), tokenFileName, workspaceSrcPath] + sys.argv[1:])
+
+if __name__ == "__main__":
+    main()
+

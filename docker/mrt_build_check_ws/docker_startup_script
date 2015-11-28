@@ -1,0 +1,23 @@
+#!/bin/bash
+set -e
+
+if [ "$#" -eq 1 ]; then
+	exec "$@"
+	exit 0
+fi
+
+if [ "$#" -lt 4 ]; then
+	echo "Invalid number of arguments"
+	exit 1
+fi
+
+USER_ID="$1"
+USER_NAME="$2"
+GROUP_ID="$3"
+GROUP_NAME="$4"
+
+echo "$USER_NAME    ALL = NOPASSWD: /usr/bin/apt-get" | sudo tee -a /etc/sudoers &> /dev/null
+
+addgroup -q --gid $GROUP_ID $GROUP_NAME
+useradd -ms /bin/bash --gid $GROUP_ID --uid $USER_ID $USER_NAME
+exec gosu $USER_ID:$GROUP_ID "/tmp/docker_build_package" ${@:5}
