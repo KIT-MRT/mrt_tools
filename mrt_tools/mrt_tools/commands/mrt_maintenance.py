@@ -161,10 +161,13 @@ def update_repo_cache(quiet):
     """
     # Because we are calling this during autocompletion, we don't wont any errors.
     # -> Just exit when something is not ok.
+    error_occurred = False
     try:
         # Connect
         git = Git(quiet=quiet)
         repo_dicts = git.get_repos()
+        if not repo_dicts:
+            raise ConnectionError
         if not quiet:
             click.echo("Update was successful")
     except:
@@ -172,7 +175,7 @@ def update_repo_cache(quiet):
         # connection anyway and don't want old data.
         if not quiet:
             click.echo("There was an error during update.")
-        repo_dicts = []
+        error_occurred = True
         # Remove lock file, so that it will soon be tried again.
         os.remove(CACHE_LOCK_FILE)
 
@@ -180,8 +183,11 @@ def update_repo_cache(quiet):
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
     with open(CACHE_FILE, "w") as f:
-        for r in repo_dicts:
-            f.write(r["name"] + ",")
+        if error_occurred:
+            f.write("AN_ERROR_OCCURRED, CACHING_WAS_UNSUCCESSFUL,")
+        else:
+            for r in repo_dicts:
+                f.write(r["name"] + ",")
 
 
 @main.command(short_help="Change the default configuration of mrt tools.",
