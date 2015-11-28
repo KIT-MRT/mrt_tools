@@ -1,6 +1,5 @@
 from mrt_tools.CredentialManager import get_credentials
-from mrt_tools.settings import USE_GIT_CREDENTIAL_CACHE, GIT_CACHE_TIMEOUT, CACHE_LOCK_FILE, CACHE_FILE, \
-    CACHE_LOCK_DECAY_TIME, HOST_URL, BASE_YAML_FILE, BASE_YAML_HASH_FILE
+from mrt_tools.settings import user_settings
 from builtins import str
 import subprocess
 import zipfile
@@ -63,9 +62,11 @@ def get_userinfo():
         while not click.confirm("Use '" + email + "'as git user email?"):
             email = click.prompt("Please enter new email")
         subprocess.call("git config --global user.email '" + email + "'", shell=True)
-    if USE_GIT_CREDENTIAL_CACHE and credential_helper != "cache --timeout={}".format(GIT_CACHE_TIMEOUT):
+    if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] and credential_helper != "cache --timeout={}".format(
+            user_settings['Gitlab']['GIT_CACHE_TIMEOUT']):
         # Set git caching helper to save credentials
-        subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(GIT_CACHE_TIMEOUT),
+        subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(
+            user_settings['Gitlab']['GIT_CACHE_TIMEOUT']),
                         shell=True)
 
     return {'name': name[:-1], 'email': email[:-1]}
@@ -276,15 +277,15 @@ def cache_repos():
     now = time.time()
     try:
         # Read in last modification time
-        last_mod_lock = os.path.getmtime(CACHE_LOCK_FILE)
+        last_mod_lock = os.path.getmtime(user_settings['Cache']['CACHE_LOCK_FILE'])
     except OSError:
         # Set modification time to 2 * default_repo_cache_time ago
-        last_mod_lock = now - 2 * CACHE_LOCK_DECAY_TIME
-        touch(CACHE_LOCK_FILE)
+        last_mod_lock = now - 2 * user_settings['Cache']['CACHE_LOCK_DECAY_TIME']
+        touch(user_settings['Cache']['CACHE_LOCK_FILE'])
 
     # Keep caching process from spawning several times
-    if (now - last_mod_lock) > CACHE_LOCK_DECAY_TIME:
-        touch(CACHE_LOCK_FILE)
+    if (now - last_mod_lock) > user_settings['Cache']['CACHE_LOCK_DECAY_TIME']:
+        touch(user_settings['Cache']['CACHE_LOCK_FILE'])
         devnull = open(os.devnull, 'wb')  # use this in python < 3.3; python >= 3.3 has subprocess.DEVNULL
         subprocess.Popen(['mrt maintenance update_repo_cache --quiet'], shell=True, stdout=devnull, stderr=devnull)
 
@@ -296,7 +297,7 @@ def import_repo_names():
     """
     try:
         # Read in repo list from cache
-        with open(os.path.expanduser(CACHE_FILE), "r") as f:
+        with open(user_settings['Cache']['CACHE_FILE'], "r") as f:
             repos = f.read()
         return repos.split(",")[:-1]
     except OSError:
@@ -304,12 +305,13 @@ def import_repo_names():
 
 
 def set_git_credentials(username, password):
-    if HOST_URL.startswith("https://"):
-        host = HOST_URL[8:]
-    elif HOST_URL.startswith("http://"):
-        host = HOST_URL[7:]
+    url = user_settings['Gitlab']['HOST_URL']
+    if url.startswith("https://"):
+        host = url[8:]
+    elif url.startswith("http://"):
+        host = url[7:]
     else:
-        host = HOST_URL
+        host = url
     git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
     git_process.communicate(
         input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
@@ -317,7 +319,8 @@ def set_git_credentials(username, password):
 
 def test_git_credentials():
     # Test whether git credentials are still stored:
-    if USE_GIT_CREDENTIAL_CACHE and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
+    if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] \
+            and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
         username, password = get_credentials()
         set_git_credentials(username, password)
 
@@ -329,29 +332,29 @@ def changed_base_yaml():
 
     # Read hashes
     try:
-        with open(BASE_YAML_FILE, 'rb') as f:
+        with open(user_settings['Other']['BASE_YAML_FILE'], 'rb') as f:
             buf = f.read()
             hasher.update(buf)
             new_hash = hasher.hexdigest()
     except IOError:
         new_hash = ""
-        click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(BASE_YAML_FILE), fg="red")
+        click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(user_settings['Other']['BASE_YAML_FILE']), fg="red")
 
     try:
-        with open(BASE_YAML_HASH_FILE, 'r') as f:
+        with open(user_settings['Other']['BASE_YAML_HASH_FILE'], 'r') as f:
             old_hash = f.read()
     except IOError:
         old_hash = ""
-        if not os.path.exists(os.path.dirname(BASE_YAML_HASH_FILE)):
-            os.makedirs(os.path.dirname(BASE_YAML_HASH_FILE))
-        with open(BASE_YAML_HASH_FILE, 'wb') as f:
+        if not os.path.exists(os.path.dirname(user_settings['Other']['BASE_YAML_HASH_FILE'])):
+            os.makedirs(os.path.dirname(user_settings['Other']['BASE_YAML_HASH_FILE']))
+        with open(user_settings['Other']['BASE_YAML_HASH_FILE'], 'wb') as f:
             f.write("")
 
     # Compare hashes
     if old_hash == new_hash:
         return False
     else:
-        with open(BASE_YAML_HASH_FILE, 'w') as f:
+        with open(user_settings['Other']['BASE_YAML_HASH_FILE'], 'w') as f:
             f.truncate()
             f.write(new_hash)
         return True

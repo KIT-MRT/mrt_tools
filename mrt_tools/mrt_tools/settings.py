@@ -6,10 +6,6 @@ CONFIG_FILE = os.path.expanduser("~/.mrtgitlab/mrt.cfg")
 
 # Default settings
 default_settings = {
-    'Token': {
-        'TOKEN_PATH': os.path.expanduser("~/.mrtgitlab/.token"),
-        'SAVE_TOKEN': True
-    },
     'SSH': {
         'USE_SSH': False,
         'SSH_PATH': os.path.expanduser("~/.ssh"),
@@ -18,7 +14,6 @@ default_settings = {
     'Cache': {
         'CACHE_FILE': os.path.expanduser("~/.mrtgitlab/repo_cache"),
         'CACHE_LOCK_FILE': os.path.expanduser("~/.mrtgitlab/.repo_cache_lock"),
-        'CACHE_DECAY_TIME': 300,  # in seconds
         'CACHE_LOCK_DECAY_TIME': 30  # in seconds
     },
     'Gitlab': {
@@ -63,31 +58,22 @@ def rw_config(settings, config_file):
                 # click.echo("Key '{}' in section '{}' not found. Adding it to config file.".format(key, section))
                 config.set(section, key, str(value))
 
+    # Test for old settings and remove them
+    for section in config.sections():
+        if section not in settings.keys():
+            config.remove_section(section)
+            continue
+        for key in config.options(section):
+            if key.upper() not in settings[section].keys():
+                config.remove_option(section, key)
+
     # Writing our configuration file
     if not os.path.exists(os.path.dirname(config_file)):
         os.makedirs(os.path.dirname(config_file))
-    with open(config_file, 'wb') as configfile:
-        config.write(configfile)
+    with open(config_file, 'wb') as f:
+        config.write(f)
 
 
-# Copy settings into default variables
-settings = default_settings
-rw_config(settings, CONFIG_FILE)
-TOKEN_PATH = settings['Token']['TOKEN_PATH']
-SAVE_TOKEN = settings['Token']['SAVE_TOKEN']
-USE_SSH = settings['SSH']['USE_SSH']
-SSH_PATH = settings['SSH']['SSH_PATH']
-SSH_KEY_NAME = settings['SSH']['SSH_KEY_NAME']
-CACHE_FILE = settings['Cache']['CACHE_FILE']
-CACHE_LOCK_FILE = settings['Cache']['CACHE_LOCK_FILE']
-CACHE_DECAY_TIME = settings['Cache']['CACHE_DECAY_TIME']
-CACHE_LOCK_DECAY_TIME = settings['Cache']['CACHE_LOCK_DECAY_TIME']
-HOST_URL = settings['Gitlab']['HOST_URL']
-GIT_CACHE_TIMEOUT = settings['Gitlab']['GIT_CACHE_TIMEOUT']
-USE_GIT_CREDENTIAL_CACHE = settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE']
-STORE_CREDENTIALS_IN_KEYRING = settings['Gitlab']['STORE_CREDENTIALS_IN_KEYRING']
-FILE_ENDING = settings['Snapshot']['FILE_ENDING']
-SNAPSHOT_VERSION = settings['Snapshot']['SNAPSHOT_VERSION']
-VERSION_FILE = settings['Snapshot']['VERSION_FILE']
-BASE_YAML_FILE = settings['Other']['BASE_YAML_FILE']
-BASE_YAML_HASH_FILE = settings['Other']['BASE_YAML_HASH_FILE']
+# Read user settings
+user_settings = default_settings
+rw_config(user_settings, CONFIG_FILE)

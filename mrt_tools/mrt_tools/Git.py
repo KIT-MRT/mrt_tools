@@ -1,9 +1,8 @@
-from mrt_tools.CredentialManager import get_credentials
+from mrt_tools.CredentialManager import get_credentials, get_token, store_credentials
 from requests.exceptions import ConnectionError
 from requests.packages import urllib3
 from mrt_tools.utilities import *
-from mrt_tools.settings import SSH_KEY_NAME, SSH_PATH, USE_SSH, TOKEN_PATH, SAVE_TOKEN, HOST_URL, GIT_CACHE_TIMEOUT, \
-    USE_GIT_CREDENTIAL_CACHE
+from mrt_tools.settings import user_settings
 from Crypto.PublicKey import RSA
 from builtins import object
 from builtins import next
@@ -28,14 +27,14 @@ except KeyError:
 class Git(object):
     def __init__(self, quiet=False):
         # Host URL
-        self.host = HOST_URL
-        self.use_ssh = USE_SSH
-        self.token = None
+        self.host = user_settings['Gitlab']['HOST_URL']
+        self.use_ssh = user_settings['SSH']['USE_SSH']
+        self.token = get_token()
         self.server = None
         self.ssh_key = None
 
         if is_bashcompletion or quiet:
-            self.connect()
+            self.connect(quiet=True)
         else:
             self.test_and_connect()
 
@@ -46,21 +45,10 @@ class Git(object):
             return "http_url_to_repo"
 
     def test_and_connect(self):
-        # Token
-        if self.token is None:
-            self.token = Token()
-        elif isinstance(self.token, str):
-            self.token = Token(path=self.token)
-        elif isinstance(self.token, Token):
-            pass
-        else:
-            click.secho("Can't create a token from " + str(type(self.token)), fg="red")
-
         # Test whether git is configured
         get_userinfo()
 
-        # Connect
-        self.connect()
+        self.connect(quiet=False)
 
         # Test ssh key
         if self.use_ssh and not self.check_ssh_key():
@@ -79,19 +67,24 @@ class Git(object):
                 self.ssh_key = local_keys[choice_idx]
             self.upload_ssh_key()
 
-    def connect(self):
+    def connect(self, quiet=False):
         """Connects to the server"""
-        if self.token is None:
-            self.token = Token(allow_creation=False)
         try:
-            try:
-                self.server = gitlab.Gitlab(self.host, token=self.token.token)
-                # Test connection
-                self.server.currentuser()
-            except ValueError:
-                click.secho("No connection to server. Trying external access.", fg="yellow")
-                username, password = get_credentials()
-                self.server = gitlab.Gitlab(self.host, token=self.token.token, auth=(username, password))
+            username, password = get_credentials(quiet=quiet)
+            if self.token:
+                self.server = gitlab.Gitlab(self.host, token=self.token, auth=(username, password))
+            else:
+                # Login with username and password
+                self.server = gitlab.Gitlab(self.host, auth=(username, password))
+                self.server.login(username, password)
+                gitlab_user = self.server.currentuser()
+                if gitlab_user is None:
+                    click.secho("Could not create token. Exiting...", fg="red")
+                    sys.exit(1)
+                else:
+                    self.token = gitlab_user['private_token']
+                    click.secho("Created gitlab token: {}".format(self.token), fg="green")
+                store_credentials('token', self.token)
         except gitlab.exceptions.HttpError:
             click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
             sys.exit(1)
@@ -210,12 +203,11 @@ class Git(object):
         return response[self.get_url_string()]
 
     @staticmethod
-    def get_local_ssh_keys(path=SSH_PATH):
-        path = os.path.expanduser(path)
+    def get_local_ssh_keys():
         keys = []
         try:
-            for filename in os.listdir(path):
-                key = SSHkey(name=filename, dir_path=path)
+            for filename in os.listdir(user_settings['SSH']['SSH_PATH']):
+                key = SSHkey(name=filename)
                 if key.load():
                     keys.append(key)
         except OSError:
@@ -226,12 +218,12 @@ class Git(object):
 class SSHkey(object):
     """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
 
-    def __init__(self, name=SSH_KEY_NAME, key="", dir_path=SSH_PATH):
+    def __init__(self, name=user_settings['SSH']['SSH_KEY_NAME']):
         self.name = name
         self.secret_key = ""
-        self.dir_path = os.path.expanduser(dir_path)
+        self.dir_path = user_settings['SSH']['SSH_PATH']
         self.path = self.dir_path + "/" + self.name
-        self.public_key = key
+        self.public_key = ""
 
     def load(self):
         """Load from file"""
@@ -283,81 +275,3 @@ class SSHkey(object):
         self.secret_key = key.exportKey('PEM')
         self.public_key = key.publickey().exportKey('OpenSSH')
         self.write()
-
-
-class Token(object):
-    """
-    The token file is an authentication key for communicating with the gitlab server through the python API.
-    """
-
-    def __init__(self, path=TOKEN_PATH, allow_creation=True):
-        self.path = os.path.expanduser(path)
-        self.token = None
-        self.load()
-        if not self and allow_creation:
-            self.create()
-
-    def __bool__(self):
-        return self.token != ""
-
-    def load(self):
-        """
-        Read in the token from a specified path
-        """
-        try:
-            # If token is not to be stored on the system
-            # TODO This is not completely safe yet.
-            if not SAVE_TOKEN:
-                import time
-                now = time.time()
-                # Read in last modification time
-                last_mod = os.path.getmtime(self.path)
-                if (now - last_mod) > GIT_CACHE_TIMEOUT:
-                    os.remove(self.path)
-            self.token = os.read(os.open(self.path, 0), 20)
-        except (IOError, OSError):
-            self.token = ""
-
-    def create(self):
-        """
-        Create a new token from Gitlab user name and password.
-        Normally this function has to be called only once.
-        From then on, the persistent token file is used to communicate with the server.
-        """
-        click.echo("No existing Gitlab token file found. Creating new one...")
-
-        gitlab_user = None
-        username, password = get_credentials()
-        tmp_git_obj = gitlab.Gitlab(HOST_URL, auth=(username, password))
-        try:
-            click.echo("Retrieving token from server...")
-            # If we are not using ssh, give those credentials directly to git
-            if USE_GIT_CREDENTIAL_CACHE:
-                set_git_credentials(username, password)
-            tmp_git_obj.login(username, password)
-            gitlab_user = tmp_git_obj.currentuser()
-        except gitlab.exceptions.HttpError:
-            click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
-        except ValueError:
-            click.secho("No connection to server. Did you connect to VPN?", fg="red")
-        except ConnectionError:
-            click.secho("No connection to server. Are you connected to the internet?", fg="red")
-
-        if gitlab_user is None:
-            click.secho("Could not create token. Exiting...", fg="red")
-            sys.exit(1)
-
-        self.token = gitlab_user['private_token']
-
-        if SAVE_TOKEN:
-            self.write()
-
-    def write(self):
-        """Write to file"""
-        if not os.path.exists(os.path.dirname(self.path)):
-            os.makedirs(os.path.dirname(self.path))
-
-        with open(self.path, 'w') as f:
-            f.write(self.token)
-
-        click.echo("Token written to: " + self.path)
