@@ -89,6 +89,8 @@ class Git(object):
             self.token = Token(allow_creation=False)
         try:
             self.server = gitlab.Gitlab(self.host, token=self.token.token)
+            # Test connection
+            self.server.currentuser()
         except gitlab.exceptions.HttpError:
             click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
             sys.exit(1)
