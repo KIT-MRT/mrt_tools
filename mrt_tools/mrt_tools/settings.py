@@ -24,7 +24,8 @@ default_settings = {
     'Gitlab': {
         'HOST_URL': "https://gitlab.mrt.uni-karlsruhe.de",
         'GIT_CACHE_TIMEOUT': 900,  # in seconds
-        'USE_GIT_CREDENTIAL_CACHE': True
+        'USE_GIT_CREDENTIAL_CACHE': True,
+        'STORE_CREDENTIALS_IN_KEYRING': False
     },
     'Snapshot': {
         'FILE_ENDING': ".snapshot",
@@ -84,6 +85,7 @@ CACHE_LOCK_DECAY_TIME = settings['Cache']['CACHE_LOCK_DECAY_TIME']
 HOST_URL = settings['Gitlab']['HOST_URL']
 GIT_CACHE_TIMEOUT = settings['Gitlab']['GIT_CACHE_TIMEOUT']
 USE_GIT_CREDENTIAL_CACHE = settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE']
+STORE_CREDENTIALS_IN_KEYRING = settings['Gitlab']['STORE_CREDENTIALS_IN_KEYRING']
 FILE_ENDING = settings['Snapshot']['FILE_ENDING']
 SNAPSHOT_VERSION = settings['Snapshot']['SNAPSHOT_VERSION']
 VERSION_FILE = settings['Snapshot']['VERSION_FILE']

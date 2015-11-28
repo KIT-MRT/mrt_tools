@@ -1,3 +1,4 @@
+from mrt_tools.CredentialManager import get_credentials
 from mrt_tools.settings import *
 from builtins import range
 from builtins import str
@@ -302,10 +303,8 @@ def set_git_credentials(username, password):
 
 def test_git_credentials():
     # Test whether git credentials are still stored:
-    if not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
-        click.echo("Gitlab credentials not in cache. Please enter:")
-        username = click.prompt("Username")
-        password = click.prompt("Password", hide_input=True)
+    if USE_GIT_CREDENTIAL_CACHE and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
+        username, password = get_credentials()
         set_git_credentials(username, password)
 
 

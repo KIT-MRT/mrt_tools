@@ -1,4 +1,5 @@
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
+from mrt_tools.CredentialManager import get_credentials
 from requests.exceptions import ConnectionError
 from catkin_tools.context import Context
 from requests.packages import urllib3
@@ -30,13 +31,14 @@ except KeyError:
 
 
 class Git(object):
-    def __init__(self, token=None, host=HOST_URL, quiet=False):
+    def __init__(self, token=None, host=HOST_URL, quiet=False, auth=None):
         # Host URL
         self.host = host
         self.token = token
         self.server = None
         self.ssh_key = None
         self.use_ssh = USE_SSH
+        self.auth = auth
 
         if is_bashcompletion or quiet:
             self.connect()
@@ -88,12 +90,16 @@ class Git(object):
         if self.token is None:
             self.token = Token(allow_creation=False)
         try:
-            self.server = gitlab.Gitlab(self.host, token=self.token.token)
+            try:
+                self.server = gitlab.Gitlab(self.host, token=self.token.token)
+                # Test connection
+                self.server.currentuser()
+            except ValueError:
+                # click.secho("No connection to server. Trying external access.", fg="yellow")
+                username, password = get_credentials()
+                self.server = gitlab.Gitlab(self.host, token=self.token.token, auth=(username, password))
         except gitlab.exceptions.HttpError:
             click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
-            sys.exit(1)
-        except ValueError:
-            click.secho("No connection to server. Did you connect to VPN?", fg="red")
             sys.exit(1)
         except ConnectionError:
             click.secho("No internet connection. Could not connect to server.", fg="red")
@@ -165,8 +171,8 @@ class Git(object):
         else:
             # Multiple found
             choice, _ = get_user_choice([item["path_with_namespace"] for item in matching_repos],
-                                     prompt="More than one repo with \"" + str(
-                                         pkg_name) + "\" found. Please choose")
+                                        prompt="More than one repo with \"" + str(
+                                            pkg_name) + "\" found. Please choose")
 
         url = matching_repos[choice][self.get_url_string()]
         click.secho("Found " + matching_repos[choice]['path_with_namespace'], fg='green')
@@ -323,15 +329,14 @@ class Token(object):
         click.echo("No existing Gitlab token file found. Creating new one...")
 
         gitlab_user = None
-        tmp_git_obj = gitlab.Gitlab(HOST_URL)
-        username = click.prompt("Gitlab user name")
-        passwd = click.prompt("Gitlab password", hide_input=True)
+        username, password = get_credentials()
+        tmp_git_obj = gitlab.Gitlab(HOST_URL, auth=(username, password))
         try:
             click.echo("Retrieving token from server...")
             # If we are not using ssh, give those credentials directly to git
             if USE_GIT_CREDENTIAL_CACHE:
-                set_git_credentials(username, passwd)
-            tmp_git_obj.login(username, passwd)
+                set_git_credentials(username, password)
+            tmp_git_obj.login(username, password)
             gitlab_user = tmp_git_obj.currentuser()
         except gitlab.exceptions.HttpError:
             click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
@@ -481,7 +486,7 @@ class Workspace(object):
                 test_git_credentials()
             self.update_only(pkg_name)
             # Fix for issue #9 to make ros cfg files executable
-            subprocess.call("find "+os.path.join(self.src, pkg_name)+" -name \*.cfg -exec chmod 755 {} \;",
+            subprocess.call("find " + os.path.join(self.src, pkg_name) + " -name \*.cfg -exec chmod 755 {} \;",
                             shell=True)
 
     def find(self, pkg_name):
@@ -607,7 +612,7 @@ class Workspace(object):
 
         if changed_base_yaml():
             click.secho("Base YAML file changed, running 'rosdep update'.", fg="green")
-            subprocess.call("rosdep update",shell=True)
+            subprocess.call("rosdep update", shell=True)
 
         if not git:
             git = Git()
