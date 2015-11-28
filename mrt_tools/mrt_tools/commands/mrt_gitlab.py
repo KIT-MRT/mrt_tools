@@ -1,5 +1,6 @@
+from mrt_tools.Git import Git, SSHkey, Token
+from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
-from mrt_tools.base import *
 import click
 
 

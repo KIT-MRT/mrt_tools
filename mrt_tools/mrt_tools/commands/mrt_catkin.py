@@ -1,4 +1,4 @@
-from mrt_tools.base import Workspace
+from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 
 

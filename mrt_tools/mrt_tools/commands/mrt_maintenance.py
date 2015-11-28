@@ -1,6 +1,7 @@
+from wstool import config as wstool_config
+from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
-from mrt_tools.base import *
-import click
+from mrt_tools.Git import Git
 
 
 ########################################################################################################################
@@ -167,7 +168,7 @@ def update_repo_cache(quiet):
         git = Git(quiet=quiet)
         repo_dicts = git.get_repos()
         if not repo_dicts:
-            raise ConnectionError
+            raise Exception
         if not quiet:
             click.echo("Update was successful")
     except:
@@ -176,8 +177,12 @@ def update_repo_cache(quiet):
         if not quiet:
             click.echo("There was an error during update.")
         error_occurred = True
+        repo_dicts = []
         # Remove lock file, so that it will soon be tried again.
-        os.remove(CACHE_LOCK_FILE)
+        try:
+            os.remove(CACHE_LOCK_FILE)
+        except OSError:
+            pass
 
     dir_name = os.path.dirname(CACHE_FILE)
     if not os.path.exists(dir_name):

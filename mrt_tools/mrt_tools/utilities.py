@@ -1,6 +1,6 @@
 from mrt_tools.CredentialManager import get_credentials
-from mrt_tools.settings import *
-from builtins import range
+from mrt_tools.settings import USE_GIT_CREDENTIAL_CACHE, GIT_CACHE_TIMEOUT, CACHE_LOCK_FILE, CACHE_FILE, \
+    CACHE_LOCK_DECAY_TIME, HOST_URL, BASE_YAML_FILE, BASE_YAML_HASH_FILE
 from builtins import str
 import subprocess
 import zipfile
@@ -289,6 +289,20 @@ def cache_repos():
         subprocess.Popen(['mrt maintenance update_repo_cache --quiet'], shell=True, stdout=devnull, stderr=devnull)
 
 
+def import_repo_names():
+    """
+    Try to read in repos from cached file.
+    If file is older than default_repo_cache_time seconds, a new list is retrieved from server.
+    """
+    try:
+        # Read in repo list from cache
+        with open(os.path.expanduser(CACHE_FILE), "r") as f:
+            repos = f.read()
+        return repos.split(",")[:-1]
+    except OSError:
+        return []
+
+
 def set_git_credentials(username, password):
     if HOST_URL.startswith("https://"):
         host = HOST_URL[8:]
@@ -324,7 +338,7 @@ def changed_base_yaml():
         click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(BASE_YAML_FILE), fg="red")
 
     try:
-        with open(BASE_YAML_HASH_FILE,'r') as f:
+        with open(BASE_YAML_HASH_FILE, 'r') as f:
             old_hash = f.read()
     except IOError:
         old_hash = ""
@@ -337,7 +351,7 @@ def changed_base_yaml():
     if old_hash == new_hash:
         return False
     else:
-        with open(BASE_YAML_HASH_FILE,'w') as f:
+        with open(BASE_YAML_HASH_FILE, 'w') as f:
             f.truncate()
             f.write(new_hash)
         return True
@@ -345,4 +359,3 @@ def changed_base_yaml():
 
 self_dir = get_script_root()
 cache_repos()
-

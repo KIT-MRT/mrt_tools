@@ -1,9 +1,5 @@
-from mrt_tools.utilities import test_git_credentials
-from mrt_tools.base import Workspace
-from mrt_tools.settings import *
-import subprocess
-import click
-import os
+from mrt_tools.Workspace import Workspace
+from mrt_tools.utilities import *
 
 
 ########################################################################################################################
