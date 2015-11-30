@@ -1,6 +1,6 @@
 from wstool import config as wstool_config
 from mrt_tools.settings import user_settings
-from mrt_tools.CredentialManager import *
+from mrt_tools.CredentialManager import credentialManager
 from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 from mrt_tools.Git import Git
@@ -216,27 +216,18 @@ def credentials():
 
 @credentials.command(short_help="Remove all stored credentials from this machine.")
 def delete():
-    try:
-        delete_credential('username')
-    except:
-        pass
-    try:
-        delete_credential('password')
-    except:
-        pass
-    try:
-        delete_credential('token')
-    except:
-        pass
+    credentialManager.delete('username')
+    credentialManager.delete('password')
+    credentialManager.delete('token')
 
 
 @credentials.command(short_help="Show all stored credentials on this machine.")
 def show():
-    username = get_username(quiet=True)
-    password = get_password(username, quiet=True) and "******"
+    username = credentialManager.get_username(quiet=True)
+    password = credentialManager.get_password(username, quiet=True) and "******"
     click.echo("Gitlab credentials")
     click.echo("==================")
     click.echo("Username: {}".format(username))
     click.echo("Password: {}".format(password))
-    click.echo("Token   : {}".format(get_token()))
+    click.echo("Token   : {}".format(credentialManager.get_token()))
 

@@ -1,4 +1,5 @@
-from mrt_tools.CredentialManager import get_credentials, get_token, store_credentials
+from mrt_tools.CredentialManager import credentialManager
+from simplejson.scanner import JSONDecodeError
 from requests.exceptions import ConnectionError
 from requests.packages import urllib3
 from mrt_tools.utilities import get_user_choice, get_gituserinfo
@@ -29,7 +30,7 @@ class Git(object):
         # Host URL
         self.host = user_settings['Gitlab']['HOST_URL']
         self.use_ssh = user_settings['SSH']['USE_SSH']
-        self.token = get_token()
+        self.token = credentialManager.get_token()
         self.server = None
         self.ssh_key = None
 
@@ -69,22 +70,37 @@ class Git(object):
 
     def connect(self, quiet=False):
         """Connects to the server"""
+        connection_successful = False
         try:
-            username, password = get_credentials(quiet=quiet)
+            # First we try to connect with token. This way, we don't necessarily need username and password.
             if self.token:
-                self.server = gitlab.Gitlab(self.host, token=self.token, auth=(username, password))
-            else:
-                # Login with username and password
-                self.server = gitlab.Gitlab(self.host, auth=(username, password))
-                self.server.login(username, password)
-                gitlab_user = self.server.currentuser()
-                if gitlab_user is None:
-                    click.secho("Could not create token. Exiting...", fg="red")
-                    sys.exit(1)
+                try:
+                    self.server = gitlab.Gitlab(self.host, token=self.token)
+                    # Test connection
+                    self.server.currentuser()
+                    connection_successful = True
+                except JSONDecodeError:
+                    connection_successful = False
+
+            if not connection_successful:
+                # Try to connect from extern
+                click.secho("Connection to server was unsuccessful. Trying external access.", fg="yellow")
+                username, password = credentialManager.get_credentials(quiet=quiet)
+                if self.token:
+                    self.server = gitlab.Gitlab(self.host, token=self.token, auth=(username, password))
                 else:
-                    self.token = gitlab_user['private_token']
-                    click.secho("Created gitlab token: {}".format(self.token), fg="green")
-                store_credentials('token', self.token)
+                    # create token, therefor login with username and password
+                    self.server = gitlab.Gitlab(self.host, auth=(username, password))
+                    self.server.login(username, password)
+                    gitlab_user = self.server.currentuser()
+                    if gitlab_user is None:
+                        click.secho("Could not create token. Exiting...", fg="red")
+                        sys.exit(1)
+                    else:
+                        self.token = gitlab_user['private_token']
+                        click.secho("Created gitlab token: {}".format(self.token), fg="green")
+                    credentialManager.store('token', self.token)
+
         except gitlab.exceptions.HttpError:
             click.secho("There was a problem logging in to gitlab. Did you use your correct credentials?", fg="red")
             sys.exit(1)
@@ -294,5 +310,5 @@ def test_git_credentials():
     # Test whether git credentials are still stored:
     if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] \
             and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
-        username, password = get_credentials()
+        username, password = credentialManager.get_credentials()
         set_git_credentials(username, password)

@@ -1,7 +1,7 @@
 from mrt_tools.Git import Git, SSHkey
 from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
-from mrt_tools.CredentialManager import delete_credential
+from mrt_tools.CredentialManager import credentialManager
 import click
 
 
@@ -20,7 +20,7 @@ def main():
                    "token to be saved on the system in the setttings.")
 def create_token():
     """Create new gitlab token"""
-    delete_credential('token')
+    credentialManager.delete('token')
     Git()
 
 
