@@ -275,3 +275,12 @@ class SSHkey(object):
         self.secret_key = key.exportKey('PEM')
         self.public_key = key.publickey().exportKey('OpenSSH')
         self.write()
+
+
+def test_git_credentials():
+    # Test whether git credentials are still stored:
+    if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] \
+            and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
+        username, password = get_credentials()
+        set_git_credentials(username, password)
+

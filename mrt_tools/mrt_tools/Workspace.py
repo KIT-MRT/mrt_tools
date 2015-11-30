@@ -1,6 +1,6 @@
-from mrt_tools.utilities import test_git_credentials, changed_base_yaml, update_apt_and_ros_packages
+from mrt_tools.utilities import changed_base_yaml, update_apt_and_ros_packages
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
-from mrt_tools.Git import Git
+from mrt_tools.Git import Git, test_git_credentials
 from catkin_tools.context import Context
 from catkin_pkg import packages
 import subprocess

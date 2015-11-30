@@ -1,4 +1,3 @@
-from mrt_tools.CredentialManager import get_credentials
 from mrt_tools.settings import user_settings
 from builtins import str
 import subprocess
@@ -73,6 +72,14 @@ def get_userinfo():
 
 
 def get_user_choice(items, extra=None, prompt="Please choose a number", default=None):
+    """
+    Function to make user choose from a list of options
+    :param items: List of strings
+    :param extra: String or list of strings with additional options
+    :param prompt: Prompt string
+    :param default: Default choice
+    :return: Index of choice, choice string
+    """
     # Test for extra choices
     if not extra:
         extra = []
@@ -315,15 +322,6 @@ def set_git_credentials(username, password):
     git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
     git_process.communicate(
         input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
-
-
-def test_git_credentials():
-    # Test whether git credentials are still stored:
-    if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] \
-            and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
-        username, password = get_credentials()
-        set_git_credentials(username, password)
-
 
 def changed_base_yaml():
     click.echo("Testing for changes in rosdeps...")
