@@ -1,4 +1,4 @@
-from mrt_tools.settings import user_settings
+from mrt_tools.settings import user_settings, write_settings
 import keyring
 import click
 import getpass
@@ -36,7 +36,19 @@ def get_token():
 
 
 def store_credentials(key, value):
-    if user_settings['Gitlab']['STORE_CREDENTIALS_IN_KEYRING']:
+    # Smooth transition to new version:
+    if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == "":
+        click.secho("For convenience and improved security, personal data like gitlab-password and gitlab-token will "
+                    "be stored in the Gnome keyring from now on.", fg='yellow')
+        click.echo("\t- Personal data can be deleted in the subcommand 'mrt maintenance credentials'. ")
+        click.echo("\t- Settings can be changed with 'mrt maintenance settings'")
+        if click.confirm("Do you confirm to saving your data in the keyring?"):
+            user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = 'keyring'
+        else:
+            user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = 'None'
+        write_settings(user_settings)
+
+    if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == 'keyring':
         click.echo("Storing {} in keyring.".format(key))
         keyring.set_password(SERVICE_NAME, key, value)
 
