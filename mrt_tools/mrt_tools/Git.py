@@ -206,7 +206,7 @@ class Git(object):
     def get_local_ssh_keys():
         keys = []
         try:
-            for filename in os.listdir(user_settings['SSH']['SSH_PATH']):
+            for filename in os.listdir(os.path.expanduser("~/.ssh")):
                 key = SSHkey(name=filename)
                 if key.load():
                     keys.append(key)
@@ -218,10 +218,10 @@ class Git(object):
 class SSHkey(object):
     """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
 
-    def __init__(self, name=user_settings['SSH']['SSH_KEY_NAME']):
+    def __init__(self, name="mrtgitlab"):
         self.name = name
         self.secret_key = ""
-        self.dir_path = user_settings['SSH']['SSH_PATH']
+        self.dir_path = os.path.expanduser("~/.ssh")
         self.path = self.dir_path + "/" + self.name
         self.public_key = ""
 

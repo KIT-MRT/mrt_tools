@@ -9,8 +9,6 @@ CONFIG_FILE = os.path.join(CONFIG_DIR, "mrt.cfg")
 default_settings = {
     'SSH': {
         'USE_SSH': False,
-        'SSH_PATH': os.path.expanduser("~/.ssh"),
-        'SSH_KEY_NAME': "mrtgitlab"
     },
     'Cache': {
         'CACHE_FILE': os.path.join(CONFIG_DIR, "repo_cache"),
@@ -19,8 +17,8 @@ default_settings = {
     },
     'Gitlab': {
         'HOST_URL': "https://gitlab.mrt.uni-karlsruhe.de",
-        'GIT_CACHE_TIMEOUT': 900,  # in seconds
         'USE_GIT_CREDENTIAL_CACHE': True,
+        'GIT_CACHE_TIMEOUT': 900,  # in seconds
         'STORE_CREDENTIALS_IN': ""
     },
     'Snapshot': {
