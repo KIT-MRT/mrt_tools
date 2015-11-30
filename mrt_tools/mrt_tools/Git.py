@@ -1,7 +1,7 @@
 from mrt_tools.CredentialManager import get_credentials, get_token, store_credentials
 from requests.exceptions import ConnectionError
 from requests.packages import urllib3
-from mrt_tools.utilities import *
+from mrt_tools.utilities import get_user_choice, get_gituserinfo
 from mrt_tools.settings import user_settings
 from Crypto.PublicKey import RSA
 from builtins import object
@@ -46,7 +46,7 @@ class Git(object):
 
     def test_and_connect(self):
         # Test whether git is configured
-        get_userinfo()
+        get_gituserinfo()
 
         self.connect(quiet=False)
 
@@ -277,10 +277,22 @@ class SSHkey(object):
         self.write()
 
 
+def set_git_credentials(username, password):
+    url = user_settings['Gitlab']['HOST_URL']
+    if url.startswith("https://"):
+        host = url[8:]
+    elif url.startswith("http://"):
+        host = url[7:]
+    else:
+        host = url
+    git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
+    git_process.communicate(
+        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
+
+
 def test_git_credentials():
     # Test whether git credentials are still stored:
     if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] \
             and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
         username, password = get_credentials()
         set_git_credentials(username, password)
-

@@ -107,7 +107,7 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
         click.echo("     --> Create  gitlab repository.... YES")
     else:
         click.echo("     --> Create  gitlab repository.... NO")
-    user = get_userinfo()
+    user = get_gituserinfo()
     click.echo("     --> Package Maintainer.... " + user['name'] + " <" + user['email'] + ">")
 
     create_directories(pkg_name, pkg_type, ros)

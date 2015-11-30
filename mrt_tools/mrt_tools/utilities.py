@@ -33,7 +33,7 @@ def find_by_pattern(pattern, path):
     return result
 
 
-def get_userinfo():
+def get_gituserinfo():
     """Read in git user infos."""
 
     # Check whether git is installed
@@ -209,7 +209,7 @@ def create_cmakelists(pkg_name, pkg_type, ros, self_dir):
 
 def create_files(pkg_name, pkg_type, ros):
     # Create files and replace with user info
-    user = get_userinfo()
+    user = get_gituserinfo()
     # Readme and test file
     shutil.copyfile(self_dir + "/templates/README.md", "README.md")
     shutil.copyfile(self_dir + "/templates/test.cpp", "./test/test_" + pkg_name + ".cpp")
@@ -310,18 +310,6 @@ def import_repo_names():
     except OSError:
         return []
 
-
-def set_git_credentials(username, password):
-    url = user_settings['Gitlab']['HOST_URL']
-    if url.startswith("https://"):
-        host = url[8:]
-    elif url.startswith("http://"):
-        host = url[7:]
-    else:
-        host = url
-    git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
-    git_process.communicate(
-        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
 
 def changed_base_yaml():
     click.echo("Testing for changes in rosdeps...")

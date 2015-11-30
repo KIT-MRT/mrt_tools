@@ -2,7 +2,8 @@
 import ConfigParser
 import os
 
-CONFIG_FILE = os.path.expanduser("~/.mrtgitlab/mrt.cfg")
+CONFIG_DIR = os.path.expanduser("~/.mrtgitlab")
+CONFIG_FILE = os.path.join(CONFIG_DIR, "mrt.cfg")
 
 # Default settings
 default_settings = {
@@ -12,8 +13,8 @@ default_settings = {
         'SSH_KEY_NAME': "mrtgitlab"
     },
     'Cache': {
-        'CACHE_FILE': os.path.expanduser("~/.mrtgitlab/repo_cache"),
-        'CACHE_LOCK_FILE': os.path.expanduser("~/.mrtgitlab/.repo_cache_lock"),
+        'CACHE_FILE': os.path.join(CONFIG_DIR, "repo_cache"),
+        'CACHE_LOCK_FILE': os.path.join(CONFIG_DIR, ".repo_cache_lock"),
         'CACHE_LOCK_DECAY_TIME': 30  # in seconds
     },
     'Gitlab': {
@@ -29,7 +30,7 @@ default_settings = {
     },
     'Other': {
         'BASE_YAML_FILE': "/mrtsoftware/pkg/share/ros/base.yaml",
-        'BASE_YAML_HASH_FILE': os.path.expanduser("~/.mrtgitlab/base_yaml_hash"),
+        'BASE_YAML_HASH_FILE': os.path.join(CONFIG_DIR, "base_yaml_hash"),
     }
 }
 
@@ -78,6 +79,7 @@ def write_settings(settings, config_file=CONFIG_FILE):
         os.makedirs(os.path.dirname(config_file))
     with open(config_file, 'wb') as f:
         config.write(f)
+
 
 # Read user settings
 user_settings = read_settings(default_settings, CONFIG_FILE)

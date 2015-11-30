@@ -1,12 +1,14 @@
-from mrt_tools.settings import user_settings, write_settings
+from mrt_tools.settings import user_settings, write_settings, CONFIG_DIR
 from mrt_tools.utilities import get_user_choice
 import keyring
 import getpass
 import click
+import os
 
-available_storage_options = ['gnome_keyring']
+available_storage_options = ['gnome_keyring', 'only_token_in_file']
 keyring.set_keyring(keyring.backends.Gnome.Keyring())
 SERVICE_NAME = "mrtgitlab"
+TOKEN_FILE = os.path.join(CONFIG_DIR,".token")
 
 
 def get_credentials(quiet=False):
@@ -45,6 +47,11 @@ def get_password(username, quiet=False):
 def get_token():
     if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == 'gnome_keyring':
         token = keyring.get_password(SERVICE_NAME, "token")
+    elif user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == 'only_token_in_file':
+        try:
+            token = open(TOKEN_FILE,'r').read()
+        except (IOError, OSError):
+            token = ""
     else:
         token = ""
 
@@ -69,9 +76,21 @@ def store_credentials(key, value):
     if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == 'gnome_keyring':
         click.echo("Storing {} in keyring.".format(key))
         keyring.set_password(SERVICE_NAME, key, value)
+    elif user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == 'only_token_in_file' and key == "token":
+        """Write to file"""
+        if not os.path.exists(CONFIG_DIR):
+            os.makedirs(CONFIG_DIR)
+        with open(TOKEN_FILE, 'w') as f:
+            f.write(value)
 
 
 def delete_credential(key):
     if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == 'gnome_keyring':
         keyring.delete_password(SERVICE_NAME, key)
         click.echo("Removed {} from keyring".format(key))
+    elif user_settings['Gitlab']['STORE_CREDENTIALS_IN'] == 'only_token_in_file' and key == "token":
+        try:
+            os.remove(TOKEN_FILE)
+            click.echo("Removed token file")
+        except OSError:
+            pass
