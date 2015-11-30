@@ -1,5 +1,7 @@
+from mrt_tools.Git import Git, SSHkey
+from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
-from mrt_tools.base import *
+from mrt_tools.CredentialManager import delete_credential
 import click
 
 
@@ -18,7 +20,8 @@ def main():
                    "token to be saved on the system in the setttings.")
 def create_token():
     """Create new gitlab token"""
-    Token(allow_creation=True)
+    delete_credential('token')
+    Git()
 
 
 @main.command(short_help="Create new ssh key",
@@ -149,7 +152,7 @@ def add_user(git):
 #
 
 ########################################################################################################################
-# List
+# Show
 ########################################################################################################################
 @main.group()
 @click.pass_context

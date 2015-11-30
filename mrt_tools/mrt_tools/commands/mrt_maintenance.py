@@ -1,6 +1,9 @@
+from wstool import config as wstool_config
+from mrt_tools.settings import user_settings
+from mrt_tools.CredentialManager import *
+from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
-from mrt_tools.base import *
-import click
+from mrt_tools.Git import Git
 
 
 ########################################################################################################################
@@ -167,7 +170,7 @@ def update_repo_cache(quiet):
         git = Git(quiet=quiet)
         repo_dicts = git.get_repos()
         if not repo_dicts:
-            raise ConnectionError
+            raise Exception
         if not quiet:
             click.echo("Update was successful")
     except:
@@ -176,13 +179,17 @@ def update_repo_cache(quiet):
         if not quiet:
             click.echo("There was an error during update.")
         error_occurred = True
+        repo_dicts = []
         # Remove lock file, so that it will soon be tried again.
-        os.remove(CACHE_LOCK_FILE)
+        try:
+            os.remove(user_settings['Cache']['CACHE_LOCK_FILE'])
+        except OSError:
+            pass
 
-    dir_name = os.path.dirname(CACHE_FILE)
+    dir_name = os.path.dirname(user_settings['Cache']['CACHE_FILE'])
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
-    with open(CACHE_FILE, "w") as f:
+    with open(user_settings['Cache']['CACHE_FILE'], "w") as f:
         if error_occurred:
             f.write("AN_ERROR_OCCURRED, CACHING_WAS_UNSUCCESSFUL,")
         else:
@@ -200,3 +207,36 @@ def settings():
     """
     from mrt_tools.settings import CONFIG_FILE
     subprocess.call("gedit {}".format(CONFIG_FILE), shell=True)
+
+
+@main.group()
+def credentials():
+    pass
+
+
+@credentials.command(short_help="Remove all stored credentials from this machine.")
+def delete():
+    try:
+        delete_credential('username')
+    except:
+        pass
+    try:
+        delete_credential('password')
+    except:
+        pass
+    try:
+        delete_credential('token')
+    except:
+        pass
+
+
+@credentials.command(short_help="Show all stored credentials on this machine.")
+def show():
+    username = get_username(quiet=True)
+    password = get_password(username, quiet=True) and "******"
+    click.echo("Gitlab credentials")
+    click.echo("==================")
+    click.echo("Username: {}".format(username))
+    click.echo("Password: {}".format(password))
+    click.echo("Token   : {}".format(get_token()))
+

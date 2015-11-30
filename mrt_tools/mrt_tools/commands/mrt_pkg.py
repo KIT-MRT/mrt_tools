@@ -1,6 +1,7 @@
+from mrt_tools.Workspace import Workspace
+from mrt_tools.Digraph import Digraph
 from mrt_tools.utilities import *
-from mrt_tools.base import *
-import click
+from mrt_tools.Git import Git
 
 # Autocompletion
 try:
@@ -21,7 +22,9 @@ self_dir = get_script_root()
 @click.group()
 @click.pass_context
 def main(ctx):
-    """Package related tasks..."""
+    """Package related tasks...
+    :param ctx:
+    """
     ctx.obj = Workspace()
 
 
