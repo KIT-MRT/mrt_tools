@@ -273,7 +273,11 @@ class SSHkey(object):
             with open(self.path + ".pub", 'w') as f:
                 chmod(self.path, 0o600)
                 f.write(self.public_key)
-        subprocess.call("eval '$(ssh-agent -s)'", shell=True)
+
+        process = subprocess.Popen(['ssh-agent', '-s'], shell=True, stdout=subprocess.PIPE)
+        output, __ = process.communicate()
+        output.replace("\n", "")
+        subprocess.call(output, shell=True)
         subprocess.call("ssh-add " + self.path, shell=True)
         click.echo("Wrote key to " + self.path + "(.pub)")
 
