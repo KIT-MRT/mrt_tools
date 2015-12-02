@@ -17,7 +17,7 @@ default_settings = {
     },
     'Gitlab': {
         'HOST_URL': "https://gitlab.mrt.uni-karlsruhe.de",
-        'USE_GIT_CREDENTIAL_CACHE': True,
+        'CACHE_GIT_CREDENTIALS_FOR_HTTPS_REPOS': True,
         'GIT_CACHE_TIMEOUT': 900,  # in seconds
         'STORE_CREDENTIALS_IN': ""
     },

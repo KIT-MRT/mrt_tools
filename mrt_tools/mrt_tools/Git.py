@@ -17,13 +17,6 @@ import os
 # Alternatively install pyopenssl ndg-httpsclient pyasn1
 urllib3.disable_warnings()
 
-# Ugly test to test for bash completion mode
-try:
-    os.environ['COMP_WORDS']
-    is_bashcompletion = True
-except KeyError:
-    is_bashcompletion = False
-
 
 class Git(object):
     def __init__(self, quiet=False):
@@ -34,7 +27,7 @@ class Git(object):
         self.server = None
         self.ssh_key = None
 
-        if is_bashcompletion or quiet:
+        if quiet:
             self.connect(quiet=True)
         else:
             self.test_and_connect()
@@ -308,7 +301,7 @@ def set_git_credentials(username, password):
 
 def test_git_credentials():
     # Test whether git credentials are still stored:
-    if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] \
+    if user_settings['Gitlab']['CACHE_GIT_CREDENTIALS_FOR_HTTPS_REPOS'] \
             and not os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
         username, password = credentialManager.get_credentials()
         set_git_credentials(username, password)

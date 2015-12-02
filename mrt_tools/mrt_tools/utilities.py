@@ -61,12 +61,11 @@ def get_gituserinfo():
         while not click.confirm("Use '" + email + "'as git user email?"):
             email = click.prompt("Please enter new email")
         subprocess.call("git config --global user.email '" + email + "'", shell=True)
-    if user_settings['Gitlab']['USE_GIT_CREDENTIAL_CACHE'] and credential_helper != "cache --timeout={}".format(
-            user_settings['Gitlab']['GIT_CACHE_TIMEOUT']):
+    if user_settings['Gitlab']['CACHE_GIT_CREDENTIALS_FOR_HTTPS_REPOS'] \
+            and credential_helper != "cache --timeout={}".format(user_settings['Gitlab']['GIT_CACHE_TIMEOUT']):
         # Set git caching helper to save credentials
         subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(
-            user_settings['Gitlab']['GIT_CACHE_TIMEOUT']),
-            shell=True)
+            user_settings['Gitlab']['GIT_CACHE_TIMEOUT']), shell=True)
 
     return {'name': name[:-1], 'email': email[:-1]}
 
@@ -294,7 +293,8 @@ def cache_repos():
     if (now - last_mod_lock) > user_settings['Cache']['CACHE_LOCK_DECAY_TIME']:
         touch(user_settings['Cache']['CACHE_LOCK_FILE'])
         devnull = open(os.devnull, 'wb')  # use this in python < 3.3; python >= 3.3 has subprocess.DEVNULL
-        subprocess.Popen(['mrt maintenance update_repo_cache --quiet'], shell=True, stdout=devnull, stderr=devnull)
+        subprocess.Popen(['mrt maintenance update_repo_cache --quiet'], shell=True, stdin=devnull, stdout=devnull,
+                         stderr=devnull)
 
 
 def import_repo_names():

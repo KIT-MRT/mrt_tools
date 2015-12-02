@@ -1,8 +1,10 @@
 from mrt_tools.settings import user_settings, write_settings, CONFIG_DIR
 from mrt_tools.utilities import get_user_choice
+from collections import OrderedDict
 import keyring
 import getpass
 import click
+import sys
 import os
 
 
@@ -112,24 +114,39 @@ class FileCredentialManager(BaseCredentialManager):
                 pass
 
 
-CredentialManagers = {
-    'Use_gnome_keyring': GnomeCredentialManager,
-    'Save_only_token_in_file': FileCredentialManager,
-    'DONT_SAVE_ANYTHING': BaseCredentialManager,
-}
+class DummyCredentialManager(BaseCredentialManager):
+    def get_username(self, quiet=False):
+        return None
+
+    def get_password(self, username, quiet=False):
+        return None
+
+
+# Using ordered dict, so that 'get_user_choice' is displayed correctly.
+CredentialManagers = OrderedDict()
+CredentialManagers['Use_gnome_keyring'] = GnomeCredentialManager
+CredentialManagers['Save_only_token_in_file'] = FileCredentialManager
+CredentialManagers['DONT_SAVE_ANYTHING'] = BaseCredentialManager
 
 # Smooth transition to new version:
 if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.keys():
-    click.echo("")
-    click.secho(
-        "For convenience and improved security, personal data like gitlab-password and gitlab-token can "
-        "now be stored in the Gnome keyring.", fg='yellow')
-    click.echo("\t- Personal data can be deleted in the subcommand 'mrt maintenance credentials'. ")
-    click.echo("\t- Settings can be changed with 'mrt maintenance settings'")
-    click.echo("")
-    _, user_choice = get_user_choice(CredentialManagers.keys(), prompt="Where do you want to save your credentials?")
-    click.echo("")
-    user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = user_choice
-    write_settings(user_settings)
+    if not sys.stdout.isatty():
+        # You're NOT running in a real terminal, create DummyCredentialManager to avoid being prompted
+        user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = "Dummy_Manager"
+        CredentialManagers['Dummy_Manager'] = DummyCredentialManager
+    else:
+        click.echo("")
+        click.secho(
+            "For convenience and improved security, personal data like gitlab-password and gitlab-token can "
+            "now be stored in the Gnome keyring.", fg='yellow')
+        click.echo("\t- Personal data can be deleted within the subcommand 'mrt maintenance credentials'. ")
+        click.echo("\t- Settings can be changed with 'mrt maintenance settings'")
+        click.echo("")
+        options = ['Use_gnome_keyring', 'Save_only_token_in_file', 'DONT_SAVE_ANYTHING']
+        _, user_choice = get_user_choice(CredentialManagers.keys(), default=0, prompt="Where do you want to save your "
+                                                                                      "credentials?")
+        click.echo("")
+        user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = user_choice
+        write_settings(user_settings)
 
 credentialManager = CredentialManagers[user_settings['Gitlab']['STORE_CREDENTIALS_IN']]()
