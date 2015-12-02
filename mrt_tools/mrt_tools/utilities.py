@@ -66,7 +66,7 @@ def get_gituserinfo():
         # Set git caching helper to save credentials
         subprocess.call("git config --global credential.helper 'cache --timeout={}'".format(
             user_settings['Gitlab']['GIT_CACHE_TIMEOUT']),
-                        shell=True)
+            shell=True)
 
     return {'name': name[:-1], 'email': email[:-1]}
 
@@ -128,8 +128,8 @@ def zip_files(files, archive):
 
 def check_naming(pkg_name):
     while re.match("^[a-z][a-z_0-9]+$", pkg_name) is None:
-        pkg_name = str(
-            input("Please enter a package name containing only [a-z], [0-9] and _ (First char must be a letter): "))
+        pkg_name = click.prompt(
+            "Please enter a package name containing only [a-z], [0-9] and _ (First char must be a letter): ")
 
     # Fail safe
     if pkg_name[-4:] == "_ros":
@@ -324,7 +324,8 @@ def changed_base_yaml():
             new_hash = hasher.hexdigest()
     except IOError:
         new_hash = ""
-        click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(user_settings['Other']['BASE_YAML_FILE']), fg="red")
+        click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(
+            user_settings['Other']['BASE_YAML_FILE']), fg="red")
 
     try:
         with open(user_settings['Other']['BASE_YAML_HASH_FILE'], 'r') as f:
