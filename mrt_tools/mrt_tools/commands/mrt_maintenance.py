@@ -225,9 +225,11 @@ def delete():
 def show():
     username = credentialManager.get_username(quiet=True)
     password = credentialManager.get_password(username, quiet=True) and "******"
+    click.echo("")
     click.echo("Gitlab credentials")
     click.echo("==================")
+    click.echo("(Current setting: '{}')".format(user_settings['Gitlab']['STORE_CREDENTIALS_IN']))
     click.echo("Username: {}".format(username))
     click.echo("Password: {}".format(password))
     click.echo("Token   : {}".format(credentialManager.get_token()))
-
+    click.echo("")
