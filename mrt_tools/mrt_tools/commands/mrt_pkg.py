@@ -4,16 +4,14 @@ from mrt_tools.utilities import *
 from mrt_tools.Git import Git
 
 # Autocompletion
-try:
-    tmp_ws = Workspace()
-    suggestions = tmp_ws.get_catkin_package_names()
-    repo_list = import_repo_names()
-    os.chdir(tmp_ws.org_dir)
-except:
-    suggestions = []
-    repo_list = []
-
-self_dir = get_script_root()
+def pkg_suggestions(ctx=None, incomplete=None, cwords=None, cword=None):
+    try:
+        tmp_ws = Workspace()
+        suggestions = tmp_ws.get_catkin_package_names()
+        os.chdir(tmp_ws.org_dir)
+    except:
+        suggestions = []
+    return suggestions
 
 
 ########################################################################################################################
@@ -31,7 +29,7 @@ def main(ctx):
 @main.command(short_help="Clone catkin packages from gitlab.",
               help="This command let's you clone a repository directly into your workspace. Dependencies to other "
                    "packages are automatically resolved. Try out the bashcompletion for the package name.")
-@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=repo_list)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=import_repo_names)
 @click.pass_obj
 def add(ws, pkg_name):
     """Clone catkin packages from gitlab."""
@@ -57,7 +55,7 @@ def add(ws, pkg_name):
 @main.command(short_help="Deletes package from workspace.",
               help="This command let's you savely remove a package from the current workspace, by checking for "
                    "uncommited or unpushed changes and removing the directory as well as the .rosinstall config entry.")
-@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=pkg_suggestions)
 @click.pass_obj
 def remove(ws, pkg_name):
     """Delete package from workspace."""
@@ -139,7 +137,7 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
                    "workspace. You can specify a package name, use the '--this' flag or leave the argument away to "
                    "create dependency graphs for the whole workspace. Dependencys are checked by using catkin, "
                    "the resulting images are written to 'ws/pics/'")
-@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=pkg_suggestions)
 @click.option("--this", is_flag=True)
 @click.pass_obj
 def visualize_deps(ws, pkg_name, this):
@@ -173,7 +171,7 @@ def visualize_deps(ws, pkg_name, this):
 
 @main.command(short_help="List dependencies of catkin packages.",
               help="This will list all dependencies of a named catkin package.")
-@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=pkg_suggestions)
 @click.option("--this", is_flag=True)
 @click.pass_obj
 def list_deps(ws, pkg_name, this):
