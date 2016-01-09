@@ -145,7 +145,7 @@ class Git(object):
         """
         click.secho("Search for package " + pkg_name, fg='red')
         # Results is a dict or a list of dicts, depending on how many results were found
-        results = self.server.searchproject(pkg_name)
+        results = list(self.server.getall(self.server.searchproject, pkg_name, per_page=100))
 
         # If we declared a namespace, there will only be one result with this name in this namespace
         if ns:
