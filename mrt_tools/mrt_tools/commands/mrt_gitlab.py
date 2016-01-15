@@ -207,3 +207,9 @@ def namespaces(git):
     ns_list = git.get_namespaces()
     for index, item in enumerate(ns_list):
         click.echo("(" + str(index) + ") " + item)
+
+@show.command(short_help="Open SW catalog",
+              help="This command will display the mrt software catalog in your favorite webbrowser.")
+def swcatalog():
+    """Open SW catalog"""
+    subprocess.call("xdg-open http://localhost/index.html?token={}".format(credentialManager.get_token()), shell=True)
