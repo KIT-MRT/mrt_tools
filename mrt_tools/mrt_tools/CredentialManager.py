@@ -1,6 +1,7 @@
 from mrt_tools.settings import user_settings, write_settings, CONFIG_DIR
 from mrt_tools.utilities import get_user_choice
 from collections import OrderedDict
+import subprocess
 import keyring
 import getpass
 import click
@@ -150,3 +151,17 @@ if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.key
         write_settings(user_settings)
 
 credentialManager = CredentialManagers[user_settings['Gitlab']['STORE_CREDENTIALS_IN']]()
+
+
+def set_git_credentials(username, password):
+    url = user_settings['Gitlab']['HOST_URL']
+    if url.startswith("https://"):
+        host = url[8:]
+    elif url.startswith("http://"):
+        host = url[7:]
+    else:
+        host = url
+    git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
+    git_process.communicate(
+        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
+

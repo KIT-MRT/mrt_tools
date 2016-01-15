@@ -1,4 +1,4 @@
-from mrt_tools.CredentialManager import credentialManager
+from mrt_tools.CredentialManager import credentialManager, set_git_credentials
 from simplejson.scanner import JSONDecodeError
 from requests.exceptions import ConnectionError
 from requests.packages import urllib3
@@ -290,20 +290,6 @@ class SSHkey(object):
         self.secret_key = key.exportKey('PEM')
         self.public_key = key.publickey().exportKey('OpenSSH')
         self.write()
-
-
-def set_git_credentials(username, password):
-    url = user_settings['Gitlab']['HOST_URL']
-    if url.startswith("https://"):
-        host = url[8:]
-    elif url.startswith("http://"):
-        host = url[7:]
-    else:
-        host = url
-    git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
-    git_process.communicate(
-        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
-
 
 def test_git_credentials():
     # Test whether git credentials are still stored:

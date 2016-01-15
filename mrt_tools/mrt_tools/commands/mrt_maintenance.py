@@ -1,6 +1,5 @@
+from mrt_tools.CredentialManager import credentialManager, set_git_credentials
 from wstool import config as wstool_config
-from mrt_tools.settings import user_settings
-from mrt_tools.CredentialManager import credentialManager
 from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 from mrt_tools.Git import Git
@@ -291,3 +290,8 @@ def show():
     else:
         click.echo("cached creds.: {}".format("No"))
     click.echo("")
+
+@credentials.command(short_help="Show all stored credentials on this machine.")
+def update_cache():
+    username, password = credentialManager.get_credentials()
+    set_git_credentials(username, password)
