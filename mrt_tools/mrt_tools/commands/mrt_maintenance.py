@@ -5,6 +5,8 @@ from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 from mrt_tools.Git import Git
 
+import getpass
+
 
 ########################################################################################################################
 # Fixes
@@ -214,11 +216,47 @@ def credentials():
     pass
 
 
-@credentials.command(short_help="Remove all stored credentials from this machine.")
-def delete():
+def delete_credentials():
+    # Remove saved credentials
     credentialManager.delete('username')
     credentialManager.delete('password')
     credentialManager.delete('token')
+
+    # Remove cache
+    if os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
+        os.remove(os.path.expanduser("~/.git-credential-cache/socket"))
+
+    # Remove git info
+    subprocess.call("git config --global --remove-section user", shell=True)
+
+    # Remove SSH Key
+    sshkeys = Git.get_local_ssh_keys()
+    if sshkeys:
+        click.secho("You have an ssh key stored on this machine. If you want to remove ALL of your userdata, "
+                    "please delete it manually.", fg="yellow")
+        for nr, key in enumerate(sshkeys):
+            click.echo("\t" + str(nr + 1) + ")\t" + key.path)
+
+
+@credentials.command(short_help="Remove all stored credentials from this machine.")
+def remove():
+    delete_credentials()
+
+
+@credentials.command(short_help="Provide credentials to be stored.")
+def reset():
+    click.confirm("Deleting userdata first. Continue?", abort=True)
+    delete_credentials()
+
+    username = getpass.getuser()
+    name = click.prompt("Please enter your first and last name")
+    email = click.prompt("Please enter your email address")
+    username = click.prompt("Please enter your Gitlab username", default=username)
+    password = click.prompt("Please enter your Gitlab password", hide_input=True)
+    set_gituserinfo(name=name, email=email)
+    credentialManager.store('username', username)
+    credentialManager.store('password', password)
+    Git()
 
 
 @credentials.command(short_help="Show all stored credentials on this machine.")
@@ -232,4 +270,24 @@ def show():
     click.echo("Username: {}".format(username))
     click.echo("Password: {}".format(password))
     click.echo("Token   : {}".format(credentialManager.get_token()))
+    click.echo("")
+
+    # Read out username and email
+    (name, name_err) = subprocess.Popen("git config --get user.name", shell=True,
+                                        stdout=subprocess.PIPE).communicate()
+    (email, mail_err) = subprocess.Popen("git config --get user.email", shell=True,
+                                         stdout=subprocess.PIPE).communicate()
+
+    if name:
+        name = name[:-1]
+    if email:
+        email = email[:-1]
+    click.echo("Git credentials")
+    click.echo("==================")
+    click.echo("user.name    : {}".format(name))
+    click.echo("user.email   : {}".format(email))
+    if os.path.exists(os.path.expanduser("~/.git-credential-cache/socket")):
+        click.echo("cached creds.: {}".format("Yes"))
+    else:
+        click.echo("cached creds.: {}".format("No"))
     click.echo("")
