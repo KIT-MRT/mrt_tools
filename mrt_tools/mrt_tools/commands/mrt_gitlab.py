@@ -212,4 +212,4 @@ def namespaces(git):
               help="This command will display the mrt software catalog in your favorite webbrowser.")
 def swcatalog():
     """Open SW catalog"""
-    subprocess.call("xdg-open http://localhost/index.html?token={}".format(credentialManager.get_token()), shell=True)
+    subprocess.call("xdg-open https://srv1.mrt.uni-karlsruhe.de/softcat.html?private_token={}".format(credentialManager.get_token()), shell=True)
