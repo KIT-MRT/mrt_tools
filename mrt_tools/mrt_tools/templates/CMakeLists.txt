@@ -146,16 +146,41 @@ link_directories(
 @xx| x@ 	endif()
 @xx| x@ endfunction()
 @xx| x@ 
+@ x| x@ function(add_nodelet EXEC_NAME SEARCH_FOLDER)
+@ x| x@ 	#glob all files in this directory
+@ x| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h")
+@ x| x@ 	file(GLOB EXEC_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.cpp")
+@ x| x@ 
+@ x| x@     # Find nodelet
+@ x| x@ 	file(GLOB NODELET_CPP RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*_nodelet.cpp")
+@ x| x@ 	if (NODELET_CPP)
+@ x| x@         STRING(REGEX REPLACE "_node" "" NODELET_NAME ${EXEC_NAME})
+@ x| x@         add_library(${NODELET_NAME}_nodelet
+@ x| x@             ${EXEC_SOURCE_FILES_INC}
+@ x| x@ 			${EXEC_SOURCE_FILES_SRC}
+@ x| x@         )
+@ x| x@         target_link_libraries(${NODELET_NAME}_nodelet
+@ x| x@             ${catkin_LIBRARIES}
+@ x| x@             ${mrt_LIBRARIES}
+@ x| x@         )
+@ x| x@         install(TARGETS ${NODELET_NAME}_nodelet
+@ x| x@             LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+@ x| x@         )
+@ x| x@     endif()
+@ x| x@ endfunction()
+@ x| x@ 
 @xx| x@ glob_folders(SRC_DIRECTORIES "${CMAKE_CURRENT_SOURCE_DIR}/src")
 @xx| x@ 
 @xx| x@ if (SRC_DIRECTORIES)
 @xx| x@ 	#found subfolders, add executable for each subfolder
 @xx| x@ 	foreach(SRC_DIR ${SRC_DIRECTORIES})
 @xx| x@ 		add_exec(${SRC_DIR} "src/${SRC_DIR}")
+@ x| x@ 		add_nodelet(${SRC_DIR} "src/${SRC_DIR}")
 @xx| x@ 	endforeach()
 @xx| x@ else()
 @xx| x@ 	#no subfolder found, add executable for src folder
 @xx| x@ 	add_exec(${PROJECT_NAME} "src")
+@ x| x@ 		add_nodelet(${SRC_DIR} "src")
 @xx| x@ endif()
 
 #############
@@ -180,6 +205,13 @@ link_directories(
 #  res/test.png
 #  DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 #)
+@ x| x@ 
+@ x| x@ # Find and install nodelet plugin description file
+@ x| x@ file(GLOB PLUGINS_FILE RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "nodelet_plugins.xml")
+@ x| x@ if (PLUGINS_FILE)
+@ x| x@     install(FILES nodelet_plugins.xml
+@ x| x@             DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION})
+@ x| x@ endif()
 
 #############
 ## Testing ##
