@@ -273,7 +273,7 @@ class Workspace(object):
         # TODO maybe use rosdep2 package directly
         click.echo("Resolving dependencies...")
         # Test whether ros is sourced
-        if "LD_LIBRARY_PATH" not in os.environ or "/opt/ros" not in os.environ["LD_LIBRARY_PATH"]:
+        if "ROS_ROOT" not in os.environ:
             click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
             sys.exit(1)
 

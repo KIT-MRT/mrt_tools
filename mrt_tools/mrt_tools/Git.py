@@ -1,4 +1,4 @@
-from mrt_tools.CredentialManager import credentialManager
+from mrt_tools.CredentialManager import credentialManager, set_git_credentials
 from simplejson.scanner import JSONDecodeError
 from requests.exceptions import ConnectionError
 from requests.packages import urllib3
@@ -45,21 +45,27 @@ class Git(object):
         self.connect(quiet=False)
 
         # Test ssh key
-        if self.use_ssh and not self.check_ssh_key():
-            # SSH Key not on server yet. Ask user
-            local_keys = self.get_local_ssh_keys()
-            choice_idx, choice_value = get_user_choice([key.name for key in local_keys],
-                                                       extra=["Create new key.", "Use https instead of a ssh key"],
-                                                       prompt="No ssh key match found. Which ssh key should we use?")
-            if choice_value == "Use https instead of a ssh key":
-                self.use_ssh = False
-                return
-            elif choice_value == "Create new key.":
-                self.ssh_key = SSHkey()
-                self.ssh_key.create()
-            else:
-                self.ssh_key = local_keys[choice_idx]
-            self.upload_ssh_key()
+        if self.use_ssh:
+            try:
+                if not self.check_ssh_key():
+                    # SSH Key not on server yet. Ask user
+                    local_keys = self.get_local_ssh_keys()
+                    choice_idx, choice_value = get_user_choice([key.name for key in local_keys],
+                                                               extra=["Create new key.",
+                                                                      "Use https instead of a ssh key"],
+                                                               prompt="No ssh key match found. Which ssh key should we use?")
+                    if choice_value == "Use https instead of a ssh key":
+                        self.use_ssh = False
+                        return
+                    elif choice_value == "Create new key.":
+                        self.ssh_key = SSHkey()
+                        self.ssh_key.create()
+                    else:
+                        self.ssh_key = local_keys[choice_idx]
+                    self.upload_ssh_key()
+            except ConnectionError:
+                click.secho("Couldn't connect to server. Are you connected to the internet?")
+                sys.exit(1)
 
     def connect(self, quiet=False):
         """Connects to the server"""
@@ -104,16 +110,12 @@ class Git(object):
     def check_ssh_key(self):
         """Test for the presence and functionality of a ssh-key."""
         local_keys = self.get_local_ssh_keys()
-        try:
-            remote_keys = self.server.getsshkeys()
-        except ConnectionError:
-            click.secho("Couldn't connect to server. Are you connected to the internet?")
-            sys.exit(1)
+        remote_keys = self.server.getsshkeys()
 
         if remote_keys is False:
-            click.secho("There was a problem with gitlab... Exiting", fg="red")
-            sys.exit(1)
-        if [key for key in local_keys if key.public_key in [r["key"] for r in remote_keys]]:
+            raise ConnectionError
+
+        if [key for key in local_keys if str(key.public_key) in [str(r["key"]) for r in remote_keys]]:
             return True
         else:
             return False
@@ -288,20 +290,6 @@ class SSHkey(object):
         self.secret_key = key.exportKey('PEM')
         self.public_key = key.publickey().exportKey('OpenSSH')
         self.write()
-
-
-def set_git_credentials(username, password):
-    url = user_settings['Gitlab']['HOST_URL']
-    if url.startswith("https://"):
-        host = url[8:]
-    elif url.startswith("http://"):
-        host = url[7:]
-    else:
-        host = url
-    git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
-    git_process.communicate(
-        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
-
 
 def test_git_credentials():
     # Test whether git credentials are still stored:

@@ -23,7 +23,7 @@ def main():
 def create(name):
     """Create a snapshot of the current workspace."""
     suffix = "_" + time.strftime("%y%m%d")
-    snapshot_name = name + suffix +user_settings['Snapshot']['FILE_ENDING']
+    snapshot_name = name + suffix + user_settings['Snapshot']['FILE_ENDING']
     filename = os.path.join(os.getcwd(), snapshot_name)
 
     # First test whether it's safe to create a snapshot
@@ -65,7 +65,7 @@ def restore(name):
         version = zf.read(user_settings['Snapshot']['VERSION_FILE'])
     except IOError:
         click.echo(os.getcwd())
-        click.secho("Can't find file: '" + name +user_settings['Snapshot']['FILE_ENDING'] + "'", fg="red")
+        click.secho("Can't find file: '" + name + user_settings['Snapshot']['FILE_ENDING'] + "'", fg="red")
         sys.exit()
 
     if version == "0.1.0":
@@ -86,6 +86,7 @@ def restore(name):
 
         # Clone packages
         click.secho("Cloning packages", fg="green")
+        ws.load()
         ws.update()
         ws.resolve_dependencies()
 
