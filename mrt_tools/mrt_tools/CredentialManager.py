@@ -144,7 +144,7 @@ if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.key
         click.echo("\t- Settings can be changed with 'mrt maintenance settings'")
         click.echo("")
         options = ['Use_gnome_keyring', 'Save_only_token_in_file', 'DONT_SAVE_ANYTHING']
-        _, user_choice = get_user_choice(CredentialManagers.keys(), default=0, prompt="Where do you want to save your "
+        _, user_choice = get_user_choice(CredentialManagers.keys(), default=1, prompt="Where do you want to save your "
                                                                                       "credentials?")
         click.echo("")
         user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = user_choice
