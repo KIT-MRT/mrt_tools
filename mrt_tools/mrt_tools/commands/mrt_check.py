@@ -18,18 +18,19 @@ import click
 def main():
     pass
 
-@main.command(short_help="Create a new catkin package.",
-              help="This is a package creation wizard, to help creating new catkin packages. You can specify whether "
-                   "to create a library or executable, ROS or non-ROS package and whether to create a Gitlab repo. "
-                   "Appropriate template files and directory tree are created. When creating the repo you can choose "
-                   "the namespace. The repo name is tested for conformity with the guidelines and conflicts with "
-                   "rosdep packages are avoided.")
-@click.option('--local', is_flag=True, help='Check and resolve dependencies before building workspace.')
+@main.command(short_help="Tests a workspace in a clean environment.",
+              help="Builds a workspace on mrtknecht or local in a docker environment. "
+                   "All non hidden files of the src folder are transfered to the docker "
+                   "and copied to a newly created catkin workspace. Then a release build "
+                   "is performed."
+                   "It can be used without pushing your source files to git.")
+@click.option('--local', is_flag=True, help='Test locally instead on mrtknecht '
+                                            '(docker environment must be setup properly).')
 def ws(local):
     ws = Workspace()
     ws_root = ws.get_root()
-    ws_root = os.path.join(ws_root, "src")
-    if not os.path.exists(ws_root):
+    ws_src = os.path.join(ws_root, "src")
+    if not os.path.exists(ws_src):
         raise "Cannot find workspace source folder"
 
     if local:
@@ -55,47 +56,41 @@ def ws(local):
         tarFile = tarfile.TarFile(tarPathName, "w")
 
         tempFileName = os.path.basename(tarPathName)
+        remote_work_dir = os.path.join("/tmp", "docker", tempFileName)
+        
+        #prepare wokspace
         sftp.mkdir(tempFileName, mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
-
-        for root, dirs, files in os.walk(ws_root):
-            #do not copy hidden folders
-            for dirName in dirs:
-                if dirName.startswith('.'):
-                    dirs.remove(dirName)
-            #add files to tar archive
-            for fileName in files:
-                if not fileName.startswith('.'):
-                    tarFile.add(os.path.join(root, fileName))
-
+        _executeSshCommand(ssh, 'bash -c "cd {0} && mrt ws init"'.format(remote_work_dir))
+        
+        os.chdir(ws_src)
+        tarFile.add(".", exclude=lambda p: os.path.basename(os.path.abspath(p)).startswith('.'))
         tarFile.close()
 
         #copy tar archive to remote
-        destTar = os.path.join("/tmp", "docker", tempFileName, tempFileName + ".tar")
-        sftp.put(tarPathName, destTar)
+        dest_tar = os.path.join(remote_work_dir, tempFileName + ".tar")
+        sftp.put(tarPathName, dest_tar)
     finally:
         if os.path.exists(tarPathName):
             os.remove(tarPathName)
 
     sftp.close()
 
-    #extract tar archive
-    stdcin, stdcout, stdcerr = ssh.exec_command("tar -xf " + destTar + " -C " + os.path.dirname(destTar))
-    stdcerr.readlines()
+    remote_work_src = os.path.join(remote_work_dir, "src")
+    ssh.exec_command("tar -xf " + dest_tar + " -C " + remote_work_src)
+    ssh.exec_command("rm " + dest_tar)
 
     #run docker build
-    execLine = 'bash -c "cd {0}  && mrt check ws"'.format(os.path.dirname(destTar))
-
+    execLine = 'bash -c "cd {0}  && mrt check ws --local"'.format(remote_work_dir)
     _executeSshCommand(ssh, execLine)
 
 
-@main.command(short_help="Create a new catkin package.",
-              help="This is a package creation wizard, to help creating new catkin packages. You can specify whether "
-                   "to create a library or executable, ROS or non-ROS package and whether to create a Gitlab repo. "
-                   "Appropriate template files and directory tree are created. When creating the repo you can choose "
-                   "the namespace. The repo name is tested for conformity with the guidelines and conflicts with "
-                   "rosdep packages are avoided.")
+@main.command(short_help="Tests a package in a clean environemnt.",
+              help="The specified package will be checked out out from git in a " 
+                   "docker environment. All dependencies are resolved and a "
+                   "release build is performed.")
 @click.argument('pkg_name', type=click.STRING, required=True)
-@click.option('--local', is_flag=True, help='Check and resolve dependencies before building workspace.')
+@click.option('--local', is_flag=True, help='Test locally instead on mrtknecht '
+                                            '(docker environment must be setup properly).')
 def pkg(pkg_name, local):
     if local:
         mrt_tools.DockerCheck.pkg(pkg_name)
@@ -105,7 +100,6 @@ def pkg(pkg_name, local):
 
     execLine = 'mrt check pkg {0} --local'.format(pkg_name)
 
-    print(execLine)
     _executeSshCommand(ssh, execLine)
 
 
