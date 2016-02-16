@@ -28,4 +28,4 @@ RUN apt-get update && apt-get install -y curl \
 	&& rm /usr/local/bin/gosu.asc \ 
 	&& chmod +x /usr/local/bin/gosu
 
-
+COPY files/* /tmp/userFiles/

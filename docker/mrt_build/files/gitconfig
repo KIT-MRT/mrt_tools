@@ -1,0 +1,8 @@
+[user]
+        email = anonymous@kit.edu
+        name = Mrt Docker Builder
+[push]
+        default = simple
+[credential]
+        helper = cache --timeout=900
+

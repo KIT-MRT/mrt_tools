@@ -2,24 +2,17 @@
 
 set -e
 
-#update rosdep
+# copy user data
+cp /tmp/userFiles/gitconfig ~/.gitconfig
+mkdir -p ~/.mrtgitlab
+cp /tmp/userFiles/mrt.cfg ~/.mrtgitlab/
+
 source /opt/ros/jade/setup.bash
-rosdep update
 
-#add credential helper for git
-mkdir ~/.git
-git config --global credential.helper store
-
-#copy token file
-mkdir ~/.mrtgitlab
-cp /tmp/.mrtgitlab/.token ~/.mrtgitlab/.token
-
-#create new workspace and clone package
+# init workspace
 cd ~
 mkdir ws
 cd ws
-
-mrt_init_workspace
-mrt_clone_pkg $@ -httpy
-mrt_catkin build --release
-
+mrt ws init
+mrt pkg add $1
+mrt catkin build --release

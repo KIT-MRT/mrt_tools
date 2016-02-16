@@ -20,6 +20,6 @@ echo "$USER_NAME    ALL = NOPASSWD: /usr/bin/apt-get" | sudo tee -a /etc/sudoers
 
 addgroup -q --gid $GROUP_ID $GROUP_NAME
 useradd -ms /bin/bash --gid $GROUP_ID --uid $USER_ID $USER_NAME
-#exec gosu $USER_ID:$GROUP_ID "/tmp/docker_build_package" ${@:5}
-exec gosu $USER_ID:$GROUP_ID "/bin/bash"
+exec gosu $USER_ID:$GROUP_ID "/tmp/docker_build_package" ${@:5}
+
 
