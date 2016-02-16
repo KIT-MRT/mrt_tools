@@ -224,3 +224,5 @@ def list_deps(ws, pkg_name, this):
     click.echo("====================")
     for dep in apt_deps:
         click.echo(dep)
+
+    
