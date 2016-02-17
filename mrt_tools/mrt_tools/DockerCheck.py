@@ -30,7 +30,7 @@ def _start_docker(docker_name, parameters, mounts = []):
             
         mount_string += ["-v", s]
        
-    exec_string = ["docker", "run", "-ti"] + cuda_device_string + mount_string + ["--rm=true", docker_name] + \
+    exec_string = ["sudo", "docker", "run", "-ti"] + cuda_device_string + mount_string + ["--rm=true", docker_name] + \
                   user_parameters + parameters
 
     # execute docker
