@@ -1,4 +1,0 @@
-#!/bin/bash
-SELF="$(readlink /proc/$$/fd/255)" || SELF="$0" # Eigener Pfad (besseres $0)
-old_name=$(basename $SELF)
-echo "$(tput bold)$(tput setf 1)WARNING:$(tput sgr0) '$old_name' is deprecated."
