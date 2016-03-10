@@ -73,6 +73,9 @@ class Workspace(object):
             self.recreate_index()
         self.cd_root()
 
+        shutil.copyfile(os.getenv('ROS_ROOT') + "/../catkin/cmake/toplevel.cmake", self.src + "/CMakeLists.txt")
+
+
     def clean(self):
         """Delete everything in current workspace."""
         self.test_for_changes()
