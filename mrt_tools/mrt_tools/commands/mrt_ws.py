@@ -1,3 +1,4 @@
+from mrt_tools.Git import test_git_credentials
 from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 
@@ -93,6 +94,7 @@ def info(ws, args):
 @click.pass_obj
 def update(ws, args):
     """Perform a git push & pull on every repo"""
+
     subprocess.call(['mrt wstool update'], shell=True)
 
 
@@ -104,4 +106,5 @@ def update(ws, args):
 @click.pass_obj
 def resolve_deps(ws):
     """Resolve dependencies for packages"""
+    test_git_credentials()
     ws.resolve_dependencies()
