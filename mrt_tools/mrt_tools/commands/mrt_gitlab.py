@@ -131,25 +131,19 @@ def add_user(git):
     click.echo("\n\nFound following new repos:")
     for r in new_repos:
         click.echo(r)
-    if not click.confirm("\nAdd user {0} to these repos aswell?".format(user["name"]), default=True):
-        return
-    for r in new_repos:
-        click.echo("\nAdding user {0} to repo {1}\n".format(user["name"].upper(),
-                                                            r.upper()))
-        repo_id = [s["id"] for s in repo_dicts if s["name"] == r]
-        _, role = get_user_choice(roles, prompt='Please choose a role for the user for this repo.', default=2)
-        git.server.addprojectmember(repo_id[0], user["id"], role)
 
-    # Add user as well
+    for r in new_repos:
+        if click.confirm("\nAdd user {0} to repo {1} aswell?".format(user["name"].upper(), r.upper()), default=True):
+            # Add user as well
+            click.echo("\nAdding user {0} to repo {1}\n".format(user["name"].upper(),
+                                                                r.upper()))
+            repo_id = [s["id"] for s in repo_dicts if s["name"] == r]
+            _, role = get_user_choice(roles, prompt='Please choose a role for the user for this repo.', default=2)
+            git.server.addprojectmember(repo_id[0], user["id"], role)
+
     os.chdir(org_dir)
     shutil.rmtree("/tmp/mrtgitlab_test_ws")
 
-
-# @permissions.command()
-# @click.pass_obj
-# def add_group(git):
-#     pass
-#
 
 ########################################################################################################################
 # Show
