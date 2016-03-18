@@ -160,6 +160,7 @@ def visualize_deps(ws, pkg_name, this):
     else:
         if click.confirm("Create dependency graph for every package?"):
             for pkg_name in pkg_list:
+                click.echo("Creating graph for {}...".format(pkg_name))
                 deps = [ws.get_dependencies(pkg_name, deep=True)]
                 graph = Digraph(deps)
                 graph.plot(pkg_name, show=False)

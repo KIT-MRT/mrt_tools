@@ -291,6 +291,7 @@ def show():
         click.echo("cached creds.: {}".format("No"))
     click.echo("")
 
+
 @credentials.command(short_help="Show all stored credentials on this machine.")
 def update_cache():
     username, password = credentialManager.get_credentials()
