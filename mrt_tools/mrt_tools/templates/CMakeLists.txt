@@ -132,7 +132,7 @@ link_directories(
 @ x| x@ 		# as an example, message headers may need to be generated before nodes
 @ x| x@ 		add_dependencies(${EXEC_NAME} ${catkin_EXPORTED_TARGETS})
 @ x| x@ 		if (CFG_FILES)
-@ x| x@ 			add_dependencies(${EXEC_NAME} ${EXEC_NAME}_gencfg)
+@ x| x@ 			add_dependencies(${EXEC_NAME} ${PROJECT_NAME}_gencfg)
 @ x| x@ 		endif()
 @ x| x@ 	  if (ROS_GENERATE_MESSAGES)
 @ x| x@ 	    add_dependencies(${EXEC_NAME} ${PROJECT_NAME}_generate_messages)
