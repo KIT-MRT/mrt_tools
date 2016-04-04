@@ -8,6 +8,7 @@ import click
 import sys
 import os
 import re
+import xml.etree.ElementTree as ET
 
 
 def get_script_root():
