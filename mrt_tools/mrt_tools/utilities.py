@@ -278,6 +278,17 @@ def set_eclipse_project_setting(ws_root):
                 os.mkdir("./.settings")
         script_dir = get_script_root()
         shutil.copy(script_dir + "/templates/language.settings.xml", "./.settings")
+        
+        # hide catkin files, etc.
+        if os.path.isfile("./.project"):
+            template_tree = ET.parse(script_dir + "/templates/project_filter.xml")
+            template_root = template_tree.getroot()
+
+            project_tree = ET.parse("./.project")
+            project_root = project_tree.getroot()
+
+            project_root.append(template_root)
+            project_tree.write("./.project", encoding="UTF-8", xml_declaration=True)
 
 
 def cache_repos():
