@@ -24,6 +24,7 @@ six==1.10.0               # via python-dateutil
 vcstools==0.1.38          # via wstool
 wstool==0.1.12
 paramiko==1.15.3
+gssapi
 
 # The following packages are commented out because they are
 # considered to be unsafe in a requirements file:
