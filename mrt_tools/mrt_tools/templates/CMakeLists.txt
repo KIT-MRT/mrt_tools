@@ -104,13 +104,13 @@ link_directories(
 @xx|x @
 @ x|x @ 	# Add cmake target dependencies of the executable/library
 @ x|x @ 	# as an example, message headers may need to be generated before nodes
-@ x|x @ 	add_dependencies(${PROJECT_NAME} ${catkin_EXPORTED_TARGETS})
+@ x|x @ 	add_dependencies(${LIBRARY_NAME} ${catkin_EXPORTED_TARGETS})
 @ x|x @ 	if (ROS_GENERATE_MESSAGES)
-@ x|x @ 	      add_dependencies(${PROJECT_NAME} ${PROJECT_NAME}_generate_messages)
+@ x|x @ 	      add_dependencies(${LIBRARY_NAME} ${PROJECT_NAME}_generate_messages)
 @ x|x @ 	endif()
 @ x|x @
 @xx|x @ 	# Specify libraries to link a library or executable target against
-@xx|x @ 	target_link_libraries(${PROJECT_NAME}
+@xx|x @ 	target_link_libraries(${LIBRARY_NAME}
 @xx|x @ 	  ${catkin_LIBRARIES}
 @xx|x @ 	  ${mrt_LIBRARIES}
 @xx|x @ 	)
