@@ -5,10 +5,11 @@ import os
 
 
 class Digraph(object):
-    def __init__(self, deps):
+    def __init__(self, deps, no_leafs=False):
         # create a graph object
         self.graph = pydot.Dot(graph_type='digraph')
         self.nodes = None
+        self.no_leafs = no_leafs
         # add nodes and edges to the root node
         for dep in deps:
             self.add_nodes(dep)
@@ -44,8 +45,9 @@ class Digraph(object):
 
             # if the list element is not a dict
             if type(v) != dict:
-                node = self.get_node(v, isleaf=True)
-                self.add_edge(root_node, node)
+                if not self.no_leafs:
+                    node = self.get_node(v, isleaf=True)
+                    self.add_edge(root_node, node)
 
             # if the element is a dict, call recursion
             else:

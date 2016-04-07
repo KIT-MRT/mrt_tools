@@ -141,8 +141,9 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
                    "the resulting images are written to 'ws/pics/'")
 @click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
 @click.option("--this", is_flag=True)
+@click.option("--repos-only", is_flag=True)
 @click.pass_obj
-def visualize_deps(ws, pkg_name, this):
+def visualize_deps(ws, pkg_name, this, repos_only):
     """ Visualize dependencies of catkin packages."""
     pkg_list = ws.get_catkin_package_names()
 
@@ -162,13 +163,13 @@ def visualize_deps(ws, pkg_name, this):
             for pkg_name in pkg_list:
                 click.echo("Creating graph for {}...".format(pkg_name))
                 deps = [ws.get_dependencies(pkg_name, deep=True)]
-                graph = Digraph(deps)
+                graph = Digraph(deps, repos_only)
                 graph.plot(pkg_name, show=False)
         if click.confirm("Create complete dependency graph for workspace?", abort=True):
             pkg_name = os.path.basename(ws.root)
 
     deps = [ws.get_dependencies(pkg, deep=True) for pkg in pkg_list]
-    graph = Digraph(deps)
+    graph = Digraph(deps, repos_only)
     graph.plot(pkg_name)
 
 
@@ -181,10 +182,7 @@ def list_deps(ws, pkg_name, this):
     """ Visualize dependencies of catkin packages."""
     pkg_list = ws.get_catkin_package_names()
 
-    if not pkg_name and not this:
-        click.secho("Please specify a package or use the '--this' flag.", fg="red")
-        sys.exit(1)
-    if this:
+    if this or not pkg_name:
         pkg_name = os.path.basename(ws.org_dir)
         if pkg_name not in pkg_list:
             click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
@@ -218,12 +216,9 @@ def list_deps(ws, pkg_name, this):
     click.echo("Gitlab dependencies")
     click.echo("===================")
     for dep in git_deps:
-
         click.echo(dep)
     click.echo("")
     click.echo("Apt-get dependencies")
     click.echo("====================")
     for dep in apt_deps:
         click.echo(dep)
-
-    
