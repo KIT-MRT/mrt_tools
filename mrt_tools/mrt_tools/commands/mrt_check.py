@@ -14,9 +14,12 @@ import mrt_tools.DockerCheck
 
 import click
 
+
 @click.group()
 def main():
+    """Test code in clean environment"""
     pass
+
 
 @main.command(short_help="Tests a workspace in a clean environment.",
               help="Builds a workspace on mrtknecht or local in a docker environment. "
@@ -31,7 +34,7 @@ def ws(local):
     ws_root = ws.get_root()
     ws_src = os.path.join(ws_root, "src")
     if not os.path.exists(ws_src):
-        raise "Cannot find workspace source folder"
+        raise Exception("Cannot find workspace source folder")
 
     if local:
         mrt_tools.DockerCheck.ws(ws_root)
@@ -39,34 +42,34 @@ def ws(local):
 
     ssh = _connect()
 
-    #copy data to server
+    # copy data to server
     sftp = ssh.open_sftp()
 
-    #create docker folder if not exist
+    # create docker folder if not exist
     sftp.chdir("/tmp")
-    if not "docker" in sftp.listdir():
+    if "docker" not in sftp.listdir():
         sftp.mkdir("docker")
 
-    sftp.chmod("docker", mode = stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+    sftp.chmod("docker", mode=stat.S_IRGRP | stat.S_IWGRP | stat.S_IXGRP | stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
     sftp.chdir("docker")
 
-    #create temporary file and create tar archive
+    # create temporary file and create tar archive
     try:
         tarPathName = tempfile.mkstemp()[1]
         tarFile = tarfile.TarFile(tarPathName, "w")
 
         tempFileName = os.path.basename(tarPathName)
         remote_work_dir = os.path.join("/tmp", "docker", tempFileName)
-        
-        #prepare wokspace
-        sftp.mkdir(tempFileName, mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
+
+        # prepare wokspace
+        sftp.mkdir(tempFileName, mode=stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR)
         _executeSshCommand(ssh, 'bash -c "cd {0} && mrt ws init"'.format(remote_work_dir))
-        
+
         os.chdir(ws_src)
         tarFile.add(".", exclude=lambda p: os.path.basename(os.path.abspath(p)).startswith('.'))
         tarFile.close()
 
-        #copy tar archive to remote
+        # copy tar archive to remote
         dest_tar = os.path.join(remote_work_dir, tempFileName + ".tar")
         sftp.put(tarPathName, dest_tar)
     finally:
@@ -79,13 +82,13 @@ def ws(local):
     ssh.exec_command("tar -xf " + dest_tar + " -C " + remote_work_src)
     ssh.exec_command("rm " + dest_tar)
 
-    #run docker build
+    # run docker build
     execLine = 'bash -c "cd {0}  && mrt check ws --local"'.format(remote_work_dir)
     _executeSshCommand(ssh, execLine)
 
 
 @main.command(short_help="Tests a package in a clean environemnt.",
-              help="The specified package will be checked out out from git in a " 
+              help="The specified package will be checked out out from git in a "
                    "docker environment. All dependencies are resolved and a "
                    "release build is performed.")
 @click.argument('pkg_name', type=click.STRING, required=True)
@@ -104,7 +107,7 @@ def pkg(pkg_name, local):
 
 
 def _connect():
-    #connect to server per ssh
+    # connect to server per ssh
     print("Connect to mrtknecht")
     ssh = paramiko.client.SSHClient()
     ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
@@ -115,8 +118,9 @@ def _connect():
 
     return ssh
 
+
 def _executeSshCommand(ssh, execCommand):
-    #execute
+    # execute
     transport = ssh.get_transport()
     session = transport.open_session()
     session.get_pty()
@@ -127,7 +131,7 @@ def _executeSshCommand(ssh, execCommand):
 
     try:
         new = termios.tcgetattr(fd)
-        new[3] = new[3] & ~termios.ECHO          # lflags
+        new[3] = new[3] & ~termios.ECHO  # lflags
         new[3] = new[3] & ~termios.ICANON
 
         termios.tcsetattr(fd, termios.TCSADRAIN, new)
@@ -137,7 +141,7 @@ def _executeSshCommand(ssh, execCommand):
         nbytes = 4096
         sleep = True
         while True:
-            #handle output
+            # handle output
             if session.recv_ready():
                 sys.stdout.write(session.recv(nbytes))
                 sys.stdout.flush()
@@ -147,17 +151,17 @@ def _executeSshCommand(ssh, execCommand):
                 sys.stderr.flush()
                 sleep = False
 
-            #handle input
+            # handle input
             try:
                 session.sendall(os.read(fd, 1))
             except:
                 sleep = True
 
-            #check if command is done
+            # check if command is done
             if session.exit_status_ready():
                 break
 
-            #sleep if no input or output occurs
+            # sleep if no input or output occurs
             if sleep:
                 time.sleep(0.001)
             else:
