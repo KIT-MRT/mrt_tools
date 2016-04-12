@@ -1,11 +1,13 @@
+from mrt_tools.settings import user_settings
 import click
 import sys
 import os
 
 # Test for sudo
 if os.getuid() == 0:
-    click.secho("Should not be run as root. Please use without sudo.", fg="red")
-    sys.exit(0)
+    if not user_settings['Other']['ALLOW_ROOT']:
+        click.secho("Should not be run as root. Please use without sudo.", fg="red")
+        sys.exit(0)
 
 plugin_folder = os.path.join(os.path.dirname(__file__), 'commands')
 

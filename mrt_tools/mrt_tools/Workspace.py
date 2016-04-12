@@ -277,7 +277,7 @@ class Workspace(object):
         click.echo("Resolving dependencies...")
         # Test whether ros is sourced
         if "ROS_ROOT" not in os.environ:
-            click.secho("ROS_ROOT not set. Source /opt/ros/<dist>/setup.bash", fg="red")
+            click.secho("ROS_ROOT not set. Run: 'source /opt/ros/$ROS_DISTRO/setup.bash'", fg="red")
             sys.exit(1)
 
         if changed_base_yaml():

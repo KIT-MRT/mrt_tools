@@ -27,6 +27,7 @@ default_settings = {
         'VERSION_FILE': "snapshot.version"
     },
     'Other': {
+        'ALLOW_ROOT': False,
         'BASE_YAML_FILE': "/mrtsoftware/pkg/share/ros/base.yaml",
         'BASE_YAML_HASH_FILE': os.path.join(CONFIG_DIR, "base_yaml_hash"),
     }
