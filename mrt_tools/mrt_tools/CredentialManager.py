@@ -115,6 +115,30 @@ class FileCredentialManager(BaseCredentialManager):
                 pass
 
 
+class EnvCredentialManager(BaseCredentialManager):
+    token = None
+
+    def get_username(self, quiet=False):
+        username = os.environ.get('MRT_USERNAME')
+        if not username:
+            raise Exception("Username must be provided through environment!")
+        return username
+
+    def get_password(self, username, quiet=False):
+        password = os.environ.get('MRT_PASSWORD')
+        if not password:
+            raise Exception("Username must be provided through environment!")
+        return password
+
+    def get_token(self):
+        return self.token
+
+    def store(self, key, value):
+        """Write to file"""
+        if key == "token":
+            self.token = value
+
+
 class DummyCredentialManager(BaseCredentialManager):
     def get_username(self, quiet=False):
         return None
@@ -127,9 +151,11 @@ class DummyCredentialManager(BaseCredentialManager):
 CredentialManagers = OrderedDict()
 CredentialManagers['Use_gnome_keyring'] = GnomeCredentialManager
 CredentialManagers['Save_only_token_in_file'] = FileCredentialManager
+CredentialManagers['Get_credentials_from_env'] = EnvCredentialManager
 CredentialManagers['DONT_SAVE_ANYTHING'] = BaseCredentialManager
 
 # Smooth transition to new version:
+user_options = ['Use_gnome_keyring', 'Save_only_token_in_file', 'DONT_SAVE_ANYTHING']
 if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.keys():
     if not sys.stdout.isatty():
         # You're NOT running in a real terminal, create DummyCredentialManager to avoid being prompted
@@ -138,14 +164,13 @@ if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.key
     else:
         click.echo("")
         click.secho(
-            "For convenience and improved security, personal data like gitlab-password and gitlab-token can "
-            "now be stored in the Gnome keyring.", fg='yellow')
+                "For convenience and improved security, personal data like gitlab-password and gitlab-token can "
+                "now be stored in the Gnome keyring.", fg='yellow')
         click.echo("\t- Personal data can be deleted within the subcommand 'mrt maintenance credentials'. ")
         click.echo("\t- Settings can be changed with 'mrt maintenance settings'")
         click.echo("")
-        options = ['Use_gnome_keyring', 'Save_only_token_in_file', 'DONT_SAVE_ANYTHING']
-        _, user_choice = get_user_choice(CredentialManagers.keys(), default=1, prompt="Where do you want to save your "
-                                                                                      "credentials?")
+        _, user_choice = get_user_choice(user_options, default=1, prompt="Where do you want to save your "
+                                                                         "credentials?")
         click.echo("")
         user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = user_choice
         write_settings(user_settings)
@@ -163,5 +188,4 @@ def set_git_credentials(username, password):
         host = url
     git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
     git_process.communicate(
-        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
-
+            input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
