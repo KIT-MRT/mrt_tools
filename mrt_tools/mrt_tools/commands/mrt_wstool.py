@@ -33,16 +33,7 @@ def main(action, args):
         if ws.contains_https():
             test_git_credentials()
 
-        # Search for unpushed commits
         ws.recreate_index() # Rebuild .rosinstall in case a package was deletetd manually
-        unpushed_repos = ws.unpushed_repos()
-
-        if len(unpushed_repos) > 0:
-            if click.confirm("Push them now?"):
-                for x in unpushed_repos:
-                    ws.cd_src()
-                    os.chdir(x)
-                    subprocess.call("git push", shell=True)
 
         # Speedup the pull process by parallelization
         if not [a for a in args if a.startswith("-j")]:
@@ -53,6 +44,20 @@ def main(action, args):
             test_git_credentials()
         action = "foreach"
         args = ("git fetch", )
+
+    if action == "push":
+        # Search for unpushed commits
+        unpushed_repos = ws.unpushed_repos()
+
+        if len(unpushed_repos) > 0:
+            if click.confirm("Push them now?"):
+                for x in unpushed_repos:
+                    ws.cd_src()
+                    os.chdir(x)
+                    subprocess.call("git push", shell=True)
+        else:
+            click.echo("No unpushed commits.")
+        sys.exit(0)
 
     # Pass the rest to wstool
     if len(args) == 0:
