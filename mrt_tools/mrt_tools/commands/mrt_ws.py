@@ -103,8 +103,9 @@ def update(ws, args):
                    "installing or cloning them into your current workspace. NOTE!: This fails, if you have already "
                    "sourced a different workspace containing one of the dependencies in your current terminal before "
                    "(e.g. in you bashrc).")
+@click.option('-y', '--default_yes', is_flag=True, help='Default to yes when asked to install dependencies.')
 @click.pass_obj
-def resolve_deps(ws):
+def resolve_deps(ws, default_yes):
     """Resolve dependencies for packages"""
     test_git_credentials()
-    ws.resolve_dependencies()
+    ws.resolve_dependencies(default_yes=default_yes)

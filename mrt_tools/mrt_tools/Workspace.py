@@ -272,7 +272,7 @@ class Workspace(object):
             [build_depend.name for catkin_pkg in list(self.catkin_pkgs.values()) for build_depend in
              catkin_pkg.build_depends])
 
-    def resolve_dependencies(self, git=None):
+    def resolve_dependencies(self, git=None, default_yes=None):
         # TODO maybe use rosdep2 package directly
         click.echo("Resolving dependencies...")
         # Test whether ros is sourced
@@ -332,7 +332,10 @@ class Workspace(object):
             self.write()
 
         # install missing system dependencies
-        subprocess.check_call(["rosdep", "install", "--from-paths", self.src, "--ignore-src"])
+        if default_yes:
+            subprocess.check_call(["rosdep", "install", "--default-yes", "--from-paths", self.src, "--ignore-src"])
+        else:
+            subprocess.check_call(["rosdep", "install", "--from-paths", self.src, "--ignore-src"])
 
     def recreate_index(self, write=True):
         """Goes through all directories within the workspace and checks whether the rosinstall file is up to date.

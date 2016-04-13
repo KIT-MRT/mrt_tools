@@ -10,8 +10,9 @@ from mrt_tools.utilities import *
 @click.option('--debug', is_flag=True, help='Build in debug mode.')
 @click.option('--release', is_flag=True, help='Build in release mode.')
 @click.option('--verbose', is_flag=True, help='Compile in verbose mode.')
+@click.option('-y', '--default_yes', is_flag=True, help='Default to yes when asked to install dependencies.')
 @click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
-def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
+def main(action, resolve_deps, eclipse, debug, release, verbose, default_yes, catkin_args):
     """ A wrapper for catkin. """
     org_dir = os.getcwd()
     ws = Workspace()
@@ -34,7 +35,7 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, catkin_args):
         catkin_args += ("--make-args VERBOSE=1 --",)
 
     if resolve_deps:
-        ws.resolve_dependencies()
+        ws.resolve_dependencies(default_yes=default_yes)
 
     os.chdir(org_dir)
     if len(catkin_args) == 0:
