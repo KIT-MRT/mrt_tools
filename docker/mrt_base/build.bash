@@ -1,1 +1,1 @@
-docker build -t mrt_base .
+docker build $1 -t mrt_base .
