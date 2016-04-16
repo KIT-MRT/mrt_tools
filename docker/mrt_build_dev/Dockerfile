@@ -5,6 +5,7 @@ RUN apt-get update && apt-get install -y libyaml-dev libpython2.7-dev
 COPY files/mrt_tools /root/mrt_tools
 RUN pip install -I -r /root/mrt_tools/requirements.txt \
 		&& cd /root/mrt_tools \
+		&& python setup.py clean \
 		&& python setup.py install \
 		&& cp /usr/local/bin/mrt /usr/bin/mrt
 

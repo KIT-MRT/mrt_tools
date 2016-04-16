@@ -1,7 +1,7 @@
 FROM mrt_ros_desktop_full:latest
 
 #add apt-chacher
-RUN echo "Acquire::http::Proxy \"http://mrtknecht:3142\";" | tee "/etc/apt/apt.conf.d/01proxy" > /dev/null
+#RUN echo "Acquire::http::Proxy \"http://mrtknecht:3142\";" | tee "/etc/apt/apt.conf.d/01proxy" > /dev/null
 
 #add mrt repository
 RUN apt-key adv --keyserver pool.sks-keyservers.net --recv-key 0x66FF02D7
