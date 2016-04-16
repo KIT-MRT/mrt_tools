@@ -16,12 +16,16 @@ class BaseCredentialManager(object):
         return username, password
 
     def get_username(self, quiet=False):
-        username = getpass.getuser()
-        username = click.prompt("Please enter Gitlab username", default=username)
+        username = None
+        if not quiet:
+            username = getpass.getuser()
+            username = click.prompt("Please enter Gitlab username", default=username)
         return username
 
     def get_password(self, username, quiet=False):
-        password = click.prompt("Please enter Gitlab password for user {}".format(username), hide_input=True)
+        password = None
+        if not quiet:
+            password = click.prompt("Please enter Gitlab password for user {}".format(username), hide_input=True)
         return password
 
     def get_token(self):
@@ -34,15 +38,14 @@ class BaseCredentialManager(object):
         pass
 
 
-class GnomeCredentialManager(BaseCredentialManager):
-    keyring.set_keyring(keyring.backends.Gnome.Keyring())
+class KeyringCredentialManager(BaseCredentialManager):
     SERVICE_NAME = "mrtgitlab"
 
     def get_username(self, quiet=False):
         username = keyring.get_password(self.SERVICE_NAME, "username")
 
         if username is None and not quiet:
-            username = super(GnomeCredentialManager, self).get_username()
+            username = super(KeyringCredentialManager, self).get_username()
             self.store("username", username)
 
         return username
@@ -51,7 +54,7 @@ class GnomeCredentialManager(BaseCredentialManager):
         password = keyring.get_password(self.SERVICE_NAME, "password")
 
         if password is None and not quiet:
-            password = super(GnomeCredentialManager, self).get_password(username)
+            password = super(KeyringCredentialManager, self).get_password(username)
             self.store("password", password)
 
         return password
@@ -61,82 +64,25 @@ class GnomeCredentialManager(BaseCredentialManager):
         return token
 
     def store(self, key, value):
-        click.echo("Storing {} in keyring.".format(key))
+        click.secho("Storing {} in keyring.".format(key), fg="green")
         keyring.set_password(self.SERVICE_NAME, key, value)
 
     def delete(self, key):
         try:
             keyring.delete_password(self.SERVICE_NAME, key)
-            click.echo("Removed {} from keyring".format(key))
+            click.secho("Removed {} from keyring".format(key), fg="green")
         except keyring.errors.PasswordDeleteError:
             pass
 
 
-class FileCredentialManager(BaseCredentialManager):
-    TOKEN_FILE = os.path.join(CONFIG_DIR, ".token")
-
-    def get_username(self, quiet=False):
-        username = None
-        if not quiet:
-            username = super(FileCredentialManager, self).get_username()
-
-        return username
-
-    def get_password(self, username, quiet=False):
-        password = None
-
-        if not quiet:
-            password = super(FileCredentialManager, self).get_password(username)
-
-        return password
-
-    def get_token(self):
-        try:
-            token = open(self.TOKEN_FILE, 'r').read()
-        except (IOError, OSError):
-            token = ""
-
-        return token
-
-    def store(self, key, value):
-        """Write to file"""
-        if key == "token":
-            if not os.path.exists(CONFIG_DIR):
-                os.makedirs(CONFIG_DIR)
-            with open(self.TOKEN_FILE, 'w') as f:
-                f.write(value)
-
-    def delete(self, key):
-        if key == "token":
-            try:
-                os.remove(self.TOKEN_FILE)
-                click.echo("Removed token file")
-            except OSError:
-                pass
+class GnomeCredentialManager(KeyringCredentialManager):
+    def __init__(self):
+        keyring.set_keyring(keyring.backends.Gnome.Keyring())
 
 
-class EnvCredentialManager(BaseCredentialManager):
-    token = None
-
-    def get_username(self, quiet=False):
-        username = os.environ.get('MRT_USERNAME')
-        if not username:
-            raise Exception("Username must be provided through environment!")
-        return username
-
-    def get_password(self, username, quiet=False):
-        password = os.environ.get('MRT_PASSWORD')
-        if not password:
-            raise Exception("Username must be provided through environment!")
-        return password
-
-    def get_token(self):
-        return self.token
-
-    def store(self, key, value):
-        """Write to file"""
-        if key == "token":
-            self.token = value
+class FileCredentialManager(KeyringCredentialManager):
+    def __init__(self):
+        keyring.set_keyring(keyring.backends.file.PlaintextKeyring())
 
 
 class DummyCredentialManager(BaseCredentialManager):
@@ -149,13 +95,13 @@ class DummyCredentialManager(BaseCredentialManager):
 
 # Using ordered dict, so that 'get_user_choice' is displayed correctly.
 CredentialManagers = OrderedDict()
-CredentialManagers['Use_gnome_keyring'] = GnomeCredentialManager
-CredentialManagers['Save_only_token_in_file'] = FileCredentialManager
-CredentialManagers['Get_credentials_from_env'] = EnvCredentialManager
 CredentialManagers['DONT_SAVE_ANYTHING'] = BaseCredentialManager
+CredentialManagers['GnomeCredentialManager'] = GnomeCredentialManager
+CredentialManagers['FileCredentialManager'] = FileCredentialManager
+CredentialManagers['BaseCredentialManager'] = BaseCredentialManager
+CredentialManagers['DummyCredentialManager'] = DummyCredentialManager
 
 # Smooth transition to new version:
-user_options = ['Use_gnome_keyring', 'Save_only_token_in_file', 'DONT_SAVE_ANYTHING']
 if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.keys():
     if not sys.stdout.isatty():
         # You're NOT running in a real terminal, create DummyCredentialManager to avoid being prompted
@@ -163,14 +109,15 @@ if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.key
         CredentialManagers['Dummy_Manager'] = DummyCredentialManager
     else:
         click.echo("")
-        click.secho(
-                "For convenience and improved security, personal data like gitlab-password and gitlab-token can "
-                "now be stored in the Gnome keyring.", fg='yellow')
-        click.echo("\t- Personal data can be deleted within the subcommand 'mrt maintenance credentials'. ")
+        click.secho("Please choose a backend for saving your credentials.", fg='yellow')
+        click.echo("\t- GnomeKeyring is recommended on your OWN computer only.")
+        click.echo("\t- On remote servers, (via SSH) GnomeKeyring will not work!")
+        click.echo("\t- You can choose to not save anything.")
+        click.echo("\t- Personal data can be deleted within the subcommand 'mrt maintenance credentials'.")
         click.echo("\t- Settings can be changed with 'mrt maintenance settings'")
         click.echo("")
-        _, user_choice = get_user_choice(user_options, default=1, prompt="Where do you want to save your "
-                                                                         "credentials?")
+        _, user_choice = get_user_choice(CredentialManagers.keys()[0:3], default=0, prompt="Where do you want to save "
+                                                                                           "your credentials?")
         click.echo("")
         user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = user_choice
         write_settings(user_settings)
