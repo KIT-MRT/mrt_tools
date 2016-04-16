@@ -73,7 +73,7 @@ def restore(name):
         try:
             os.mkdir(workspace)
             os.chdir(workspace)
-            ws = Workspace(silent=True)
+            ws = Workspace(quiet=True)
             ws.create()
         except OSError:
             click.secho("Directory {0} exists already".format(workspace), fg="red")

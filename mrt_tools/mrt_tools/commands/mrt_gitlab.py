@@ -115,7 +115,7 @@ def add_user(git):
         shutil.rmtree("/tmp/mrtgitlab_test_ws")
     os.mkdir("/tmp/mrtgitlab_test_ws")
     os.chdir("/tmp/mrtgitlab_test_ws")
-    ws = Workspace(silent=True)
+    ws = Workspace(quiet=True)
     ws.create()
 
     # Clone pkg and resolve dependencies

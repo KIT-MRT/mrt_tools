@@ -258,6 +258,14 @@ def reset():
     Git()
 
 
+@credentials.command(short_help="Provide credentials to be stored.")
+@click.argument("username", required=True)
+@click.argument("password", required=True)
+def set(username, password):
+    credentialManager.store('username', username)
+    credentialManager.store('password', password)
+
+
 @credentials.command(short_help="Show all stored credentials on this machine.")
 def show():
     username = credentialManager.get_username(quiet=True)

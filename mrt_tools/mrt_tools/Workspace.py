@@ -15,7 +15,7 @@ import re
 class Workspace(object):
     """Object representing a catkin workspace"""
 
-    def __init__(self, silent=False):
+    def __init__(self, quiet=False):
         self.org_dir = os.getcwd()
         self.root = self.get_root()
         self.updated_apt = False
@@ -38,9 +38,9 @@ class Workspace(object):
                 # TODO Maybe not so smart to change rosinstall file every time -> snapshots!
                 self.recreate_index()
             self.cd_root()
-        elif not silent:
-            click.secho("No catkin workspace root found.", fg="red")
-            click.echo("This command must be invoked from within a workspace")
+        elif not quiet:
+            click.secho("No_catkin_workspace_root_found.", fg="red")
+            click.echo("This_command_must_be_invoked_from_within_a_workspace")
             sys.exit(1)
 
     def create(self):

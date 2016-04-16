@@ -11,7 +11,7 @@ from mrt_tools.utilities import *
 def main(ctx):
     """A collection of tools to perform on a catkin workspace"""
     if ctx.invoked_subcommand == "init":
-        ctx.obj = Workspace(silent=True)
+        ctx.obj = Workspace(quiet=True)
     else:
         ctx.obj = Workspace()
 
