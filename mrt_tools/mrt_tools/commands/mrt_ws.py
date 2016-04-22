@@ -50,7 +50,7 @@ def remove(ws):
 def clean(ws):
     """Delete compiled code."""
     ws.cd_root()
-    catkin_args = ("-a",)
+    catkin_args = ("-y",)
     subprocess.call(["catkin", "clean"] + list(catkin_args))
 
 
