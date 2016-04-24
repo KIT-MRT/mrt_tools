@@ -5,8 +5,8 @@
 #    pip-compile --output-file requirements.txt requirements.in
 #
 
-git+https://github.com/cbandera/click.git@8e18d48f925c312f47d2075e1392d49dc4818c95#egg=click
-git+https://github.com/cbandera/pyapi-gitlab.git@057a1e4ec67037ba964f9531c236ee4737d3242a#egg=pyapi-gitlab
+-e git+https://github.com/cbandera/click.git@8e18d48f925c312f47d2075e1392d49dc4818c95#egg=click
+-e git+https://github.com/cbandera/pyapi-gitlab.git@057a1e4ec67037ba964f9531c236ee4737d3242a#egg=pyapi-gitlab
 argparse==1.4.0           # via catkin-pkg
 catkin-pkg==0.2.10
 catkin-tools==0.4.2
