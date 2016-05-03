@@ -15,14 +15,22 @@ pip install -U pip
 pip install --upgrade ndg-httpsclient
 
 # Install dependencies
-pip install -U pip-tools
 pip install -r requirements.txt
-pip install ipython
 python setup.py develop
+
+# Link system dependencies into virtualenv
 ln -s /usr/lib/python2.7/dist-packages/keyring $VIRTUAL_ENV/lib/python2.7/site-packages/
 ln -s /usr/lib/python2.7/dist-packages/gi $VIRTUAL_ENV/lib/python2.7/site-packages/
 
 # fix pyparser error
-pip uninstall pyparsing
+pip uninstall pyparsing -y
 pip install -Iv https://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz#md5=9be0fcdcc595199c646ab317c1d9a709
 pip install pydot
+
+# Link binaries to global namespace
+ln -s ~/.virtualenvs/mrt/bin/mrt ~/.local/bin/mrt
+ln -s ~/.virtualenvs/mrt/bin/catkin ~/.local/bin/catkin
+
+# install additional software
+pip install ipython
+pip install -U pip-tools
