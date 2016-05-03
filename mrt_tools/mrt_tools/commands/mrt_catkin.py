@@ -10,10 +10,13 @@ from mrt_tools.utilities import *
 @click.option('--debug', is_flag=True, help='Build in debug mode.')
 @click.option('--release', is_flag=True, help='Build in release mode.')
 @click.option('--verbose', is_flag=True, help='Compile in verbose mode.')
-@click.option('-w', '--warnings', is_flag=True, help='Show all warnings during comilation.')
+@click.option('-w', '--warnings', is_flag=True, help='Show all warnings during comilation. This overrides user '
+                                                     'settings')
+@click.option('-nw', '--no-warnings', is_flag=True, help='Show no warnings during comilation. This overrides user '
+                                                     'settings')
 @click.option('-y', '--default_yes', is_flag=True, help='Default to yes when asked to install dependencies.')
 @click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
-def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, default_yes, catkin_args):
+def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, no_warnings, default_yes, catkin_args):
     """ A wrapper for catkin. """
     org_dir = os.getcwd()
     ws = Workspace()
@@ -25,7 +28,7 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, defau
     if release:
         catkin_args = ("-DCMAKE_BUILD_TYPE=RelWithDebInfo",) + catkin_args
 
-    if warnings:
+    if (user_settings['Other']['SHOW_WARNINGS_DURING_COMPILATION'] or warnings) and not no_warnings:
         catkin_args = ("-DCMAKE_CXX_FLAGS=-Wall",) + ("-DCMAKE_CXX_FLAGS=-Wextra",) + catkin_args
 
     build_eclipse = False
