@@ -1,4 +1,4 @@
-from mrt_tools.utilities import changed_base_yaml, update_apt_and_ros_packages
+from mrt_tools.utilities import changed_base_yaml, update_apt_and_ros_packages, self_dir
 from wstool import multiproject_cli, config_yaml, multiproject_cmd, config as wstool_config
 from mrt_tools.Git import Git, test_git_credentials
 from catkin_tools.context import Context
@@ -74,7 +74,7 @@ class Workspace(object):
         self.cd_root()
 
         shutil.copyfile(os.getenv('ROS_ROOT') + "/../catkin/cmake/toplevel.cmake", self.src + "/CMakeLists.txt")
-
+        shutil.copyfile(self_dir + "/templates/clang-format", self.src + "/.clang-format")
 
     def clean(self):
         """Delete everything in current workspace."""
