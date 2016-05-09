@@ -24,9 +24,10 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, no_wa
 
     if debug:
         catkin_args = ("-DCMAKE_BUILD_TYPE=Debug",) + catkin_args
-
-    if release:
+    elif release:
         catkin_args = ("-DCMAKE_BUILD_TYPE=RelWithDebInfo",) + catkin_args
+    else:
+        catkin_args = ("-DCMAKE_BUILD_TYPE={}".format(user_settings['Other']['DEFAULT_BUILD_TYPE']),) + catkin_args
 
     if (user_settings['Other']['SHOW_WARNINGS_DURING_COMPILATION'] or warnings) and not no_warnings:
         catkin_args = ("-DCMAKE_CXX_FLAGS=-Wall",) + ("-DCMAKE_CXX_FLAGS=-Wextra",) + catkin_args
