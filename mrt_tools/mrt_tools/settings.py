@@ -26,12 +26,14 @@ default_settings = {
         'SNAPSHOT_VERSION': "0.1.0",
         'VERSION_FILE': "snapshot.version"
     },
+    'Catkin': {
+        'SHOW_WARNINGS_DURING_COMPILATION': True,
+        'DEFAULT_BUILD_TYPE': "RelWithDebInfo",
+    },
     'Other': {
         'ALLOW_ROOT': False,
         'BASE_YAML_FILE': "/mrtsoftware/pkg/share/ros/base.yaml",
         'BASE_YAML_HASH_FILE': os.path.join(CONFIG_DIR, "base_yaml_hash"),
-        'SHOW_WARNINGS_DURING_COMPILATION': True,
-        'DEFAULT_BUILD_TYPE': "RelWithDebInfo",
     }
 }
 
