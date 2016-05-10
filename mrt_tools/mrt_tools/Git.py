@@ -152,8 +152,7 @@ class Git(object):
         # If we declared a namespace, there will only be one result with this name in this namespace
         if ns:
             try:
-                return next(
-                    x[self.get_url_string()] for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
+                return next(x for x in results if x["path_with_namespace"] == str(ns) + "/" + pkg_name)
             except StopIteration:
                 return None
         else:
@@ -175,10 +174,8 @@ class Git(object):
                                         prompt="More than one repo with \"" + str(
                                             pkg_name) + "\" found. Please choose")
 
-        url = matching_repos[choice][self.get_url_string()]
         click.secho("Found " + matching_repos[choice]['path_with_namespace'], fg='green')
-
-        return url
+        return matching_repos[choice]
 
     def create_repo(self, pkg_name):
         """
@@ -194,10 +191,10 @@ class Git(object):
         ns_id = namespaces[choice_value]
 
         # Check whether repo exists
-        url = self.find_repo(pkg_name, list(namespaces.keys())[int(choice_index)])
+        existing_repo = self.find_repo(pkg_name, list(namespaces.keys())[int(choice_index)])
 
-        if url is not None:
-            click.secho("    ERROR Repo exist already: " + url, fg='red')
+        if existing_repo is not None:
+            click.secho("    ERROR Repo exist already: " + existing_repo["web_url"], fg='red')
             sys.exit(1)
 
         # Create repo

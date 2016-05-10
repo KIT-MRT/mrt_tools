@@ -168,7 +168,7 @@ class Workspace(object):
             pkgs = " ".join(pkgs)
         subprocess.call("wstool update -t {0} -j {1} {2}".format(self.src, jobs, pkgs), shell=True)
 
-    def unpushed_repos(self, pkg_name=None):
+    def unpushed_repos(self, pkg_name=None, quiet=False):
         """Search for unpushed commits in workspace
         :param pkg_name: Look for only one specified package name
         """
@@ -190,8 +190,9 @@ class Workspace(object):
                 result = git_process.communicate()
 
                 if result[0] != "":
-                    click.secho("Unpushed commits in repo '" + pkg + "'", fg="yellow")
-                    subprocess.call("git log --branches --not --remotes --oneline", shell=True)
+                    if not quiet:
+                        click.secho("Unpushed commits in repo '" + pkg + "'", fg="yellow")
+                        subprocess.call("git log --branches --not --remotes --oneline", shell=True)
                     unpushed_repos.append(pkg)
             except OSError:  # Directory does not exist (repo not cloned yet)
                 pass
@@ -199,8 +200,9 @@ class Workspace(object):
         os.chdir(self.org_dir)
         return unpushed_repos
 
-    def test_for_changes(self, pkg_name=None, prompt="Are you sure you want to continue?"):
+    def test_for_changes(self, pkg_name=None, quiet=False, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server
+        :param quiet:
         :param pkg_name:
         :param prompt:
         """
@@ -212,17 +214,20 @@ class Workspace(object):
             statuslist = [line for line in statuslist if pkg_name in line]
 
         # Check for unpushed commits
-        unpushed_repos = self.unpushed_repos(pkg_name)
+        unpushed_repos = self.unpushed_repos(pkg_name, quiet=quiet)
 
         # Prompt user if changes detected
         if len(unpushed_repos) > 0 or len(statuslist) > 0:
-            if len(statuslist) > 0:  # Unpushed repos where asked already
-                click.secho("\nYou have the following uncommited changes:", fg="red")
-                for e in statuslist:
-                    click.echo(list(e.keys())[0])
-                    click.echo(list(e.values())[0])
-
-            click.confirm(prompt, abort=True)
+            if not quiet:
+                if len(statuslist) > 0:  # Unpushed repos where asked already
+                    click.secho("\nYou have the following uncommited changes:", fg="red")
+                    for e in statuslist:
+                        click.echo(list(e.keys())[0])
+                        click.echo(list(e.values())[0])
+                    click.confirm(prompt, abort=True)
+            return True
+        else:
+            return False
 
     def snapshot(self, filename):
         """Writes current workspace configuration to file

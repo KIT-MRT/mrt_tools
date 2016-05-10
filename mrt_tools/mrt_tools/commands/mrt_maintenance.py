@@ -140,6 +140,88 @@ def update_cmakelists(package, this):
                 "didn't, right? Ok, so go ahead and test them and then run 'mrt wstool update'", fg="yellow")
 
 
+@main.command(short_help="Rename project",
+              help="This command renames a project. The CMakeLists.txt, package.xml and includes are adjusted "
+                   "accordingly within this project. "
+                   "Additionally, all other files in the repo get regexed.")
+@click.argument("new_name", required=True)
+def rename_pkg(new_name):
+    """ """
+    ws = Workspace()
+
+    package = os.path.basename(ws.org_dir)
+    catkin_packages = ws.get_catkin_package_names()
+    if package not in catkin_packages:
+        click.secho("{0} does not seem to be a catkin package.".format(package), fg="red")
+        sys.exit(1)
+    if new_name in catkin_packages:
+        click.secho("{0} does already exist in your workspace.".format(new_name), fg="red")
+        sys.exit(1)
+
+    # Test files
+    for dirName, subdirList, fileList in os.walk(ws.src + "/" + package):
+        if "/.git" in dirName:
+            continue
+        for fname in fileList:
+            if fname.endswith(".h") or fname.endswith(".hh") or fname.endswith(".hpp") \
+                    or fname.endswith(".cc") or fname.endswith(".cpp"):
+                # Adjust includes
+                subprocess.call("sed -i -e 's:#include\s[\"<]" + package + "/:#include \"" + new_name + "/:g' " +
+                                dirName + "/" + fname, shell=True)
+            else:
+                # Rename all other occurrences
+                subprocess.call("sed -i -e 's/" + package + "/" + new_name + "/g' " + dirName + "/" + fname, shell=True)
+
+    # Move include folder
+    if os.path.exists(ws.src + "/" + package + "/include/" + package):
+        shutil.move(ws.src + "/" + package + "/include/" + package, ws.src + "/" + package + "/include/" + new_name)
+
+    # Test for git repo
+    if not os.path.exists(ws.src + "/" + package + "/.git"):
+        click.echo("Renamed package " + package + " to " + new_name)
+        return
+
+    os.chdir(ws.src + "/" + package)
+    click.echo("The following files in this package have been changed:")
+    subprocess.call("git status -s", shell=True)
+    click.echo("")
+    click.echo("Next steps:")
+    click.echo("\t-Review changes")
+    click.echo("\t-Commit changes")
+
+    click.echo("")
+    while ws.test_for_changes(package, quiet=True):
+        click.prompt("Continue, when changes are commited and pushed...")
+
+    click.echo("")
+    click.confirm("Do you want to move the gitlab project now?", abort=True)
+    click.echo("Moving gitlab project...")
+    git = Git()
+    project = git.find_repo(package)
+    namespace = project["namespace"]["name"]
+    project_id = project["id"]
+    if not git.server.editproject(project_id, name=new_name, path=new_name):
+        click.secho("There was a problem, moving the project. Aborting!", fg="red")
+        sys.exit(1)
+
+    click.echo("Updating git remote...")
+    os.chdir(ws.src + "/" + package)
+    project = git.find_repo(new_name, namespace)
+    new_url = project[git.get_url_string()]
+    subprocess.call("git remote set-url origin " + new_url + " >/dev/null 2>&1", shell=True)
+
+    click.echo("Updating local ws...")
+    ws.cd_src()
+    shutil.move(package, new_name)
+    os.chdir(new_name)
+    os.remove(ws.src + "/.rosinstall")
+    ws.recreate_index(write=True)
+
+    click.echo("")
+    click.echo("Next steps:")
+    click.echo("\t-Adjust includes in other packages")
+
+
 @main.command(short_help="Reinitialise the workspace index",
               help="This command recreates the '.rosinstall' file, which is used by catkin and wstool. This might be "
                    "necessary, when you altered it, or removed packages by hand but did not delete their config entry.")

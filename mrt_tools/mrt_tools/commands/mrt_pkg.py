@@ -47,9 +47,10 @@ def add(ws, pkg_name):
 
     # Add package to workspace
     git = Git()
-    url = git.find_repo(pkg_name)  # Gives error string
-    if not url:
+    repo = git.find_repo(pkg_name)  # Gives error string
+    if not repo:
         sys.exit(1)
+    url = repo[git.get_url_string()]
     ws.add(pkg_name, url)
     ws.resolve_dependencies(git=git)
 
