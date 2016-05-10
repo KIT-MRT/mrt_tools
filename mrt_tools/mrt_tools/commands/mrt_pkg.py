@@ -47,7 +47,7 @@ def add(ws, pkg_name):
 
     # Add package to workspace
     git = Git()
-    repo = git.find_repo(pkg_name)  # Gives error string
+    repo = git.find_repo(pkg_name)
     if not repo:
         sys.exit(1)
     url = repo[git.get_url_string()]

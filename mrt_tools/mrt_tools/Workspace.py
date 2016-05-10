@@ -314,8 +314,9 @@ class Workspace(object):
             gitlab_packages = []
             for missing_package, package_dep_specified in missing_packages.items():
                 # Search for package in gitlab
-                url = git.find_repo(missing_package)
-                if url:
+                repo = git.find_repo(missing_package)
+                if repo:
+                    url = repo[git.get_url_string()]
                     self.add(missing_package, url, update=True)
                     gitlab_packages.append(missing_package)
                 else:
