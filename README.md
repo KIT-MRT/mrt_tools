@@ -8,7 +8,7 @@ The *MRT tools* are a collection of usefull command-line tools for developing, w
 The *MRT tools* are automatically installed when the mrt_init script is executed. See the [install instructions](https://mrtwiki.mrt.uni-karlsruhe.de:10443/dokuwiki/doku.php?id=software:mrt_build_system:installation) for more infos.
 If you have run the init script before and your apt-get repos are set up, you can install the *MRT tools* with:
 ```bash
-    $ sudo apt-get install mrt-build
+    $ sudo apt-get install mrt-build-tools
 ```
     
 ## Getting Started
