@@ -57,8 +57,8 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @xx|x @ ############################
 @xx|x @ ## read source code files ##
 @xx|x @ ############################
-@xx|x @ file(GLOB_RECURSE PROJECT_HEADER_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "include/*.h")
-@xx|x @ file(GLOB PROJECT_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "src/*.h")
+@xx|x @ file(GLOB_RECURSE PROJECT_HEADER_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "include/*.h" "include/*.hpp")
+@xx|x @ file(GLOB PROJECT_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "src/*.h" "src/*.hpp")
 @xx|x @ file(GLOB PROJECT_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "src/*.cpp")
 @xx|x @
 @xx|x @ if (PROJECT_SOURCE_FILES_SRC)
@@ -118,7 +118,7 @@ link_directories(
 @xx|x @
 @xx| x@ function(add_exec EXEC_NAME SEARCH_FOLDER)
 @xx| x@ 	#glob all files in this directory
-@xx| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h")
+@xx| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h" "${SEARCH_FOLDER}/*.hpp")
 @xx| x@ 	file(GLOB EXEC_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.cpp")
 @xx| x@
 @xx| x@ 	if (EXEC_SOURCE_FILES_SRC)
@@ -155,7 +155,7 @@ link_directories(
 @xx| x@
 @ x| x@ function(add_nodelet EXEC_NAME SEARCH_FOLDER)
 @ x| x@ 	#glob all files in this directory
-@ x| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h")
+@ x| x@ 	file(GLOB EXEC_SOURCE_FILES_INC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.h" "${SEARCH_FOLDER}/*.hpp")
 @ x| x@ 	file(GLOB EXEC_SOURCE_FILES_SRC RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "${SEARCH_FOLDER}/*.cpp")
 @ x| x@
 @ x| x@     # Find nodelet
@@ -205,7 +205,7 @@ link_directories(
 @xx|x @ # Mark c++ header files for installation
 @xx|x @ install(DIRECTORY include/${PROJECT_NAME}/
 @xx|x @   DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-@xx|x @   FILES_MATCHING PATTERN "*.h"
+@xx|x @   FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 @xx|x @ )
 @xx|x @
 #install(FILES
