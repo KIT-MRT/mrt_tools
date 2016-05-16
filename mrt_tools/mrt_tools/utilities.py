@@ -63,7 +63,7 @@ def get_gituserinfo(quiet=False):
             set_gituserinfo(name=name)
         if mail_err is not None or email == "":
             email = click.prompt("Git user email not configured. Please enter email")
-            set_gituserinfo(name=email)
+            set_gituserinfo(email=email)
         if user_settings['Gitlab']['CACHE_GIT_CREDENTIALS_FOR_HTTPS_REPOS'] \
                 and credential_helper != "cache --timeout={}".format(user_settings['Gitlab']['GIT_CACHE_TIMEOUT']):
             set_gituserinfo(credential_helper="cache --timeout={}".format(user_settings['Gitlab']['GIT_CACHE_TIMEOUT']))
