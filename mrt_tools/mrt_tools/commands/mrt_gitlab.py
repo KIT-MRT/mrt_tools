@@ -96,15 +96,19 @@ def add_user(git):
     repo_dicts = sorted(repo_dicts, key=lambda k: k['path_with_namespace'])
     user_choice, _ = get_user_choice([user["name"] for user in users], prompt="Please choose a user")
     user = users[user_choice]
-    repo_choice, _ = get_user_choice([repo["path_with_namespace"] for repo in repo_dicts], prompt="Please choose a "
-                                                                                                 "repo.")
+    click.echo("--> Selected user '{}'\n".format(user['name']))
+
+    repo_choice, _ = get_user_choice([repo["path_with_namespace"] for repo in repo_dicts],
+                                     prompt="Please choose a repo.")
     repo = repo_dicts[repo_choice]
+    click.echo("--> Selected repo '{}'\n".format(repo["name_with_namespace"]))
+
     roles = ["Guest", "Reporter", "Developer", "Master", "Owner"]
     _, role = get_user_choice(roles, prompt='Please choose a role for the user.', default=2)
 
-    click.echo("\nAdding user {0} to repo {1} with role {2}\n".format(user["name"].upper(),
-                                                                      repo["path_with_namespace"].upper(),
-                                                                      role.upper()))
+    click.confirm("\nAdd user {0} to repo {1} with role {2}?\n".format(user["name"].upper(),
+                                                                       repo["path_with_namespace"].upper(),
+                                                                       role.upper()), default=True, abort=True)
     git.server.addprojectmember(repo["id"], user["id"], role)
     if not click.confirm("Should I test dependencies?", default=True):
         return
@@ -120,8 +124,8 @@ def add_user(git):
 
     # Clone pkg and resolve dependencies
     pkg_name = repo["name"]
-    url = git.find_repo(pkg_name)  # Gives error string
-    ws.add(pkg_name, url)
+    gl_repo = git.find_repo(pkg_name)  # Gives error string
+    ws.add(pkg_name, gl_repo[git.get_url_string()])
     ws.resolve_dependencies(git=git)
 
     # Read in dependencies
@@ -130,7 +134,7 @@ def add_user(git):
     new_repos.pop(pkg_name)
     click.echo("\n\nFound following new repos:")
     for r in new_repos:
-        click.echo(r)
+        click.echo("- {}".format(r))
 
     for r in new_repos:
         if click.confirm("\nAdd user {0} to repo {1} aswell?".format(user["name"].upper(), r.upper()), default=True):
@@ -202,8 +206,10 @@ def namespaces(git):
     for index, item in enumerate(ns_list):
         click.echo("(" + str(index) + ") " + item)
 
+
 @show.command(short_help="Open SW catalog",
               help="This command will display the mrt software catalog in your favorite webbrowser.")
 def swcatalog():
     """Open SW catalog"""
-    subprocess.call("xdg-open https://srv1.mrt.uni-karlsruhe.de/softcat.html?private_token={}".format(credentialManager.get_token()), shell=True)
+    subprocess.call("xdg-open https://srv1.mrt.uni-karlsruhe.de/softcat.html?private_token={}".format(
+        credentialManager.get_token()), shell=True)
