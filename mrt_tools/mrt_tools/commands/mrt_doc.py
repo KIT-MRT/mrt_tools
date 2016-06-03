@@ -9,7 +9,7 @@ import webbrowser
 # Autocompletion
 try:
     tmp_ws = Workspace()
-    suggestions = tmp_ws.get_catkin_pkg_names()
+    suggestions = tmp_ws.get_catkin_package_names()
     repo_list = import_repo_names()
     os.chdir(tmp_ws.org_dir)
 except:
@@ -26,13 +26,13 @@ def main():
     pass
     
 @main.command(help="Generate the documentation of a package.")
-@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=repo_list)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
 def build(pkg_name):
     build_(pkg_name)
 
 @main.command(short_help="Shows the documentation of a package.",
               help="Shows the documentation of a package. If the documentation is not found, it will be generated.")
-@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=repo_list)
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
 def show(pkg_name):
     package_build_dir = subprocess.check_output(["catkin", "locate", "--build", pkg_name], universal_newlines=True).rstrip("\n")
     package_doxygen_output_dir = os.path.join(package_build_dir, "doxygen_doc")
