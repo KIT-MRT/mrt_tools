@@ -1,9 +1,9 @@
+from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 
 import os
 import subprocess
 import tempfile
-import sys
 import webbrowser
 
 # Autocompletion
@@ -18,6 +18,7 @@ except:
 
 self_dir = get_script_root()
 
+
 ########################################################################################################################
 # Package
 ########################################################################################################################
@@ -25,37 +26,35 @@ self_dir = get_script_root()
 def main():
     """ Build and show doxy documentation. """
     pass
-    
+
+
 @main.command(help="Generate the documentation of a package.")
 @click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
 def build(pkg_name):
     build_(pkg_name)
 
+
 @main.command(short_help="Shows the documentation of a package.",
               help="Shows the documentation of a package. If the documentation is not found, it will be generated.")
 @click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
 def show(pkg_name):
-    package_build_dir = subprocess.check_output(["catkin", "locate", "--build", pkg_name], universal_newlines=True).rstrip("\n")
-    package_doxygen_output_dir = os.path.join(package_build_dir, "doxygen_doc")
-    
+    _, _, package_doxygen_output_dir = check_paths_(pkg_name)
     index_file = os.path.join(package_doxygen_output_dir, "html", "index.html")
 
     if not os.path.isfile(index_file):
         build_(pkg_name)
-    
+
     if not os.path.isfile(index_file):
-        raise RuntimeException("Documentation output not found. Expected to be in " + index_file)
-    
+        raise RuntimeError("Documentation output not found. Expected to be in " + index_file)
+
     webbrowser.open("file://" + index_file)
-    
+
+
 def build_(pkg_name):
-    package_src_dir = subprocess.check_output(["catkin", "locate", "--src", pkg_name], universal_newlines=True).rstrip("\n")
-    package_build_dir = subprocess.check_output(["catkin", "locate", "--build", pkg_name], universal_newlines=True).rstrip("\n")
+    package_src_dir, package_build_dir, package_doxygen_output_dir = check_paths_(pkg_name)
 
     doxygen_template_filename = os.path.abspath(os.path.join(self_dir, "templates/Doxygen"))
 
-    package_doxygen_output_dir = os.path.join(package_build_dir, "doxygen_doc")
-    
     os.makedirs(package_doxygen_output_dir)
 
     additional_doxygen_config = ""
@@ -78,3 +77,16 @@ def build_(pkg_name):
         # run doxygen
         os.chdir(package_src_dir)
         subprocess.check_call(["doxygen", doxyfile.name])
+
+
+def check_paths_(pkg_name):
+    if pkg_name not in suggestions:
+        click.echo("Package '{}' does not exist inside this workspace.".format(pkg_name))
+        sys.exit()
+    package_src_dir = subprocess.check_output(["catkin", "locate", "--src", pkg_name], universal_newlines=True).rstrip(
+        "\n")
+    package_build_dir = subprocess.check_output(["catkin", "locate", "--build", pkg_name],
+                                                universal_newlines=True).rstrip("\n")
+    package_doxygen_output_dir = os.path.join(package_build_dir, "doxygen_doc")
+
+    return package_src_dir, package_build_dir, package_doxygen_output_dir
