@@ -22,9 +22,13 @@ self_dir = get_script_root()
 ########################################################################################################################
 # Package
 ########################################################################################################################
-@click.group()
+@click.group(short_help="Build and show the documentation of a package.",
+             help="The documentation of a package is build with doxygen using a template Doxyfile. If you wish, "
+                  "you can also provide an individual Doxyfile by placing it in the root folder of the package. "
+                  "Additional documentation can be provided in Markdown format ('.md') in the 'doc' folder. "
+                  "The output files will lie in the build space of your workspace, "
+                  "but can easily be opened with the 'show' command.")
 def main():
-    """ Build and show doxy documentation. """
     pass
 
 
