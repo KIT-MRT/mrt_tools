@@ -23,6 +23,7 @@ self_dir = get_script_root()
 ########################################################################################################################
 @click.group()
 def main():
+    """ Build and show doxy documentation. """
     pass
     
 @main.command(help="Generate the documentation of a package.")
