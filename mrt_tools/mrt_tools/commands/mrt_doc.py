@@ -53,6 +53,13 @@ def show(pkg_name):
 
     webbrowser.open("file://" + index_file)
 
+@main.command(help="Removes the documentation build folder of a package.")
+@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
+def clean(pkg_name):
+    _, _, package_doxygen_output_dir = check_paths_(pkg_name)
+    print(package_doxygen_output_dir)
+    if os.path.exists(package_doxygen_output_dir):
+        shutil.rmtree(package_doxygen_output_dir)
 
 def build_(pkg_name):
     package_src_dir, package_build_dir, package_doxygen_output_dir = check_paths_(pkg_name)
