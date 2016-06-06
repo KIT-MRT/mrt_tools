@@ -59,9 +59,8 @@ def build_(pkg_name):
 
     doxygen_template_filename = os.path.abspath(os.path.join(self_dir, "templates/Doxygen"))
 
-    if os.path.exists(package_doxygen_output_dir):
-        shutil.rmtree(package_doxygen_output_dir)
-    os.makedirs(package_doxygen_output_dir)
+    if not os.path.exists(package_doxygen_output_dir):
+        os.makedirs(package_doxygen_output_dir)
 
     additional_doxygen_config = ""
     additional_doxygen_config += "PROJECT_NAME = \"" + pkg_name + "\"\n"
