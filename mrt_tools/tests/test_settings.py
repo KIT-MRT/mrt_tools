@@ -1,4 +1,4 @@
-from mrt_tools.settings import read_settings
+from mrt_tools.settings import read_settings, write_settings
 import pytest
 import os
 
@@ -44,7 +44,7 @@ def test_create_config(config_file, default_settings):
     assert not os.path.isfile(config_file)
     # Create default config
     settings = default_settings
-    read_settings(settings, config_file)
+    write_settings(settings, config_file)
     # Make sure config file exists now
     assert os.path.isfile(config_file)
 
@@ -52,7 +52,7 @@ def test_create_config(config_file, default_settings):
 def test_read_config(config_file, default_settings):
     # Create default config
     settings = default_settings
-    read_settings(settings, config_file)
+    write_settings(settings, config_file)
     # Make sure default values get overwritten when reading config
     settings['Section1']['Value_String'] = "altered_string"
     settings['Section1']['Value_Bool'] = False
@@ -66,6 +66,7 @@ def test_read_config(config_file, default_settings):
 def test_config_types(config_file, default_settings):
     # Create default config
     settings = default_settings
+    write_settings(settings, config_file)
     read_settings(settings, config_file)
     assert isinstance(settings['Section1']['Value_String'], str)
     assert isinstance(settings['Section1']['Value_Bool'], bool)

@@ -40,8 +40,8 @@ def test_touch(working_directory):
     # assert os.path.exists("test2")
     last_mod = os.path.getmtime("test2")
     last_access = os.path.getatime("test2")
-    assert last_mod == now
-    assert last_access == now
+    assert (last_mod - now) < 0.01
+    assert (last_access - now) < 0.01
 
 
 def test_find_by_pattern(working_directory):

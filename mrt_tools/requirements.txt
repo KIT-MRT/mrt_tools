@@ -10,7 +10,7 @@
 argparse==1.4.0           # via catkin-pkg
 catkin-pkg==0.2.10
 catkin-tools==0.4.2
-ConfigParser==3.3.0.post2
+ConfigParser==3.5.0
 decorator==4.0.9          # via gssapi
 docutils==0.12            # via catkin-pkg
 ecdsa==0.13               # via paramiko
@@ -27,6 +27,7 @@ pyparsing==2.1.1          # via pydot2
 python-dateutil==2.5.3    # via catkin-pkg, vcstools
 pyyaml==3.11              # via catkin-tools, vcstools, wstool
 requests==2.9.1
+simplejson==3.8.2
 six==1.10.0               # via gssapi, python-dateutil, trollius
 trollius==2.1             # via osrf-pycommon
 vcstools==0.1.38          # via wstool
