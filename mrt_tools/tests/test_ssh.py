@@ -1,6 +1,6 @@
 from click.testing import CliRunner
-from mrt_tools.base import SSHkey
-from mrt_tools.settings import *
+from mrt_tools.Git import SSHkey
+from mrt_tools.settings import user_settings
 import pytest
 import os
 
@@ -16,8 +16,8 @@ def test_create_sshkey_default(runner):
         curr_dir = os.getcwd()
         ssh = SSHkey(dir_path=curr_dir)
         ssh.create()
-        assert os.path.isfile(os.path.join(curr_dir, SSH_KEY_NAME))
-        assert os.path.isfile(os.path.join(curr_dir, SSH_KEY_NAME + ".pub"))
+        assert os.path.isfile(os.path.join(curr_dir, "mrtgitlab"))
+        assert os.path.isfile(os.path.join(curr_dir, "mrtgitlab.pub"))
 
 
 def test_create_sshkey_custom_name(runner):

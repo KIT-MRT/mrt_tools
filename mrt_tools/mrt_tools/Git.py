@@ -226,10 +226,10 @@ class Git(object):
 class SSHkey(object):
     """The ssh-key is an authentication key for communicating with the gitlab server through the git cli-tool."""
 
-    def __init__(self, name="mrtgitlab"):
+    def __init__(self, name="mrtgitlab", dir_path="~/.ssh"):
         self.name = name
         self.secret_key = ""
-        self.dir_path = os.path.expanduser("~/.ssh")
+        self.dir_path = os.path.expanduser(dir_path)
         self.path = self.dir_path + "/" + self.name
         self.public_key = ""
 
