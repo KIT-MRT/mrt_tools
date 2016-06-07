@@ -34,6 +34,9 @@ class BaseCredentialManager(object):
     def store(self, key, value):
         pass
 
+    def get(self, key):
+        return ""
+
     def delete(self, key):
         pass
 
@@ -42,7 +45,7 @@ class KeyringCredentialManager(BaseCredentialManager):
     SERVICE_NAME = "mrtgitlab"
 
     def get_username(self, quiet=False):
-        username = keyring.get_password(self.SERVICE_NAME, "username")
+        username = self.get("username")
 
         if username is None and not quiet:
             username = super(KeyringCredentialManager, self).get_username()
@@ -51,7 +54,7 @@ class KeyringCredentialManager(BaseCredentialManager):
         return username
 
     def get_password(self, username, quiet=False):
-        password = keyring.get_password(self.SERVICE_NAME, "password")
+        password = self.get("password")
 
         if password is None and not quiet:
             password = super(KeyringCredentialManager, self).get_password(username)
@@ -60,8 +63,11 @@ class KeyringCredentialManager(BaseCredentialManager):
         return password
 
     def get_token(self):
-        token = keyring.get_password(self.SERVICE_NAME, "token")
+        token = self.get("token")
         return token
+
+    def get(self, key):
+        return keyring.get_password(self.SERVICE_NAME, key)
 
     def store(self, key, value):
         click.secho("Storing {} in keyring.".format(key), fg="green")
