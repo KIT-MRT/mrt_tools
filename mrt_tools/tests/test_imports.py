@@ -1,12 +1,22 @@
 def test_click():
     import click
 
+    try:
+        @click.command()
+        @click.argument("arg1", type=click.STRING, required=True, autocompletion=["foo", "bar"])
+        def command_test(arg1):
+            pass
+    except TypeError as err:
+        if err.message == "__init__() got an unexpected keyword argument 'autocompletion'":
+            raise TypeError("Wrong version of click installed. Please install https://github.com/cbandera/click.git.")
+
 
 def test_gnome_keyring():
     from Crypto.PublicKey import RSA
     import keyring
     keyring.set_keyring(keyring.backends.Gnome.Keyring())
     keyring.get_password("test", "test")
+
 
 def test_base_imports():
     from builtins import next
@@ -42,9 +52,9 @@ def test_catkin():
     from catkin_pkg import packages
     from catkin_tools.context import Context
 
+
 def test_wstool():
     import wstool
-
 
 
 def test_gitlab():
@@ -53,10 +63,9 @@ def test_gitlab():
     from requests.packages import urllib3
     from simplejson.scanner import JSONDecodeError
 
+
 def test_pydot():
     import pydot
-
-
 
 
 if __name__ == '__main__':
