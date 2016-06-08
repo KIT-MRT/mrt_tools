@@ -10,45 +10,19 @@ import os
 
 
 class BaseCredentialManager(object):
+    credentialStorage = {}
+
     def get_credentials(self, quiet=False):
         username = self.get_username(quiet)
         password = self.get_password(username, quiet)
         return username, password
 
     def get_username(self, quiet=False):
-        username = None
-        if not quiet:
-            username = getpass.getuser()
-            username = click.prompt("Please enter Gitlab username", default=username)
-        return username
-
-    def get_password(self, username, quiet=False):
-        password = None
-        if not quiet:
-            password = click.prompt("Please enter Gitlab password for user {}".format(username), hide_input=True)
-        return password
-
-    def get_token(self):
-        return ""
-
-    def store(self, key, value):
-        pass
-
-    def get(self, key):
-        return ""
-
-    def delete(self, key):
-        pass
-
-
-class KeyringCredentialManager(BaseCredentialManager):
-    SERVICE_NAME = "mrtgitlab"
-
-    def get_username(self, quiet=False):
         username = self.get("username")
 
         if username is None and not quiet:
-            username = super(KeyringCredentialManager, self).get_username()
+            username = getpass.getuser()
+            username = click.prompt("Please enter Gitlab username", default=username)
             self.store("username", username)
 
         return username
@@ -57,14 +31,43 @@ class KeyringCredentialManager(BaseCredentialManager):
         password = self.get("password")
 
         if password is None and not quiet:
-            password = super(KeyringCredentialManager, self).get_password(username)
+            password = click.prompt("Please enter Gitlab password for user {}".format(username), hide_input=True)
             self.store("password", password)
 
         return password
 
     def get_token(self):
-        token = self.get("token")
-        return token
+        return self.get("token")
+
+    def store(self, key, value):
+        self.credentialStorage[key] = value
+
+    def get(self, key):
+        try:
+            return self.credentialStorage[key]
+        except KeyError:
+            return None
+
+    def delete(self, key):
+        try:
+            del self.credentialStorage[key]
+        except KeyError:
+            pass
+
+
+class DummyCredentialManager(BaseCredentialManager):
+    def get_username(self, quiet=False):
+        return None
+
+    def get_password(self, username, quiet=False):
+        return None
+
+    def store(self, key, value):
+        pass
+
+
+class KeyringCredentialManager(BaseCredentialManager):
+    SERVICE_NAME = "mrtgitlab"
 
     def get(self, key):
         return keyring.get_password(self.SERVICE_NAME, key)
@@ -90,13 +93,6 @@ class FileCredentialManager(KeyringCredentialManager):
     def __init__(self):
         keyring.set_keyring(keyring.backends.file.PlaintextKeyring())
 
-
-class DummyCredentialManager(BaseCredentialManager):
-    def get_username(self, quiet=False):
-        return None
-
-    def get_password(self, username, quiet=False):
-        return None
 
 
 # Using ordered dict, so that 'get_user_choice' is displayed correctly.
@@ -141,4 +137,4 @@ def set_git_credentials(username, password):
         host = url
     git_process = subprocess.Popen("git credential-cache store", shell=True, stdin=subprocess.PIPE)
     git_process.communicate(
-            input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
+        input="protocol=https\nhost={}\nusername={}\npassword={}".format(host, username, password))
