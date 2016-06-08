@@ -51,7 +51,9 @@ def clean(ws):
     """Delete compiled code."""
     ws.cd_root()
     catkin_args = ("-y",)
-    subprocess.call(["catkin", "clean"] + list(catkin_args))
+    process = subprocess.Popen(["catkin", "clean"] + list(catkin_args))
+    process.wait()
+    sys.exit(process.returncode)
 
 
 @main.command(short_help="Print the git status of files in workspace.",
@@ -69,11 +71,14 @@ def status(ws, args):
 
     # Pass the rest to wstool
     if len(args) == 0:
-        subprocess.call("wstool status")
+        process = subprocess.Popen("wstool status")
     else:
-        subprocess.call(["wstool", "status"] + list(args))
+        process = subprocess.Popen(["wstool", "status"] + list(args))
+    process.wait()
 
     ws.unpushed_repos()
+
+    sys.exit(process.returncode)
 
 
 @main.command(short_help="List all git repos and their status.",
@@ -83,7 +88,9 @@ def status(ws, args):
 @click.pass_obj
 def info(ws, args):
     """List all git repos and their status."""
-    subprocess.call(['mrt wstool info'], shell=True)
+    process = subprocess.Popen(['mrt wstool info'], shell=True)
+    process.wait()
+    sys.exit(process.returncode)
 
 
 @main.command(short_help="Perform a git push & pull on every repo.",
@@ -95,7 +102,9 @@ def info(ws, args):
 def update(ws, args):
     """Perform a git push & pull on every repo"""
 
-    subprocess.call(['mrt wstool update'], shell=True)
+    process = subprocess.Popen(['mrt wstool update'], shell=True)
+    process.wait()
+    sys.exit(process.returncode)
 
 
 @main.command(short_help="Resolve dependencies for packages.",

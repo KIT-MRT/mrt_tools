@@ -13,7 +13,7 @@ from mrt_tools.utilities import *
 @click.option('-w', '--warnings', is_flag=True, help='Show all warnings during comilation. This overrides user '
                                                      'settings')
 @click.option('-nw', '--no-warnings', is_flag=True, help='Show no warnings during comilation. This overrides user '
-                                                     'settings')
+                                                         'settings')
 @click.option('-y', '--default_yes', is_flag=True, help='Default to yes when asked to install dependencies.')
 @click.argument('catkin_args', nargs=-1, type=click.UNPROCESSED)
 def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, no_warnings, default_yes, catkin_args):
@@ -47,9 +47,12 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, no_wa
 
     os.chdir(org_dir)
     if len(catkin_args) == 0:
-        subprocess.call(["catkin", action])
+        process = subprocess.Popen(["catkin", action])
     else:
-        subprocess.call(["catkin", action]+list(catkin_args))
+        process = subprocess.Popen(["catkin", action] + list(catkin_args))
+    process.wait()  # Wait for process to finish and set returncode
 
     if build_eclipse:
         set_eclipse_project_setting(ws.root)
+
+    sys.exit(process.returncode)

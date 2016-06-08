@@ -61,9 +61,12 @@ def main(action, args):
 
     # Pass the rest to wstool
     if len(args) == 0:
-        subprocess.call(["wstool", action, "-t", ws.src])
+        process = subprocess.Popen(["wstool", action, "-t", ws.src])
     else:
-        subprocess.call(["wstool", action, "-t", ws.src] + list(args))
+        process = subprocess.Popen(["wstool", action, "-t", ws.src] + list(args))
+    process.wait()  # Wait for process to finish and set returncode
 
     if action == "status":
         ws.unpushed_repos()
+
+    sys.exit(process.returncode)
