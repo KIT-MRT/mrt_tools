@@ -27,8 +27,7 @@ def test_setup_git():
     keys = git.server.getsshkeys()
     for key in keys:
         git.server.deletesshkey(key["id"])
-    if os.path.exists(git.ssh_key.path):
-        os.remove(git.ssh_key.path)
+
 
     # Test read operations
     assert git.get_namespaces() == {"root": 0}
@@ -44,6 +43,8 @@ def test_setup_git():
     # Test ssh
     assert git.check_ssh_key() is False
     git.ssh_key = SSHkey(name="mrt_test_key")
+    if os.path.exists(git.ssh_key.path):
+        os.remove(git.ssh_key.path)
     git.ssh_key.create()
     git.upload_ssh_key()
     assert git.check_ssh_key() is True
