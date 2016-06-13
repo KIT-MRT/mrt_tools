@@ -7,6 +7,8 @@ import os
 import subprocess
 import tempfile
 import webbrowser
+import hashlib
+import time
 
 # Autocompletion
 try:
@@ -39,13 +41,12 @@ def main():
 @click.option("--this", is_flag=True, help="Build the package containing the current working directory.")
 @click.option("--no-deps", is_flag=True, help="Only build specified packages, not their dependencies.")
 @click.option("-v", "--verbose", is_flag=True, help="Print the info output of the doc generation")
-def build(pkg_name, this, no_deps, verbose):
+@click.option("--workspace-docs", "-w", is_flag=True, default=True,
+              help="Build a documentation page with combines all documentation in this workspace")
+def build(pkg_name, this, no_deps, verbose, workspace_docs):
+    start = time.time()
     ws = Workspace()
-    
-    # TODO: remove
-    #build_workspace_doc(ws)
-    #sys.exit(1)
-    
+
     # add all workspace packages to possibly be doc builded
     pkg_list = ws.get_catkin_packages()
     is_build_workspace_doc = True
@@ -68,35 +69,41 @@ def build(pkg_name, this, no_deps, verbose):
           
         # add also dependencies if necessary  
         if not no_deps:
-            pkg_list.update(get_dep_packages_in_workspace(ws, pkg_name))
+            pkg_list.update(get_dep_packages_in_workspace_(ws, pkg_name))
             
         is_build_workspace_doc = False
 
     # order topologically to get the build order right
     pkg_list = catkin_pkg.topological_order.topological_order_packages(pkg_list)
 
-    # output build summaey
-    output = "The following packages will be doc builded: \n"
-    for pkg, _ in pkg_list:
-        output += "   - {}\n".format(pkg)
-    click.echo(output)
-    
+    # output build summary
+    end = time.time()
+    click.secho("[doc build] Found '{}' packages in {:.1f} seconds.".format(len(pkg_list), end - start))
+
     # build packages
     for pkg, _ in pkg_list:
-        click.secho(">>> " + pkg, fg="cyan", bold=True)
+        output_start_status_(pkg)
         build_(ws, pkg, verbose)
-        click.secho("<<< " + pkg, fg="cyan")
-        
-    #if is_build_workspace_doc:
-    #    build_workspace_doc()
+        output_finished_states_(pkg)
 
-        
+    # build workspace docs
+    if workspace_docs:
+        click.echo("[doc build] Build workspace documentation")
+        output_start_status_("workspace_doc")
+        build_workspace_doc_(ws)
+        output_finished_states_("workspace_doc")
+
+
 @main.command(short_help="Shows the documentation of a package.",
               help="Shows the documentation of a package. If the documentation is not found, it will be generated.")
-@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
 def show(pkg_name):
-    _, _, package_doxygen_output_dir = check_paths_(pkg_name)
-    index_file = os.path.join(package_doxygen_output_dir, "html", "index.html")
+    if pkg_name:
+        index_file = get_html_index_file_path_(pkg_name)
+    else:
+        ws = Workspace()
+        doc_folder = get_workspace_doc_folder_(ws)
+        index_file = os.path.join(doc_folder, "html", "index.html")
 
     if not os.path.isfile(index_file):
         build_(pkg_name)
@@ -114,17 +121,21 @@ def clean(pkg_name):
     else:
         ws = Workspace()
         pkg_list = ws.get_catkin_package_names()
-    
+
     for pkg in pkg_list:
-        _, _, package_doxygen_output_dir = check_paths_(pkg_name)
+        _, _, package_doxygen_output_dir = check_paths_(pkg)
         if os.path.exists(package_doxygen_output_dir):
             shutil.rmtree(package_doxygen_output_dir)
+
+    if not pkg_name:
+        doc_folder = get_workspace_doc_folder_(ws)
+        if os.path.exists(doc_folder):
+            shutil.rmtree(doc_folder)
+
 
 def build_(ws, pkg_name, verbose=None):
     # prepare build paths
     package_src_dir, package_build_dir, package_doxygen_output_dir = check_paths_(pkg_name)
-
-    doxygen_template_filename = os.path.abspath(os.path.join(self_dir, "templates/Doxygen"))
 
     if not os.path.exists(package_doxygen_output_dir):
         os.makedirs(package_doxygen_output_dir)
@@ -139,18 +150,14 @@ def build_(ws, pkg_name, verbose=None):
     
     # determine all dependent packages from workspace and add the tag files
     tag_files = list()
-    for dep_package, _ in get_dep_packages_in_workspace(ws, pkg_name):
-        _, _, dep_package_doxygen_output_dir = check_paths_(dep_package)
-        dep_tag_file_name = os.path.abspath(os.path.join(dep_package_doxygen_output_dir, dep_package + ".tag"))
-        tag_output_file_name = os.path.abspath(os.path.join(dep_package_doxygen_output_dir, "html"))
-
-        tag_files.append('"{}"="{}"'.format(dep_tag_file_name, tag_output_file_name))
+    for dep_package, _ in get_dep_packages_in_workspace_(ws, pkg_name):
+        tag_files.append(get_tag_file_config_entry_(dep_package))
         
     config["TAGFILES"] = " ".join(tag_files)
     
-    # configure search engine
-    port = 8213
-    config["SEARCHENGINE_URL"] = "http://localhost:{}/cgi-bin/doxysearch.cgi".format(port)
+    # configure search engine (not working correctly with local http python server)
+    #port = 8213
+    #config["SEARCHENGINE_URL"] = "http://localhost:{}/cgi-bin/doxysearch.cgi".format(port)
     #config["EXTERNAL_SEARCH_ID"] = pkg_name
     
     # Set the input folders. Only add those which are 
@@ -162,7 +169,7 @@ def build_(ws, pkg_name, verbose=None):
     if not verbose:
         config["QUIET"] = "YES"
     
-    warn_logfile_name = None        
+    warn_logfile_name = None
     try:
         # add warn logfile
         warn_logfile_name = tempfile.NamedTemporaryFile(delete=False).name
@@ -172,27 +179,11 @@ def build_(ws, pkg_name, verbose=None):
         # Add include to user defined doxygen file
         user_doxyfile = os.path.join(package_src_dir, "Doxyfile")
         if os.path.isfile(user_doxyfile):
-            additional_doxygen_config += "@INCLUDE = \"" + user_doxyfile + "\"\n"
-            
-        # generate config
-        additional_doxygen_config = "\n".join(["{0} = {1}".format(k, v) for k, v in config.items()])
+            config["@INCLUDE"] = '"{}"'.format(user_doxyfile)
 
         # build
-        with tempfile.NamedTemporaryFile() as doxyfile:
-            # read standard doxygen file
-            with open(doxygen_template_filename, "rb") as f:
-                doxyfile.write(f.read())
+        run_doxygen_(config, package_src_dir)
 
-            # read generated project specific doxygen file
-            doxyfile.write(additional_doxygen_config)
-            doxyfile.flush()
-            
-            print(additional_doxygen_config)
-
-            # run doxygen
-            os.chdir(package_src_dir)
-            subprocess.check_call(["doxygen", doxyfile.name])
-            
         # output warn log file if not empty
         with open(warn_logfile_name, "r") as f:
             warn_log = f.read().rstrip("\n")
@@ -202,15 +193,48 @@ def build_(ws, pkg_name, verbose=None):
         if os.path.isfile(warn_logfile_name):
             os.remove(warn_logfile_name)
 
-def build_workspace_doc(ws):
+
+def run_doxygen_(config, package_src_dir):
+    # generate config
+    additional_doxygen_config = "\n".join(["{0} = {1}".format(k, v) for k, v in config.items()])
+
+    # build
+    with tempfile.NamedTemporaryFile() as doxyfile:
+        # read standard doxygen file
+        with open(get_doxygen_template_filename_(), "rb") as f:
+            doxyfile.write(f.read())
+
+        # read generated project specific doxygen file
+        doxyfile.write(additional_doxygen_config)
+        doxyfile.flush()
+
+        # run doxygen
+        os.chdir(package_src_dir)
+        subprocess.check_call(["doxygen", doxyfile.name])
+
+
+def build_workspace_doc_(ws):
     pkg_list = ws.get_catkin_packages()
-    
-    ws_doc = ["\mainpage"]
+
+    # create doc folder
+    doc_folder = get_workspace_doc_folder_(ws)
+
+    if not os.path.isdir(doc_folder):
+        os.makedirs(doc_folder)
+
+    # generate main page and tag file list
+    ws_doc = list()
+    tag_files = list()
+    ws_doc.append("\mainpage")
     
     for pkg_name in sorted(pkg_list.iterkeys()):
         pkg = pkg_list[pkg_name]
+
+        tag_file_name = get_tage_file_name_(pkg_name)
+        if not os.path.isfile(tag_file_name):
+            continue
         
-        ws_doc.append('<a href=\"http://www.google.de\"><b>' + pkg_name + '</b></a>')
+        ws_doc.append('<a href=\"{}\"><b>{}</b></a>'.format(get_html_index_file_path_(pkg_name), pkg_name))
         ws_doc.append("\par")
         ws_doc.append("\parblock")
         ws_doc.append(pkg.description)
@@ -218,22 +242,38 @@ def build_workspace_doc(ws):
         ws_doc.append('<table border="0">')
         ws_doc.append("<tr><td>Version</td>" + "<td>&nbsp;</td>" + "<td>" + pkg.version + "</td></tr>")
         
-        ws_doc += generate_multi_entry("Author", ["{} ({})".format(f.name, f.email) for f in pkg.authors])        
-        ws_doc += generate_multi_entry("Maintainer", ["{} ({})".format(f.name, f.email) for f in pkg.maintainers])
-        ws_doc += generate_multi_entry("License", pkg.licenses)
+        ws_doc += gen_multi_entry_table_("Author", ["{} ({})".format(f.name, f.email) for f in pkg.authors])
+        ws_doc += gen_multi_entry_table_("Maintainer", ["{} ({})".format(f.name, f.email) for f in pkg.maintainers])
+        ws_doc += gen_multi_entry_table_("License", pkg.licenses)
 
         ws_doc.append("</table>")
         ws_doc.append("\endparblock")
+
+        tag_files.append(get_tag_file_config_entry_(pkg_name))
         
     ws_doc_str = ""
     for ws_doc_entry in ws_doc:
         ws_doc_str += "{}\n".format(ws_doc_entry)
-        
-    with open("/home/beck/tmp/doxygen/output.md", "w+") as f:
+
+    main_file_path = os.path.join(doc_folder, "main.md")
+    with open(main_file_path, "w+") as f:
         f.write(ws_doc_str)
+
+    # generate config file
+    config = dict()
+
+    config["PROJECT_NAME"] = '"Workspace {}"'.format(ws.get_workspace_name())
+    config["OUTPUT_DIRECTORY"] = doc_folder
+    config["INPUT"] = main_file_path
+    config["QUIET"] = "YES"
+    config["WARNINGS"] = "NO"
+    config["TAGFILES"] = " ".join(tag_files)
+
+    # build documentation
+    run_doxygen_(config, doc_folder)
     
     
-def generate_multi_entry(heading, entries):
+def gen_multi_entry_table_(heading, entries):
     doc = list()
     is_first = True
     for entry in entries:
@@ -247,14 +287,40 @@ def generate_multi_entry(heading, entries):
         
     return doc
 
-    
 
-def get_dep_packages_in_workspace(ws, pkg_name):
+def get_html_index_file_path_(pkg_name):
+    _, _, dep_package_doxygen_output_dir = check_paths_(pkg_name)
+    return os.path.abspath(os.path.join(dep_package_doxygen_output_dir, "html", "index.html"))
+
+
+def get_tage_file_name_(pkg_name):
+    _, _, package_doxygen_output_dir = check_paths_(pkg_name)
+    tag_file_name = os.path.abspath(os.path.join(package_doxygen_output_dir, pkg_name + ".tag"))
+    return tag_file_name
+
+
+def get_tag_file_config_entry_(pkg_name):
+    _, _, package_doxygen_output_dir = check_paths_(pkg_name)
+    tag_file_name = os.path.abspath(os.path.join(package_doxygen_output_dir, pkg_name + ".tag"))
+    tag_output_file_name = os.path.abspath(os.path.join(package_doxygen_output_dir, "html"))
+
+    return '"{}"="{}"'.format(tag_file_name, tag_output_file_name)
+
+
+def get_dep_packages_in_workspace_(ws, pkg_name):
     """Returns all packages which depends from pkg_name which are also in the current workspace"""
     package_deps = ws.get_dependencies(pkg_name)[pkg_name]
     ws_packages = ws.get_catkin_packages()
     
     return [(p, ws_packages[p]) for p in package_deps if p in ws_packages]
+
+
+def get_workspace_doc_folder_(ws):
+    doc_folder_name = "workspace_doc_" + str(hashlib.sha224(ws.get_root()).hexdigest()[:10])
+    doc_folder = subprocess.check_output(["catkin", "locate", "--build"], universal_newlines=True).rstrip("\n")
+    doc_folder = os.path.join(doc_folder, doc_folder_name)
+    return doc_folder
+
 
 def check_paths_(pkg_name):
     if pkg_name not in suggestions:
@@ -267,4 +333,18 @@ def check_paths_(pkg_name):
     package_doxygen_output_dir = os.path.join(package_build_dir, "doxygen_doc")
 
     return package_src_dir, package_build_dir, package_doxygen_output_dir
+
+
+def get_doxygen_template_filename_():
+    return os.path.abspath(os.path.join(self_dir, "templates/Doxygen"))
+
+
+def output_start_status_(pkg_name):
+    click.echo("Starting  " + click.style(">>>", fg="green", bold=True) + " " +
+               click.style(pkg_name, fg="cyan", bold=True))
+
+
+def output_finished_states_(pkg_name):
+    click.echo(click.style("Finished  ", fg="black", bold=True) + click.style("<<<", fg="green") + " " +
+               click.style(pkg_name, fg="cyan"))
 

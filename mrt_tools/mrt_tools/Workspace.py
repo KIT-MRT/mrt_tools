@@ -109,6 +109,18 @@ class Workspace(object):
         else:
             return current_dir
 
+    @staticmethod
+    def get_workspace_name():
+        root = os.path.abspath(Workspace.get_root())
+        if not root:
+            return None
+
+        root = os.path.split(root)
+        if root[-1] != "":
+            return root[-1]
+
+        return root[-2]
+
     def cd_root(self):
         """Changes directory to workspace root"""
         os.chdir(self.root)
