@@ -2,11 +2,9 @@ from mrt_tools.settings import user_settings, write_settings, CONFIG_DIR
 from mrt_tools.utilities import get_user_choice
 from collections import OrderedDict
 import subprocess
-import keyring
 import getpass
 import click
 import sys
-import os
 
 
 class BaseCredentialManager(object):
@@ -67,6 +65,7 @@ class DummyCredentialManager(BaseCredentialManager):
 
 
 class KeyringCredentialManager(BaseCredentialManager):
+    """Base class for all keyring credential managers"""
     SERVICE_NAME = "mrtgitlab"
 
     def get(self, key):
@@ -94,37 +93,49 @@ class FileCredentialManager(KeyringCredentialManager):
         keyring.set_keyring(keyring.backends.file.PlaintextKeyring())
 
 
-
 # Using ordered dict, so that 'get_user_choice' is displayed correctly.
 CredentialManagers = OrderedDict()
-CredentialManagers['DONT_SAVE_ANYTHING'] = BaseCredentialManager
-CredentialManagers['GnomeCredentialManager'] = GnomeCredentialManager
-CredentialManagers['FileCredentialManager'] = FileCredentialManager
-CredentialManagers['BaseCredentialManager'] = BaseCredentialManager
-CredentialManagers['DummyCredentialManager'] = DummyCredentialManager
+CredentialManagers['BaseCredentialManager'] = (BaseCredentialManager, "Does not save any credentials.")
+CredentialManagers['DummyCredentialManager'] = (
+    DummyCredentialManager, "DEBUG ONLY! This will not ask for a password at all.")
+try:  # Test whether keyring is available
+    import keyring
+
+    try:  # Test whether Gnome Keyring is available
+        keyring.set_keyring(keyring.backends.Gnome.Keyring())
+        CredentialManagers['GnomeCredentialManager'] = (GnomeCredentialManager, "Uses Ubuntu Default Gnome Keyring "
+                                                                                "protected with your user account")
+    except AttributeError:
+        pass
+    try:
+        keyring.set_keyring(keyring.backends.file.PlaintextKeyring())
+        CredentialManagers['FileCredentialManager'] = (FileCredentialManager, "Stores credentials in an encoded file "
+                                                                              "within your account")
+    except AttributeError:
+        pass
+except ImportError:
+    pass
 
 # Smooth transition to new version:
 if user_settings['Gitlab']['STORE_CREDENTIALS_IN'] not in CredentialManagers.keys():
     if not sys.stdout.isatty():
         # You're NOT running in a real terminal, create DummyCredentialManager to avoid being prompted
-        user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = "Dummy_Manager"
-        CredentialManagers['Dummy_Manager'] = DummyCredentialManager
+        user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = "DummyCredentialManager"
     else:
         click.echo("")
-        click.secho("Please choose a backend for saving your credentials.", fg='yellow')
-        click.echo("\t- GnomeKeyring is recommended on your OWN computer only.")
-        click.echo("\t- On remote servers, (via SSH) GnomeKeyring will not work!")
-        click.echo("\t- You can choose to not save anything.")
-        click.echo("\t- Personal data can be deleted within the subcommand 'mrt maintenance credentials'.")
-        click.echo("\t- Settings can be changed with 'mrt maintenance settings'")
+        click.secho("Please choose one of the available backends for saving your credentials. \n"
+                    "These settings can be changed with 'mrt maintenance settings')", fg='yellow')
         click.echo("")
-        _, user_choice = get_user_choice(CredentialManagers.keys()[0:3], default=0, prompt="Where do you want to save "
-                                                                                           "your credentials?")
+        user_choice, _ = get_user_choice(['{:25s}-> {}'.format(manager, description[1]) for manager,
+                                                                                            description in
+                                          CredentialManagers.items()], default=0,
+                                         prompt="Where do you want to save your credentials?")
         click.echo("")
-        user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = user_choice
+        user_settings['Gitlab']['STORE_CREDENTIALS_IN'] = CredentialManagers.keys()[user_choice]
         write_settings(user_settings)
 
-credentialManager = CredentialManagers[user_settings['Gitlab']['STORE_CREDENTIALS_IN']]()
+# Choose the correct Credential Manager
+credentialManager = CredentialManagers[user_settings['Gitlab']['STORE_CREDENTIALS_IN']][0]()
 
 
 def set_git_credentials(username, password):
