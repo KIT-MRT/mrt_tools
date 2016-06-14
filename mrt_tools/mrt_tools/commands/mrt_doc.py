@@ -106,7 +106,7 @@ def show(pkg_name):
         index_file = os.path.join(doc_folder, "html", "index.html")
 
     if not os.path.isfile(index_file):
-        build_(pkg_name)
+        build_(ws, pkg_name)
 
     if not os.path.isfile(index_file):
         raise RuntimeError("Documentation output not found. Expected to be in " + index_file)
