@@ -29,29 +29,32 @@ def main(ctx):
 
 
 @main.command(short_help="Clone catkin packages from gitlab.",
-              help="This command let's you clone a repository directly into your workspace. Dependencies to other "
+              help="This command let's you clone repositories directly into your workspace. Dependencies to other "
                    "packages are automatically resolved. Try out the bashcompletion for the package name.")
-@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=repo_list)
+@click.argument("pkg_names", type=click.STRING, required=True, nargs=-1, autocompletion=repo_list)
 @click.pass_obj
-def add(ws, pkg_name):
+def add(ws, pkg_names):
     """Clone catkin packages from gitlab."""
     """
     This tool searches for, and clones a package from the Gitlab Server into the current workspace.
     Execute this script from within a catkin workspace
     """
 
-    # Test for package
-    if ws.find(pkg_name):
-        click.echo("Package {0} already present in workspace config. Run 'mrt wstool update'.".format(pkg_name))
-        return
+    for pkg_name in pkg_names:
 
-    # Add package to workspace
-    git = Git()
-    repo = git.find_repo(pkg_name)
-    if not repo:
-        sys.exit(1)
-    url = repo[git.get_url_string()]
-    ws.add(pkg_name, url)
+        # Test for package
+        if ws.find(pkg_name):
+            click.echo("Package {0} already present in workspace config. Run 'mrt wstool update'.".format(pkg_name))
+            continue
+
+        # Add package to workspace
+        git = Git()
+        repo = git.find_repo(pkg_name)
+        if not repo:
+            continue
+        url = repo[git.get_url_string()]
+        ws.add(pkg_name, url)
+
     ws.resolve_dependencies(git=git)
 
 
