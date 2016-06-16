@@ -161,9 +161,12 @@ def build_(ws, pkg_name, verbose=None):
     #config["EXTERNAL_SEARCH_ID"] = pkg_name
     
     # Set the input folders. Only add those which are 
-    input_folders = ["doc", "include", "src"]
-    input_folders = ['"{}"'.format(f) for f in input_folders if os.path.isdir(os.path.join(package_src_dir, f))]
+    input_folders = ["README.md", "doc", "include", "src"]
+    input_folders = ['"{}"'.format(f) for f in input_folders if os.path.exists(os.path.join(package_src_dir, f))]
     config["INPUT"] = " ".join(input_folders)
+    
+    if os.path.exists(os.path.join(package_src_dir, "doc")):
+        config["IMAGE_PATH"] = "doc"
     
     # Add quite if not verbose
     if not verbose:
@@ -268,6 +271,7 @@ def build_workspace_doc_(ws):
     config["QUIET"] = "YES"
     config["WARNINGS"] = "NO"
     config["TAGFILES"] = " ".join(tag_files)
+    config["AUTOLINK_SUPPORT"] = "NO"
 
     # build documentation
     run_doxygen_(config, doc_folder)
