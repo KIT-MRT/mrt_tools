@@ -61,19 +61,19 @@ def add(ws, pkg_names):
 @main.command(short_help="Deletes package from workspace.",
               help="This command let's you savely remove a package from the current workspace, by checking for "
                    "uncommited or unpushed changes and removing the directory as well as the .rosinstall config entry.")
-@click.argument("pkg_name", type=click.STRING, required=True, autocompletion=suggestions)
+@click.argument("pkg_names", type=click.STRING, required=True, nargs=-1, autocompletion=suggestions)
 @click.pass_obj
-def remove(ws, pkg_name):
+def remove(ws, pkg_names):
     """Delete package from workspace."""
     pkg_list = ws.get_catkin_package_names()
-    if pkg_name:
+    for pkg_name in pkg_names:
         if pkg_name not in pkg_list:
-            click.secho("Package does not exist.", fg="red")
-            sys.exit(1)
-    ws.test_for_changes(pkg_name)
-    ws.cd_src()
-    click.echo("Removing {0}".format(pkg_name))
-    shutil.rmtree(pkg_name)
+            click.echo("Package {} does not exist.".format(pkg_name))
+            continue
+        ws.test_for_changes(pkg_name)
+        ws.cd_src()
+        click.echo("Removing {0}".format(pkg_name))
+        shutil.rmtree(pkg_name)
     ws.recreate_index()
     ws.cd_root()
 
