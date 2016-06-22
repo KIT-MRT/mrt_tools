@@ -187,7 +187,7 @@ link_directories(
 @xx| x@ else()
 @xx| x@ 	#no subfolder found, add executable for src folder
 @xx| x@ 	add_exec(${PROJECT_NAME} "src")
-@ x| x@ 		add_nodelet(${SRC_DIR} "src")
+@ x| x@ 	add_nodelet(${PROJECT_NAME} "src")
 @xx| x@ endif()
 
 #############
