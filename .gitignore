@@ -1,5 +1,12 @@
-include
-lib
-bin
-share
+*.pyc
+
+dist/
+build/
+*.egg-info/
+*.egg
+.eggs/
+
+.tox/
+.coverage
 .idea
+.cache

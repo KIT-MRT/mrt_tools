@@ -55,4 +55,3 @@ def test_setup_git():
 
 if __name__ == '__main__':
     test_setup_git()
-    # raise RuntimeError("USername {}, password {}".format(username,password))
