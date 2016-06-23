@@ -45,6 +45,9 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, no_wa
     if resolve_deps:
         ws.resolve_dependencies(default_yes=default_yes)
 
+    if action == "clean":
+        catkin_args = ("-y",)  # Remove all other flags
+
     os.chdir(org_dir)
     if len(catkin_args) == 0:
         process = subprocess.Popen(["catkin", action])
