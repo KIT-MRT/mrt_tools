@@ -1,7 +1,6 @@
 from mrt_tools import CredentialManager as cm
 from simplejson.scanner import JSONDecodeError
 from requests.exceptions import ConnectionError
-from requests.packages import urllib3
 from mrt_tools.utilities import get_user_choice, get_gituserinfo
 from mrt_tools.settings import user_settings
 from Crypto.PublicKey import RSA
@@ -13,9 +12,6 @@ import gitlab
 import click
 import sys
 import os
-
-# Alternatively install pyopenssl ndg-httpsclient pyasn1
-urllib3.disable_warnings()
 
 
 class Git(object):
