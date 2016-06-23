@@ -3,7 +3,6 @@ A toolbelt full of mrt scripts
 """
 from setuptools import find_packages, setup
 
-
 setup(
     name='mrt',
     version='2.0.0',
@@ -18,15 +17,14 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms='any',
-    install_requires=[], # Dependencies are now specified in requirements.txt
+    install_requires=[],  # Dependencies are now specified in requirements.txt
     setup_requires=['pytest-runner'],
-    tests_require=['pytest','tox'],
-    # entry_points={
-    #     'console_scripts': [
-    #         'mrt = mrt_tools.cli:cli',
-    #     ],
-    # },
-    scripts=['mrt_tools/mrt'],
+    tests_require=['pytest', 'tox'],
+    entry_points={
+        'console_scripts': [
+            'mrt = mrt_tools.cli:cli',
+        ],
+    },
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',
