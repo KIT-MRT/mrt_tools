@@ -10,6 +10,7 @@
   <url type="repository">${PACKAGE_REPOSITORY_URL}</url>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>mrt_cmake_modules</build_depend>
   <test_depend>gtest</test_depend>
   <!-- 
     Documentation for dependencies:
