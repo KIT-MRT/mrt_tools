@@ -22,6 +22,8 @@ setup(
     zip_safe=False,
     platforms='any',
     install_requires=dependencies,
+    setup_requires=['pytest-runner'],
+    tests_require=['pytest','tox'],
     entry_points={
         'console_scripts': [
             'mrt = mrt_tools.cli:cli',
