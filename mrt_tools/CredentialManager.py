@@ -1,4 +1,4 @@
-from mrt_tools.settings import user_settings, write_settings, CONFIG_DIR
+from mrt_tools.settings import user_settings, write_settings
 from mrt_tools.utilities import get_user_choice
 from collections import OrderedDict
 import subprocess

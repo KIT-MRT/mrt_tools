@@ -3,9 +3,6 @@ A toolbelt full of mrt scripts
 """
 from setuptools import find_packages, setup
 
-#dependencies = ['click', 'pyapi-gitlab', 'wstool', 'catkin_tools', 'catkin_pkg', 'pydot2', 'pycrypto', 'future']
-# Dependencies are now specified in requirements.in
-dependencies = []
 
 setup(
     name='mrt',
@@ -21,33 +18,34 @@ setup(
     include_package_data=True,
     zip_safe=False,
     platforms='any',
-    install_requires=dependencies,
+    install_requires=[], # Dependencies are now specified in requirements.txt
     setup_requires=['pytest-runner'],
     tests_require=['pytest','tox'],
-    entry_points={
-        'console_scripts': [
-            'mrt = mrt_tools.cli:cli',
-        ],
-    },
+    # entry_points={
+    #     'console_scripts': [
+    #         'mrt = mrt_tools.cli:cli',
+    #     ],
+    # },
+    scripts=['mrt_tools/mrt'],
     classifiers=[
         # As from http://pypi.python.org/pypi?%3Aaction=list_classifiers
         # 'Development Status :: 1 - Planning',
         # 'Development Status :: 2 - Pre-Alpha',
         # 'Development Status :: 3 - Alpha',
-        'Development Status :: 4 - Beta',
-        # 'Development Status :: 5 - Production/Stable',
+        # 'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         # 'Development Status :: 6 - Mature',
         # 'Development Status :: 7 - Inactive',
         'Environment :: Console',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: GPL-3.0+ License',
-        'Operating System :: POSIX',
-        'Operating System :: MacOS',
+        # 'Operating System :: POSIX',
+        # 'Operating System :: MacOS',
         'Operating System :: Unix',
-        'Operating System :: Windows',
+        # 'Operating System :: Windows',
         'Programming Language :: Python',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3',
+        # 'Programming Language :: Python :: 3',
         'Topic :: Software Development :: Libraries :: Python Modules',
     ]
 )

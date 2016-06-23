@@ -5,7 +5,7 @@ from mrt_tools.Git import Git
 
 # Autocompletion
 try:
-    tmp_ws = Workspace()
+    tmp_ws = Workspace(quiet=True)
     suggestions = tmp_ws.get_catkin_package_names()
     repo_list = import_repo_names()
     os.chdir(tmp_ws.org_dir)
