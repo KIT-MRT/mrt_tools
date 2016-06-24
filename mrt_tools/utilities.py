@@ -111,6 +111,7 @@ def get_user_choice(items, extra=None, prompt="Please choose a number", default=
 
 def touch(filename, times=None):
     """create a file"""
+    # TODO catch error if directory does not exist
     with open(filename, 'a'):
         os.utime(filename, times)
 
@@ -138,7 +139,7 @@ def zip_files(files, archive):
 def check_naming(pkg_name):
     while re.match("^[a-z][a-z_0-9]+$", pkg_name) is None:
         pkg_name = click.prompt(
-                "Please enter a package name containing only [a-z], [0-9] and _ (First char must be a letter): ")
+            "Please enter a package name containing only [a-z], [0-9] and _ (First char must be a letter): ")
 
     # Fail safe
     if pkg_name[-4:] == "_ros":
@@ -166,9 +167,9 @@ def create_directories(pkg_name, pkg_type, ros):
     # Check for already existing folder
     if os.path.exists("src/" + pkg_name):
         click.secho(
-                "ERROR: The folder with the name ./src/" + pkg_name +
-                " exists already. Please move it or choose a different package name.",
-                fg="red")
+            "ERROR: The folder with the name ./src/" + pkg_name +
+            " exists already. Please move it or choose a different package name.",
+            fg="red")
         sys.exit(1)
 
     # Create folders
@@ -275,8 +276,8 @@ def set_eclipse_project_setting(ws_root):
         os.chdir(os.path.dirname(project))
         # set environment variables
         subprocess.call(
-                'awk -f $(rospack find mk)/eclipse.awk .project > .project_with_env && mv .project_with_env .project',
-                shell=True)
+            'awk -f $(rospack find mk)/eclipse.awk .project > .project_with_env && mv .project_with_env .project',
+            shell=True)
 
         # add support for indexing
         if not os.path.isfile("./.settings/language.settings.xml"):
@@ -346,7 +347,7 @@ def changed_base_yaml():
     except IOError:
         new_hash = ""
         click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(
-                user_settings['Other']['BASE_YAML_FILE']), fg="red")
+            user_settings['Other']['BASE_YAML_FILE']), fg="red")
 
     try:
         with open(user_settings['Other']['BASE_YAML_HASH_FILE'], 'r') as f:
