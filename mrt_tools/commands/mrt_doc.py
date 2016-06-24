@@ -9,7 +9,6 @@ import tempfile
 import webbrowser
 import hashlib
 import time
-import io
 
 # Autocompletion
 try:
@@ -246,8 +245,8 @@ def build_workspace_doc_(ws):
         ws_doc.append('<table border="0">')
         ws_doc.append("<tr><td>Version</td>" + "<td>&nbsp;</td>" + "<td>" + pkg.version + "</td></tr>")
         
-        ws_doc += gen_multi_entry_table_("Author", [u"{} ({})".format(f.name, f.email) for f in pkg.authors])
-        ws_doc += gen_multi_entry_table_("Maintainer", [u"{} ({})".format(f.name, f.email) for f in pkg.maintainers])
+        ws_doc += gen_multi_entry_table_("Author", ["{} ({})".format(f.name, f.email) for f in pkg.authors])
+        ws_doc += gen_multi_entry_table_("Maintainer", ["{} ({})".format(f.name, f.email) for f in pkg.maintainers])
         ws_doc += gen_multi_entry_table_("License", pkg.licenses)
 
         ws_doc.append("</table>")
@@ -257,10 +256,10 @@ def build_workspace_doc_(ws):
         
     ws_doc_str = ""
     for ws_doc_entry in ws_doc:
-        ws_doc_str += u"{}\n".format(ws_doc_entry)
+        ws_doc_str += "{}\n".format(ws_doc_entry)
 
     main_file_path = os.path.join(doc_folder, "main.md")
-    with io.open(main_file_path, "w+") as f:
+    with open(main_file_path, "w+") as f:
         f.write(ws_doc_str)
 
     # generate config file
@@ -352,3 +351,4 @@ def output_start_status_(pkg_name):
 def output_finished_states_(pkg_name):
     click.echo(click.style("Finished  ", fg="black", bold=True) + click.style("<<<", fg="green") + " " +
                click.style(pkg_name, fg="cyan"))
+
