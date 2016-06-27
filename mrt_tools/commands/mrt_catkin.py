@@ -2,8 +2,22 @@ from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 
 
+def get_catkin_help_text():
+    """
+    Adds '\b' before every paragraph to keep correct formatting
+    :return: Formatted help text
+    """
+    help_text = subprocess.check_output(["catkin", "--help"])
+    reformatted = "\b\n"
+    for line in help_text.splitlines(True):
+        if line == "\n":
+            line = "\b\n"
+        reformatted += line
+    return reformatted
+
+
 @click.command(context_settings=dict(ignore_unknown_options=True, ), short_help="A wrapper for catkin.",
-               help=subprocess.check_output(["catkin", "--help"]))
+               help=get_catkin_help_text())
 @click.argument('action', type=click.STRING)
 @click.option('-rd', '--resolve-deps', is_flag=True, help='Check and resolve dependencies before building workspace.')
 @click.option('--eclipse', is_flag=True, help='Create a eclipse project.')
@@ -22,37 +36,32 @@ def main(action, resolve_deps, eclipse, debug, release, verbose, warnings, no_wa
     ws = Workspace()
     ws.cd_root()
 
-    if debug:
-        catkin_args = ("-DCMAKE_BUILD_TYPE=Debug",) + catkin_args
-    elif release:
-        catkin_args = ("-DCMAKE_BUILD_TYPE=RelWithDebInfo",) + catkin_args
-    else:
-        catkin_args = ("-DCMAKE_BUILD_TYPE={}".format(user_settings['Catkin']['DEFAULT_BUILD_TYPE']),) + catkin_args
-
-    if (user_settings['Catkin']['SHOW_WARNINGS_DURING_COMPILATION'] or warnings) and not no_warnings:
-        catkin_args = ("-DCMAKE_CXX_FLAGS=-Wall",) + ("-DCMAKE_CXX_FLAGS=-Wextra",) + catkin_args
-
     build_eclipse = False
-    if eclipse:
-        build_eclipse = True
-        catkin_args = ("--force-cmake",) + catkin_args
-        catkin_args = ("-GEclipse CDT4 - Unix Makefiles",) + catkin_args
+    if action == "build":
+        if debug:
+            catkin_args = ("-DCMAKE_BUILD_TYPE=Debug",) + catkin_args
+        elif release:
+            catkin_args = ("-DCMAKE_BUILD_TYPE=RelWithDebInfo",) + catkin_args
+        else:
+            catkin_args = ("-DCMAKE_BUILD_TYPE={}".format(user_settings['Catkin']['DEFAULT_BUILD_TYPE']),) + catkin_args
 
-    if verbose:
-        catkin_args += ("-v",)
-        catkin_args += ("--make-args VERBOSE=1 --",)
+        if (user_settings['Catkin']['SHOW_WARNINGS_DURING_COMPILATION'] or warnings) and not no_warnings:
+            catkin_args = ("-DCMAKE_CXX_FLAGS=-Wall",) + ("-DCMAKE_CXX_FLAGS=-Wextra",) + catkin_args
+
+        if eclipse:
+            build_eclipse = True
+            catkin_args = ("--force-cmake",) + catkin_args
+            catkin_args = ("-GEclipse CDT4 - Unix Makefiles",) + catkin_args
+
+        if verbose:
+            catkin_args += ("-v",)
+            catkin_args += ("--make-args VERBOSE=1 --",)
 
     if resolve_deps:
         ws.resolve_dependencies(default_yes=default_yes)
 
-    if action == "clean":
-        catkin_args = ("-y",)  # Remove all other flags
-
     os.chdir(org_dir)
-    if len(catkin_args) == 0:
-        process = subprocess.Popen(["catkin", action])
-    else:
-        process = subprocess.Popen(["catkin", action] + list(catkin_args))
+    process = subprocess.Popen(["catkin", action] + list(catkin_args))
     process.wait()  # Wait for process to finish and set returncode
 
     if build_eclipse:
