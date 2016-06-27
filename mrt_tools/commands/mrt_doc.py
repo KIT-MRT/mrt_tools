@@ -50,7 +50,7 @@ def build(pkg_name, this, no_deps, verbose, workspace_docs):
     # add all workspace packages to possibly be doc builded
     pkg_list = ws.get_catkin_packages()
     is_build_workspace_doc = True
-
+    
     if pkg_name or this:
         # build only the specified packge
         if pkg_name:
@@ -63,14 +63,14 @@ def build(pkg_name, this, no_deps, verbose, workspace_docs):
             if pkg_name not in pkg_list:
                 click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
                 sys.exit(1)
-
+        
         # clear doc build package list and set to specified one
         pkg_list = {pkg_name: pkg_list[pkg_name]}
-
+          
         # add also dependencies if necessary  
         if not no_deps:
             pkg_list.update(get_dep_packages_in_workspace_(ws, pkg_name))
-
+            
         is_build_workspace_doc = False
 
     # order topologically to get the build order right
@@ -113,7 +113,6 @@ def show(pkg_name):
 
     webbrowser.open("file://" + index_file)
 
-
 @main.command(help="Removes the documentation build folder of a workspace or package.")
 @click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
 def clean(pkg_name):
@@ -145,39 +144,39 @@ def build_(ws, pkg_name, verbose=None):
     config = dict()
     config["PROJECT_NAME"] = "\"" + pkg_name + "\""
     config["OUTPUT_DIRECTORY"] = "\"" + package_doxygen_output_dir + "\""
-
+    
     tag_file_name = os.path.abspath(os.path.join(package_doxygen_output_dir, pkg_name + ".tag"))
-    config["GENERATE_TAGFILE"] = "\"" + tag_file_name + "\""
-
+    config["GENERATE_TAGFILE"] = "\"" + tag_file_name + "\""    
+    
     # determine all dependent packages from workspace and add the tag files
     tag_files = list()
     for dep_package, _ in get_dep_packages_in_workspace_(ws, pkg_name):
         tag_files.append(get_tag_file_config_entry_(dep_package))
-
+        
     config["TAGFILES"] = " ".join(tag_files)
-
+    
     # configure search engine (not working correctly with local http python server)
-    # port = 8213
-    # config["SEARCHENGINE_URL"] = "http://localhost:{}/cgi-bin/doxysearch.cgi".format(port)
-    # config["EXTERNAL_SEARCH_ID"] = pkg_name
-
+    #port = 8213
+    #config["SEARCHENGINE_URL"] = "http://localhost:{}/cgi-bin/doxysearch.cgi".format(port)
+    #config["EXTERNAL_SEARCH_ID"] = pkg_name
+    
     # Set the input folders. Only add those which are 
     input_folders = ["README.md", "doc", "include", "src"]
     input_folders = ['"{}"'.format(f) for f in input_folders if os.path.exists(os.path.join(package_src_dir, f))]
     config["INPUT"] = " ".join(input_folders)
-
+    
     if os.path.exists(os.path.join(package_src_dir, "doc")):
         config["IMAGE_PATH"] = "doc"
-
+    
     # Add quite if not verbose
     if not verbose:
         config["QUIET"] = "YES"
-
+    
     warn_logfile_name = None
     try:
         # add warn logfile
         warn_logfile_name = tempfile.NamedTemporaryFile(delete=False).name
-
+        
         config["WARN_LOGFILE"] = '"{}"'.format(warn_logfile_name)
 
         # Add include to user defined doxygen file
@@ -229,41 +228,39 @@ def build_workspace_doc_(ws):
     # generate main page and tag file list
     ws_doc = list()
     tag_files = list()
-    ws_doc.append("\mainpage")
-
+    ws_doc.append(u"\mainpage")
+    
     for pkg_name in sorted(pkg_list.iterkeys()):
         pkg = pkg_list[pkg_name]
 
         tag_file_name = get_tage_file_name_(pkg_name)
         if not os.path.isfile(tag_file_name):
             continue
+        
+        ws_doc.append(u'<a href=\"{}\"><b>{}</b></a>'.format(get_html_index_file_path_(pkg_name), pkg_name))
+        ws_doc.append(u"\par")
+        ws_doc.append(u"\parblock")
+        ws_doc.append(unicode(pkg.description))
+        ws_doc.append(u"")
+        ws_doc.append(u'<table border="0">')
+        ws_doc.append(u"<tr><td>Version</td>" + u"<td>&nbsp;</td>" + u"<td>" + unicode(pkg.version) + u"</td></tr>")
+        
+        ws_doc += gen_multi_entry_table_(u"Author", [u"{} ({})".format(f.name, f.email) for f in pkg.authors])
+        ws_doc += gen_multi_entry_table_(u"Maintainer", [u"{} ({})".format(f.name, f.email) for f in pkg.maintainers])
+        ws_doc += gen_multi_entry_table_(u"License", pkg.licenses)
 
-        ws_doc.append('<a href=\"{}\"><b>{}</b></a>'.format(get_html_index_file_path_(pkg_name), pkg_name))
-        ws_doc.append("\par")
-        ws_doc.append("\parblock")
-        ws_doc.append(pkg.description)
-        ws_doc.append("")
-        ws_doc.append('<table border="0">')
-        ws_doc.append("<tr><td>Version</td>" + "<td>&nbsp;</td>" + "<td>" + pkg.version + "</td></tr>")
-
-        ws_doc += gen_multi_entry_table_("Author", ["{} ({})".format(f.name.encode("utf8"), f.email)
-                                                    for f in pkg.authors])
-        ws_doc += gen_multi_entry_table_("Maintainer", ["{} ({})".format(f.name.encode("utf8"), f.email)
-                                                        for f in pkg.maintainers])
-        ws_doc += gen_multi_entry_table_("License", pkg.licenses)
-
-        ws_doc.append("</table>")
-        ws_doc.append("\endparblock")
+        ws_doc.append(u"</table>")
+        ws_doc.append(u"\endparblock")
 
         tag_files.append(get_tag_file_config_entry_(pkg_name))
-
-    ws_doc_str = ""
+        
+    ws_doc_str = u""
     for ws_doc_entry in ws_doc:
-        ws_doc_str += "{}\n".format(ws_doc_entry)
+        ws_doc_str += u"{}\n".format(ws_doc_entry)
 
     main_file_path = os.path.join(doc_folder, "main.md")
     with open(main_file_path, "w+") as f:
-        f.write(ws_doc_str)
+        f.write(ws_doc_str.encode("UTF-8"))
 
     # generate config file
     config = dict()
@@ -278,20 +275,20 @@ def build_workspace_doc_(ws):
 
     # build documentation
     run_doxygen_(config, doc_folder)
-
-
+    
+    
 def gen_multi_entry_table_(heading, entries):
     doc = list()
     is_first = True
     for entry in entries:
-        doc_str = "<tr><td>"
+        doc_str = u"<tr><td>"
         if is_first:
             doc_str += heading
             is_first = False
-
-        doc_str += "</td>" + "<td>&nbsp;</td>" + "<td>" + entry + "</td></tr>"
+            
+        doc_str += u"</td>" + u"<td>&nbsp;</td>" + u"<td>" + entry + u"</td></tr>"
         doc.append(doc_str)
-
+        
     return doc
 
 
@@ -318,7 +315,7 @@ def get_dep_packages_in_workspace_(ws, pkg_name):
     """Returns all packages which depends from pkg_name which are also in the current workspace"""
     package_deps = ws.get_dependencies(pkg_name)[pkg_name]
     ws_packages = ws.get_catkin_packages()
-
+    
     return [(p, ws_packages[p]) for p in package_deps if p in ws_packages]
 
 
@@ -354,3 +351,4 @@ def output_start_status_(pkg_name):
 def output_finished_states_(pkg_name):
     click.echo(click.style("Finished  ", fg="black", bold=True) + click.style("<<<", fg="green") + " " +
                click.style(pkg_name, fg="cyan"))
+
