@@ -17,7 +17,7 @@ project(${CMAKE_PACKAGE_NAME})
 ###################
 ## find packages ##
 ###################
-include(UseMrtModules)
+find_package(mrt_cmake_modules REQUIRED)
 include(UseMrtStdCompilerFlags)
 include(UseMrtAutoTarget)
 
