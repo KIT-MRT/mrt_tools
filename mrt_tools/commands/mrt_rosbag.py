@@ -1,9 +1,17 @@
+import rospy
+
 from mrt_tools.RosbagMetadataHandler import RosbagMetadataHandler
 from mrt_tools.utilities import get_help_text
 import subprocess
 import time
 import click
 import os
+
+try:
+    topic_list = rospy.get_published_topics()
+    topic_list = [item for sublist in topic_list for item in sublist]
+except:
+    topic_list = []
 
 
 @click.group(short_help="A wrapper for rosbag.", help="This group of commands wrap the native 'rosbag' command. The "
@@ -18,8 +26,12 @@ def main():
               help=get_help_text("rosbag record --help"))
 @click.option('-O', '--output-name', 'output_name', type=click.STRING)
 @click.option('-o', '--output-prefix', 'prefix', type=click.STRING)
-@click.argument('args', nargs=-1, type=click.UNPROCESSED)
+@click.argument('args', nargs=-1, type=click.UNPROCESSED, autocompletion=topic_list)
 def record(output_name, prefix, args):
+    if not [arg for arg in args if not arg.startswith("-")] and "-a" not in args:
+        click.echo("You must specify a topic name or else use the '-a' option.")
+        return
+
     # Determine file name
     if not output_name:
         output_name = time.strftime("%Y-%m-%d-%H-%M-%S.bag", time.localtime())
@@ -74,4 +86,3 @@ def info(args):
             click.echo("Rosbag")
             click.echo("=" * len("Rosbag"))
             subprocess.call(["rosbag", "info"] + list(options) + [bag])
-

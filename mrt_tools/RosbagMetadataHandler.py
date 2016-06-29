@@ -18,6 +18,8 @@ METADATA_TEMPLATE = os.path.join(get_script_root(), "templates", "rosbag_metadat
 
 
 def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
+    """ Wrapper function to assert ordered loading of yaml file """
+
     class OrderedLoader(Loader):
         pass
 
@@ -29,6 +31,9 @@ def ordered_load(stream, Loader=yaml.Loader, object_pairs_hook=OrderedDict):
         yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
         construct_mapping)
     return yaml.load(stream, OrderedLoader)
+
+
+yaml.add_representer(OrderedDict, lambda self, data: self.represent_mapping('tag:yaml.org,2002:map', data.items()))
 
 
 class RosbagMetadataHandler(object):
@@ -73,7 +78,7 @@ class RosbagMetadataHandler(object):
         if not os.path.exists(os.path.dirname(filename)):
             os.makedirs(os.path.dirname(filename))
         with open(filename, 'wb') as f:
-            yaml.dump(data, stream=f)
+            yaml.dump(data, stream=f, default_flow_style=False)
 
     @staticmethod
     def load_from_bag(filename):
@@ -92,7 +97,7 @@ class RosbagMetadataHandler(object):
     def write_to_bag(self, bagfile):
         metadata = self.data
         if isinstance(metadata, dict):  # convert dict to yaml
-            metadata = yaml.dump(metadata)
+            metadata = yaml.dump(metadata, default_flow_style=False)
 
         while os.path.exists(bagfile + ".active"):
             click.echo("Waiting for bagfile to be written to disk...")
@@ -133,17 +138,17 @@ class RosbagMetadataHandler(object):
                     last_data = OrderedDict()
             except KeyError:
                 pass
-            
+
             if last_data:
                 new_data = self.update_data(new_data, last_data)
 
         new_data = self.query_user(new_data, "Please provide information about this rosbag.")
 
         try:
-            click.echo("Add addtional fields now or continue by pressing Ctrl+d")
+            click.echo("Add additional fields now or continue by pressing Ctrl+d")
             while True:
-                k = click.prompt('Field name', type=click.STRING)
-                v = click.prompt(k, type=click.STRING)
+                k = unidecode(click.prompt('Field name', type=click.STRING))
+                v = unidecode(click.prompt(k, type=click.STRING))
                 if "Custom" not in new_data:
                     new_data["Custom"] = OrderedDict()
                 new_data["Custom"][k] = v
@@ -166,8 +171,7 @@ class RosbagMetadataHandler(object):
                 continue  # Use template version
             elif k == "CreatedBy":
                 v = getpass.getuser()
-            data[k] = click.prompt(k, default=str(v), type=click.STRING).encode('utf-8')
-            data[k] = unidecode(data[k].decode('utf-8'))
+            data[k] = unidecode(click.prompt(k, default=str(v).decode("utf-8"), type=click.STRING))
         return data
 
     def update_data(self, data, default):
