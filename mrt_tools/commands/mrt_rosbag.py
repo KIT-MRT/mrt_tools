@@ -14,10 +14,10 @@ except:
     topic_list = []
 
 
-@click.group(short_help="A wrapper for rosbag.", help="This group of commands wrap the native 'rosbag' command. The "
-                                                      "original commands are extanded by forcing the user to specify "
-                                                      "more metadata when recording a rosbag. The data is stored in a "
-                                                      "seperate topic inside the rosbag.")
+@click.group(short_help="A wrapper for rosbag.",
+             help="This group of commands wrap the native 'rosbag' command. The original commands are extanded by "
+                  "forcing the user to specify more metadata when recording a rosbag. The data is stored in a seperate "
+                  "topic inside the rosbag.")
 def main():
     pass
 
