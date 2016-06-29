@@ -1,0 +1,20 @@
+General: {
+  MetaDataVers: 0.1,
+  LastModified: ,
+  CreatedBy:,
+  Description:,
+  }
+Environment: {
+  Location: ,
+  Weather: ,
+  }
+Platform: {
+  VehicleName: ,
+  Cameras: ,
+  GPS: ,
+  Laser: ,
+  Radar: ,
+  }
+Custom: {
+
+  }

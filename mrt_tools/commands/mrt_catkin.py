@@ -2,22 +2,8 @@ from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 
 
-def get_catkin_help_text():
-    """
-    Adds '\b' before every paragraph to keep correct formatting
-    :return: Formatted help text
-    """
-    help_text = subprocess.check_output(["catkin", "--help"])
-    reformatted = "\b\n"
-    for line in help_text.splitlines(True):
-        if line == "\n":
-            line = "\b\n"
-        reformatted += line
-    return reformatted
-
-
 @click.command(context_settings=dict(ignore_unknown_options=True, ), short_help="A wrapper for catkin.",
-               help=get_catkin_help_text())
+               help=get_help_text("catkin --help"))
 @click.argument('action', type=click.STRING)
 @click.option('-rd', '--resolve-deps', is_flag=True, help='Check and resolve dependencies before building workspace.')
 @click.option('--eclipse', is_flag=True, help='Create a eclipse project.')
