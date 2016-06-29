@@ -13,7 +13,7 @@ import time
 import os
 
 METADATA_CACHE = os.path.join(CONFIG_DIR, "rosbag_metadata.yaml")
-DEFAULT_TOPIC = "/metadata"
+METADATA_TOPIC = "/metadata"
 METADATA_TEMPLATE = os.path.join(get_script_root(), "templates", "rosbag_metadata.yaml")
 
 
@@ -109,7 +109,7 @@ class RosbagMetadataHandler(object):
     @staticmethod
     def load_from_bag(filename):
         """
-        Load yaml data from DEFAULT_TOPIC from rosbag into OrderedDict
+        Load yaml data from METADATA_TOPIC from rosbag into OrderedDict
 
         :param filename: Path to rosbag
         :return: OrderedDict with key value pairs from file or None upon file error
@@ -117,8 +117,8 @@ class RosbagMetadataHandler(object):
         click.echo("Gathering metadata from bag {} ...".format(filename))
         try:
             with rosbag.Bag(filename, 'r') as bag:
-                for msg_topic, msg, t in bag.read_messages(topics=[DEFAULT_TOPIC, ]):
-                    if msg_topic == DEFAULT_TOPIC:
+                for msg_topic, msg, t in bag.read_messages(topics=[METADATA_TOPIC, ]):
+                    if msg_topic == METADATA_TOPIC:
                         return ordered_load(msg.data)
                 else:
                     return OrderedDict()
@@ -128,7 +128,7 @@ class RosbagMetadataHandler(object):
 
     def write_to_bag(self, bagfile):
         """
-        Write Dictionary of metadata to rosbags DEFAULT_TOPIC
+        Write Dictionary of metadata to rosbags METADATA_TOPIC
 
         Catches errors and prints warning
         :param filename: Path to rosbag
@@ -153,7 +153,7 @@ class RosbagMetadataHandler(object):
                     break
                 if t:
                     success = True
-                    bag.write(DEFAULT_TOPIC, metadata_msg, t - rospy.rostime.Duration(0, 1))
+                    bag.write(METADATA_TOPIC, metadata_msg, t - rospy.rostime.Duration(0, 1))
         except rosbag.bag.ROSBagException as err:
             click.secho("Could not write to bagfile: {}".format(err.value), fg="red")
 

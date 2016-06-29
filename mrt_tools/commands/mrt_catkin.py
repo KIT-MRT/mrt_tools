@@ -4,7 +4,9 @@ from mrt_tools.utilities import *
 
 @click.command(context_settings=dict(ignore_unknown_options=True, ), short_help="A wrapper for catkin.",
                help=get_help_text("catkin --help"))
-@click.argument('action', type=click.STRING)
+@click.argument('action', type=click.STRING,
+                autocompletion=["build", "clean", "config", "create", "env", "init", "lint", "list", "locate",
+                                "profile"])
 @click.option('-rd', '--resolve-deps', is_flag=True, help='Check and resolve dependencies before building workspace.')
 @click.option('--eclipse', is_flag=True, help='Create a eclipse project.')
 @click.option('--debug', is_flag=True, help='Build in debug mode.')

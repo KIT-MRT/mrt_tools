@@ -9,7 +9,7 @@ import os
 
 try:
     topic_list = rospy.get_published_topics()
-    topic_list = [item for sublist in topic_list for item in sublist]
+    topic_list = [pair[0][1:] for pair in topic_list]
 except:
     topic_list = []
 
