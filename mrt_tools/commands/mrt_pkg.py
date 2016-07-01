@@ -40,6 +40,8 @@ def add(ws, pkg_names):
     Execute this script from within a catkin workspace
     """
 
+    git = Git()
+
     for pkg_name in pkg_names:
 
         # Test for package
@@ -48,7 +50,6 @@ def add(ws, pkg_names):
             continue
 
         # Add package to workspace
-        git = Git()
         repo = git.find_repo(pkg_name)
         if not repo:
             continue
@@ -100,6 +101,10 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
         pkg_name += "_ros"
     if pkg_type == "exec":
         pkg_name += "_tool"
+
+    if pkg_name in get_rosdeps():
+        click.secho("This name collides with a rosdep dependency. Please choose a different one.", fg="red")
+        sys.exit(1)
 
     click.echo("Creating package with name.... " + pkg_name)
     click.echo("     --> Package type.... " + pkg_type)

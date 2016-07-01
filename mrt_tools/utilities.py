@@ -149,10 +149,6 @@ def check_naming(pkg_name):
     if pkg_name[-4:] == "_ros":
         pkg_name = pkg_name[:-4]
 
-    if pkg_name in get_rosdeps():
-        click.secho("This name collides with a rosdep dependency. Please choose a different one.", fg="red")
-        sys.exit(1)
-
     return pkg_name
 
 
