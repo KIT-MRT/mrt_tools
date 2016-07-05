@@ -35,4 +35,5 @@ requests==2.9.1
 simplejson==3.8.2
 six==1.10.0               # via gssapi, python-dateutil, trollius
 trollius==2.1             # via osrf-pycommon
+Unidecode==0.4.19
 vcstools==0.1.38          # via wstool

@@ -369,5 +369,21 @@ def changed_base_yaml():
         return True
 
 
+def get_help_text(command):
+    """
+    Adds '\b' before every paragraph to keep correct formatting
+    :return: Formatted help text
+    """
+    command_args = command.split()
+    help_text = subprocess.check_output(command_args)
+    # reformatted = "This is the help text for '{}':\n\n\b\n".format(command)
+    reformatted = "\b\n"
+    for line in help_text.splitlines(True):
+        if line == "\n":
+            line = "\b\n"
+        reformatted += line
+    return reformatted
+
+
 self_dir = get_script_root()
 cache_repos()
