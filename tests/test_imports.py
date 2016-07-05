@@ -42,6 +42,7 @@ def test_base_imports():
     import tempfile
     import termios
     import time
+    import unidecode
     import webbrowser
     import xml.etree.ElementTree as ET
     import yaml
