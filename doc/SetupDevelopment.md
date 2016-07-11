@@ -2,9 +2,9 @@
 You cat setup the MRT tools in a virtual environment. This way, it won't conflict with your system wide installation and you can easily test your modifications to the code base.
 
 ## Requirements
-Install the `virtualenvwrapper` for easier handling of virtual environments
+Install the `virtualenvwrapper` for easier handling of virtual environments and other deps
 ```bash
-sudo apt-get install virtualenvwrapper
+sudo apt-get install virtualenvwrapper libffi-dev
 source /usr/share/virtualenvwrapper/virtualenvwrapper.sh # Can be put into bashrc
 ```
 

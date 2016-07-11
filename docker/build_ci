@@ -21,5 +21,5 @@ cd $BASE/mrt_build
 cd $BASE/mrt_build_dev
 ./build.bash $FLAGS
 
-cd $BASE/mrt_build_gitlab_ci
+cd $BASE/mrt_gitlab_ci
 ./build.bash $FLAGS

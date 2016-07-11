@@ -16,7 +16,7 @@ RUN apt-get install -y python-yaml python-pip --yes --force-yes
 
 #install mrt build system related stuff
 RUN pip install pyapi-gitlab colorama
-RUN apt-get update && apt-get install -y mrt-cmake-modules mrt-build
+RUN apt-get install -y mrt-cmake-modules
 
 RUN echo "yaml file:///mrtsoftware/pkg/share/ros/base.yaml" | tee --append "/etc/ros/rosdep/sources.list.d/20-default.list" > /dev/null
 

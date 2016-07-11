@@ -107,7 +107,7 @@ try:  # Test whether keyring is available
 	keyring.get_password("test", "test")
         CredentialManagers['GnomeCredentialManager'] = (GnomeCredentialManager, "Uses Ubuntu Default Gnome Keyring "
                                                                                 "protected with your user account")
-    except (AttributeError, keyring.errors.PasswordSetError):
+    except (AttributeError, keyring.errors.PasswordSetError, NameError):
         pass
     try:
         keyring.set_keyring(keyring.backends.file.PlaintextKeyring())

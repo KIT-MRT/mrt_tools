@@ -1,13 +1,10 @@
 FROM mrt_build:latest
 
 # Install from local version
-RUN apt-get update && apt-get install -y libyaml-dev libpython2.7-dev
-COPY files/mrt_tools /root/mrt_tools
-RUN pip install -I -r /root/mrt_tools/requirements.txt \
-		&& cd /root/mrt_tools \
-		&& python setup.py clean \
-		&& python setup.py install \
-		&& cp /usr/local/bin/mrt /usr/bin/mrt
+RUN apt-get update && apt-get install -y libyaml-dev libpython2.7-dev libffi-dev nano tree
+COPY files/* /usr/local/src/mrt_build/
+RUN pip install -U -I -r /usr/local/src/mrt_build/requirements.txt
+RUN cd /usr/local/src/mrt_build/ && python setup.py develop
 
 # Create known_hosts and add server key
 RUN mkdir -p /root/.ssh \
