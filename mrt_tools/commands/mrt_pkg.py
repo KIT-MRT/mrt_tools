@@ -1,3 +1,6 @@
+import pprint
+from collections import defaultdict
+
 from mrt_tools.Workspace import Workspace
 from mrt_tools.Digraph import Digraph
 from mrt_tools.utilities import *
@@ -143,7 +146,13 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
         subprocess.call("sed -i -e '/  <url/d' package.xml", shell=True)
 
 
-@main.command(short_help="Visualize dependencies of catkin packages.",
+@main.group(short_help="Investigate dependencies of catkin packages.")
+@click.pass_obj
+def deps(ws):
+    pass
+
+
+@deps.command(short_help="Visualize dependencies of catkin packages.",
               help="This is a powerfull tool to visualize dependecies of individual packages or your complete "
                    "workspace. You can specify a package name, use the '--this' flag or leave the argument away to "
                    "create dependency graphs for the whole workspace. Dependencys are checked by using catkin, "
@@ -152,7 +161,7 @@ def create(ws, pkg_name, pkg_type, ros, create_git_repo):
 @click.option("--this", is_flag=True)
 @click.option("--repos-only", is_flag=True)
 @click.pass_obj
-def visualize_deps(ws, pkg_name, this, repos_only):
+def draw(ws, pkg_name, this, repos_only):
     """ Visualize dependencies of catkin packages."""
     pkg_list = ws.get_catkin_package_names()
 
@@ -182,12 +191,12 @@ def visualize_deps(ws, pkg_name, this, repos_only):
     graph.plot(pkg_name)
 
 
-@main.command(short_help="List dependencies of catkin packages.",
+@deps.command(short_help="List dependencies of catkin packages.",
               help="This will list all dependencies of a named catkin package.")
 @click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
 @click.option("--this", is_flag=True)
 @click.pass_obj
-def list_deps(ws, pkg_name, this):
+def show(ws, pkg_name, this):
     """ Visualize dependencies of catkin packages."""
     pkg_list = ws.get_catkin_package_names()
 
@@ -231,3 +240,65 @@ def list_deps(ws, pkg_name, this):
     click.echo("====================")
     for dep in apt_deps:
         click.echo(dep)
+
+
+@deps.command(short_help="Lookup reverse dependencies.",
+              help="This will crawl all packages (in the MRT workspace, on the master branch, on the latest commit, "
+                   "in gitlab) inorder to detect, who directly relies on this pkg.")
+@click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
+@click.option("--this", is_flag=True)
+@click.option("-u", "--update", is_flag=True)
+@click.pass_obj
+def rlookup(ws, pkg_name, this, update):
+
+    if update or not os.path.exists(user_settings['Cache']['CACHED_DEPS_WS']):
+        click.echo("Updating repo cache...")
+        process = subprocess.Popen(['mrt maintenance update_cached_deps'], shell=True)
+        process.wait()  # Wait for process to finish and set returncode
+        # print(process.returncode)
+
+    if not pkg_name and not this:
+        click.secho("Please specify a package or use the '--this' flag.", fg="red")
+        sys.exit(1)
+
+    if this:
+        pkg_list = ws.get_catkin_package_names()
+        pkg_name = os.path.basename(ws.org_dir)
+        if pkg_name not in pkg_list:
+            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
+            sys.exit(1)
+
+    rdeps = {}
+    for root, dirs, files in os.walk(user_settings['Cache']['CACHED_DEPS_WS']):
+        def insert_into_dict(d, data):
+            key = data[0]
+            if type(d) is list:
+                d.append(key)
+                return d
+            elif type(d) is dict and key not in d:
+                if len(data) == 2:
+                    d[key] = []
+                else:
+                    d[key] = dict()
+            d[key] = insert_into_dict(d[key], data[1:])
+            return d
+
+        if files == ["package.xml"]:
+            filename = os.path.join(root, files[0])
+            root, branch = os.path.split(root)
+            root, repo = os.path.split(root)
+            root, namespace = os.path.split(root)
+            with open(filename, 'r') as f:
+                for line in f:
+                    line = line.decode("utf-8")
+                    if pkg_name in line and "depend" in line:
+                        match = re.search("\</.*\>", line)
+                        typ = match.string [match.start()+2:match.end()-1]
+                        rdeps = insert_into_dict(rdeps, [namespace, repo, branch, typ])
+
+    click.echo("I found the following packages relying on {}:\n".format(pkg_name))
+    for namespace, d_repo in rdeps.iteritems():
+        for repo, d_branches in d_repo.iteritems():
+            click.echo("{}/{}:".format(namespace,repo))
+            for branch, typ in d_branches.iteritems():
+                click.echo("\t- On branch '{}': {}".format(branch, typ))

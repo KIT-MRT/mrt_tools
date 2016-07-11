@@ -3,7 +3,6 @@ from wstool import config as wstool_config
 from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
 from mrt_tools.Git import Git
-
 import getpass
 
 
@@ -290,6 +289,48 @@ def settings():
     """
     from mrt_tools.settings import CONFIG_FILE
     subprocess.call("gedit {}".format(CONFIG_FILE), shell=True)
+
+
+@main.command(short_help="Update you local copy of all package dependencies.",
+              help="This will download every package.xml file from Gitlab, that you have access to. These files will "
+                   "be used for reverse dependency lookup.")
+def update_cached_deps():
+    git = Git()
+
+    if os.path.exists(user_settings['Cache']['CACHED_DEPS_WS']):
+        click.echo("Removing existing files in workspace")
+        shutil.rmtree(user_settings['Cache']['CACHED_DEPS_WS'])
+    os.makedirs(user_settings['Cache']['CACHED_DEPS_WS'])
+
+    click.echo("Retrieving repo list")
+    repo_list = list(git.server.getall(git.server.getprojects, per_page=100))
+
+    click.echo("Downloading package.xml files")
+    skipped_repos = []
+    with click.progressbar(repo_list) as repos:
+        for repo in repos:
+            branches = git.server.getbranches(repo['id'])
+            for branch in branches:
+
+                # TODO Test checksum before downloading?
+
+                file_contents = git.server.getrawfile(repo['id'], branch['name'], 'package.xml')
+                if file_contents is None or file_contents is False:
+                    skipped_repos.append(repo['name'])
+                    continue
+
+                file_name = os.path.join(user_settings['Cache']['CACHED_DEPS_WS'], repo['namespace']['name'],
+                                             repo['name'], branch['name'], 'package.xml')
+                if not os.path.exists(os.path.dirname(file_name)):
+                    os.makedirs(os.path.dirname(file_name))
+
+                with open(file_name, 'w') as f:
+                    f.write(file_contents)
+
+    skipped_repos = set(skipped_repos)
+    click.echo("Skipped the following repos:")
+    for repo in skipped_repos:
+        click.echo("- {}".format(repo))
 
 
 @main.group()

@@ -13,7 +13,8 @@ default_settings = {
     'Cache': {
         'CACHE_FILE': os.path.join(CONFIG_DIR, "repo_cache"),
         'CACHE_LOCK_FILE': os.path.join(CONFIG_DIR, ".repo_cache_lock"),
-        'CACHE_LOCK_DECAY_TIME': 30  # in seconds
+        'CACHE_LOCK_DECAY_TIME': 30,  # in seconds
+        'CACHED_DEPS_WS': os.path.join(CONFIG_DIR, "deps_cache_ws"),
     },
     'Gitlab': {
         'HOST_URL': "https://gitlab.mrt.uni-karlsruhe.de",
