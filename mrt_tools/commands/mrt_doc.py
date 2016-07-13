@@ -317,7 +317,7 @@ def get_dep_packages_in_workspace_(ws, pkg_name):
     package_deps = ws.get_dependencies(pkg_name)[pkg_name]
     ws_packages = ws.get_catkin_packages()
 
-    return [(p, ws_packages[p]) for p in package_deps if p in ws_packages]
+    return [(p, ws_packages[p]) for p in package_deps.keys() if p in ws_packages]
 
 
 def get_workspace_doc_folder_(ws):

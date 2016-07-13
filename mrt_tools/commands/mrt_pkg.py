@@ -180,13 +180,15 @@ def draw(ws, pkg_name, this, repos_only):
         if click.confirm("Create dependency graph for every package?"):
             for pkg_name in pkg_list:
                 click.echo("Creating graph for {}...".format(pkg_name))
-                deps = [ws.get_dependencies(pkg_name, deep=True)]
+                deps = ws.get_dependencies(pkg_name, deep=True)
                 graph = Digraph(deps, repos_only)
                 graph.plot(pkg_name, show=False)
         if click.confirm("Create complete dependency graph for workspace?", abort=True):
             pkg_name = os.path.basename(ws.root)
 
-    deps = [ws.get_dependencies(pkg, deep=True) for pkg in pkg_list]
+    deps = dict()
+    for pkg in pkg_list:
+        deps.update(ws.get_dependencies(pkg, deep=True))
     graph = Digraph(deps, repos_only)
     graph.plot(pkg_name)
 
@@ -206,27 +208,19 @@ def show(ws, pkg_name, this):
             click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
             sys.exit(1)
 
-    dep_dict = ws.get_dependencies(pkg_name, deep=True)
-    dep_list = dep_dict[pkg_name]
+    these_deps = ws.get_dependencies(pkg_name, deep=True)[pkg_name]
     git_deps = set()
     apt_deps = set()
 
-    found_one = True
-    while found_one:
-        found_one = False
-        for obj in dep_list:
-            if isinstance(obj, basestring):
-                found_one = True
-                apt_deps.add(obj)
-            elif isinstance(obj, dict):
-                found_one = True
-                git_deps.update(set(obj.keys()))
-                dep_list += obj.values()
-            elif isinstance(obj, list):
-                found_one = True
-                dep_list += obj
-            if found_one:
-                dep_list.remove(obj)
+    def sort(d):
+        for k, v in d.iteritems():
+            if not v:
+                apt_deps.add(k)
+            else:
+                git_deps.add(k)
+                sort(v)
+
+    sort(these_deps)
 
     click.echo("")
     click.echo("Dependencies for {}".format(pkg_name))
@@ -250,7 +244,6 @@ def show(ws, pkg_name, this):
 @click.option("-u", "--update", is_flag=True)
 @click.pass_obj
 def rlookup(ws, pkg_name, this, update):
-
     if update or not os.path.exists(user_settings['Cache']['CACHED_DEPS_WS']):
         click.echo("Updating repo cache...")
         process = subprocess.Popen(['mrt maintenance update_cached_deps'], shell=True)
@@ -293,12 +286,12 @@ def rlookup(ws, pkg_name, this, update):
                     line = line.decode("utf-8")
                     if pkg_name in line and "depend" in line:
                         match = re.search("\</.*\>", line)
-                        typ = match.string [match.start()+2:match.end()-1]
+                        typ = match.string[match.start() + 2:match.end() - 1]
                         rdeps = insert_into_dict(rdeps, [namespace, repo, branch, typ])
 
     click.echo("I found the following packages relying on {}:\n".format(pkg_name))
     for namespace, d_repo in rdeps.iteritems():
         for repo, d_branches in d_repo.iteritems():
-            click.echo("{}/{}:".format(namespace,repo))
+            click.echo("{}/{}:".format(namespace, repo))
             for branch, typ in d_branches.iteritems():
                 click.echo("\t- On branch '{}': {}".format(branch, typ))

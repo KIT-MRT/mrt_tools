@@ -272,22 +272,25 @@ class Workspace(object):
         :param pkg_name: Name of package
         :param deep: Recursively retrieve dependencies
         """
-        if pkg_name in list(self.catkin_pkgs.keys()):
-            deps = [d.name for d in self.catkin_pkgs[pkg_name].build_depends]
-            if len(deps) > 0:
-                if deep:
-                    deps = [self.get_dependencies(d, self.catkin_pkgs) for d in deps]
-                return {pkg_name: deps}
-            else:
-                return {pkg_name: []}
-        else:
-            return pkg_name
+        deps = {d: {} for d in self.get_all_dependencies(pkg_name)}
+        if deep:
+            for k in deps.keys():
+                deps.update(self.get_dependencies(k, deep))
+        return {pkg_name: deps}
 
-    def get_all_dependencies(self):
+    def get_all_dependencies(self, pkg_name):
         """Returns a flat list of dependencies"""
-        return set(
-            [build_depend.name for catkin_pkg in list(self.catkin_pkgs.values()) for build_depend in
-             catkin_pkg.build_depends])
+        deps = set()
+        if pkg_name in self.catkin_pkgs.keys():
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].build_depends})
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].build_depends})
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].build_export_depends})
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].exec_depends})
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].doc_depends})
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].buildtool_depends})
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].buildtool_export_depends})
+            deps.update({d.name for d in self.catkin_pkgs[pkg_name].test_depends})
+        return deps
 
     def resolve_dependencies(self, git=None, default_yes=None):
         # TODO maybe use rosdep2 package directly

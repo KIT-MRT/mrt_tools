@@ -1,3 +1,4 @@
+from mrt_tools.Digraph import Digraph
 from mrt_tools.Git import test_git_credentials
 from mrt_tools.Workspace import Workspace
 from mrt_tools.utilities import *
@@ -54,6 +55,53 @@ def clean(ws):
     process = subprocess.Popen(["catkin", "clean"] + list(catkin_args))
     process.wait()
     sys.exit(process.returncode)
+
+
+@main.command(short_help="Tidy up workspace, remove unneccessary packages")
+@click.pass_obj
+def tidy(ws):
+    not_done = True
+    blacklist = []
+    while not_done:
+        not_done = False
+        pkg_list = ws.get_catkin_package_names()
+        deps = dict()
+        for pkg in pkg_list:
+            deps.update(ws.get_dependencies(pkg, deep=True))
+
+        parents = dict()
+        children = dict()
+
+        def get_connections(deps, parent=None):
+            for child, v in deps.iteritems():
+                if child not in pkg_list:
+                    continue
+                if child not in parents:
+                    parents[child] = set()
+                if parent:
+                    if parent not in children:
+                        children[parent] = set()
+                    if parent in pkg_list:
+                        parents[child].add(parent)
+                        children[parent].add(child)
+                get_connections(v, child)
+
+        get_connections(deps)
+        for pkg_name, has_parents in parents.iteritems():
+            if not has_parents:
+                if pkg_name in blacklist:
+                    continue
+                if click.confirm("Package {} has no parents. Delete?".format(pkg_name)):
+                    not_done = True
+                    ws.test_for_changes(pkg_name)
+                    ws.cd_src()
+                    click.echo("Removing {0}".format(pkg_name))
+                    shutil.rmtree(pkg_name)
+                    ws.recreate_index()
+                    ws.cd_root()
+                    continue
+                else:
+                    blacklist.append(pkg_name)
 
 
 @main.command(short_help="Print the git status of files in workspace.",

@@ -11,8 +11,7 @@ class Digraph(object):
         self.nodes = None
         self.no_leafs = no_leafs
         # add nodes and edges to the root node
-        for dep in deps:
-            self.add_nodes(dep)
+        self.add_nodes(deps)
 
     def create_node(self, name, isleaf=False):
         if isleaf:
@@ -35,32 +34,30 @@ class Digraph(object):
 
         return self.create_node(name, isleaf=isleaf)
 
-    def add_nodes(self, deps_dict):
+    def add_nodes(self, deps, parent=None):
         """Add several nodes
-        :param deps_dict: Dictionary of Dependencies
+        :param deps: Dictionary of Dependencies
+        :param parent: The parent node to this dep
         """
-        root_node = self.get_node(list(deps_dict.keys())[0])
-
-        for v in list(deps_dict.values())[0]:
-
-            # if the list element is not a dict
-            if type(v) != dict:
-                if not self.no_leafs:
-                    node = self.get_node(v, isleaf=True)
-                    self.add_edge(root_node, node)
-
-            # if the element is a dict, call recursion
+        for k, v in deps.iteritems():
+            if v:  # if the dict is not empty, then recurse
+                node = self.get_node(k, isleaf=False)
+                self.add_edge(parent, node)
+                self.add_nodes(v, parent=node)
             else:
-                node = self.get_node(list(v.keys())[0], isleaf=False)
-                self.add_edge(root_node, node)
-                self.add_nodes(v)
+                if self.no_leafs:
+                    pass
+                else:
+                    node = self.get_node(k, isleaf=True)
+                    self.add_edge(parent, node)
 
     def add_edge(self, a, b):
         """checks if the edge already exists, if not, creates one from a2b
         :param a: Node a
         :param b: Node b
         """
-
+        if a is None or b is None:
+            return
         for edge_obj in self.graph.get_edge_list():
             if a.get_name() in edge_obj.obj_dict["points"] and \
                             b.get_name() in edge_obj.obj_dict["points"]:
