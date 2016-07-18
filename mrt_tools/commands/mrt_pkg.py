@@ -1,10 +1,10 @@
-import pprint
-from collections import defaultdict
+from string import Template
 
 from mrt_tools.Workspace import Workspace
 from mrt_tools.Digraph import Digraph
 from mrt_tools.utilities import *
 from mrt_tools.Git import Git
+import stat
 
 # Autocompletion
 try:
@@ -17,6 +17,15 @@ except:
     repo_list = []
 
 self_dir = get_script_root()
+
+
+def figure_out_pkg_name(ws, pkg_name, this):
+    if this:
+        pkg_name = os.path.basename(ws.org_dir)
+    if pkg_name not in ws.get_catkin_package_names():
+        click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
+        sys.exit(1)
+    return pkg_name
 
 
 ########################################################################################################################
@@ -163,22 +172,14 @@ def deps(ws):
 @click.pass_obj
 def draw(ws, pkg_name, this, repos_only):
     """ Visualize dependencies of catkin packages."""
-    pkg_list = ws.get_catkin_package_names()
+    pkg_list = ws.get_catkin_package_names
 
-    if pkg_name:
-        if pkg_name not in pkg_list:
-            click.secho("Package not found, cant create graph", fg="red")
-            sys.exit(1)
-        pkg_list = [pkg_name]
-    elif this:
-        pkg_name = os.path.basename(ws.org_dir)
-        if pkg_name not in pkg_list:
-            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
-            sys.exit(1)
+    if pkg_name or this:
+        pkg_name = figure_out_pkg_name(ws, pkg_name, this)
         pkg_list = [pkg_name]
     else:
         if click.confirm("Create dependency graph for every package?"):
-            for pkg_name in pkg_list:
+            for pkg_name in ws.get_catkin_package_names():
                 click.echo("Creating graph for {}...".format(pkg_name))
                 deps = ws.get_dependencies(pkg_name, deep=True)
                 graph = Digraph(deps, repos_only)
@@ -200,13 +201,7 @@ def draw(ws, pkg_name, this, repos_only):
 @click.pass_obj
 def show(ws, pkg_name, this):
     """ Visualize dependencies of catkin packages."""
-    pkg_list = ws.get_catkin_package_names()
-
-    if this or not pkg_name:
-        pkg_name = os.path.basename(ws.org_dir)
-        if pkg_name not in pkg_list:
-            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
-            sys.exit(1)
+    pkg_name = figure_out_pkg_name(ws, pkg_name, this)
 
     these_deps = ws.get_dependencies(pkg_name, deep=True)[pkg_name]
     git_deps = set()
@@ -250,16 +245,7 @@ def rlookup(ws, pkg_name, this, update):
         process.wait()  # Wait for process to finish and set returncode
         # print(process.returncode)
 
-    if not pkg_name and not this:
-        click.secho("Please specify a package or use the '--this' flag.", fg="red")
-        sys.exit(1)
-
-    if this:
-        pkg_list = ws.get_catkin_package_names()
-        pkg_name = os.path.basename(ws.org_dir)
-        if pkg_name not in pkg_list:
-            click.secho("{0} does not seem to be a catkin package.".format(pkg_name), fg="red")
-            sys.exit(1)
+    pkg_name = figure_out_pkg_name(ws, pkg_name, this)
 
     rdeps = {}
     for root, dirs, files in os.walk(user_settings['Cache']['CACHED_DEPS_WS']):
@@ -295,3 +281,132 @@ def rlookup(ws, pkg_name, this, update):
             click.echo("{}/{}:".format(namespace, repo))
             for branch, typ in d_branches.iteritems():
                 click.echo("\t- On branch '{}': {}".format(branch, typ))
+
+
+@main.command(short_help="Add a new executable to this package.",
+              help="")
+@click.argument("node_name", type=click.STRING, required=True)
+@click.option("--tf", is_flag=True, prompt="Do you need tf conversions?")
+@click.option("--reconfigure", is_flag=True, prompt="Do you need dynamic reconfigure?")
+@click.option("--diagnostics", is_flag=True, prompt="Do you need diagnostics?")
+@click.pass_obj
+def add_node(ws, node_name, tf, reconfigure, diagnostics):
+    # TODO use python template class
+    # Get package name
+    pkg_name = figure_out_pkg_name(ws, "", this=True)
+    if not "_ros_" in pkg_name:
+        click.echo("{} does not seem to be a ROS package.")
+        sys.exit(1)
+    # ...and test for changes
+    ws.test_for_changes(pkg_name)
+    if not os.path.exists(os.path.join(ws.src, pkg_name, ".git")):
+        click.echo("\nSpecified package does not seem to be a git repo. I don't dare touching any files!")
+        sys.exit(1)
+
+    # Get name
+    class_name = convert_to_camel_case(node_name)
+    file_name = convert_to_snake_case(node_name)
+    print("Using file prefix: {}".format(file_name))
+    print("Using class name: {}".format(class_name))
+    print
+
+    # CREATE FILES
+    def copy_template_file(template_file, rel_target_path, append=False):
+        target_path = os.path.join(ws.src, pkg_name, rel_target_path)
+        print("Creating file {}".format(rel_target_path))
+        if os.path.exists(target_path):
+            click.secho("Target file '{}' exists already.".format(target_path))
+            sys.exit(1)
+
+        if not os.path.exists(os.path.dirname(target_path)) and not append:
+            os.makedirs(os.path.dirname(target_path))
+
+        source_path = os.path.join(self_dir, "templates", "node_base", template_file)
+        if append:
+            with open(target_path,'a') as f_out:
+                with open(source_path,'r') as f_in:
+                    f_out.write(f_in.read())
+        else:
+            shutil.copyfile(source_path, target_path)
+
+        # Replace Strings with new names
+        command = "sed -i "
+        command += "-e 's:${class_name}:" + file_name + ":g' "
+        command += "-e 's:${ClassName}:" + class_name + ":g' "
+        command += "-e 's:${pkgname}:" + pkg_name + ":g' "
+        command += "-e 's://@tf@::g' " if tf else "-e '/@tf@/d' "
+        command += "-e 's://@reconfigure@::g' " if reconfigure else "-e '/@reconfigure@/d' "
+        command += "-e 's://@diagnostics@::g' " if diagnostics else "-e '/@diagnostics@/d' "
+        subprocess.call(command + " " + target_path, shell=True)
+
+        # Reformat new code files
+        if any(x in target_path for x in [".h", ".hpp", ".hh", ".cpp", ".cc"]):
+            subprocess.call("clang-format-3.8 -i --style=file " + target_path, shell=True)
+
+        return target_path
+
+    new_files = [copy_template_file("class_name_node.launch", os.path.join("launch", file_name + "_node.launch")),
+                 copy_template_file("class_name_nodelet.launch", os.path.join("launch", file_name + "_nodelet.launch")),
+                 copy_template_file("class_name.cpp", os.path.join("src", file_name, file_name + ".cpp")),
+                 copy_template_file("class_name.h", os.path.join("src", file_name, file_name + ".h")),
+                 copy_template_file("class_name_node.cpp", os.path.join("src", file_name, file_name + "_node.cpp")),
+                 copy_template_file("class_name_nodelet.cpp",
+                                    os.path.join("src", file_name, file_name + "_nodelet.cpp")),
+                 copy_template_file("class_name_parameters.cpp",
+                                    os.path.join("src", file_name, file_name + "_parameters.cpp")),
+                 copy_template_file("class_name_parameters.h",
+                                    os.path.join("src", file_name, file_name + "_parameters.h")),
+                 copy_template_file("class_name_parameters.yaml", os.path.join("launch", "params", file_name +
+                                                                               "_parameters.yaml")),
+                 copy_template_file("nodelet_plugins.xml", "nodelet_plugins.xml")]
+
+    if reconfigure:
+        new_files.append(copy_template_file("ClassName.cfg", os.path.join("cfg", class_name + ".cfg")))
+        os.chmod(new_files[-1], 33277)  # entspricht 775
+
+    # Add entries to package.xml
+    class FullParser(ET.XMLTreeBuilder):
+        def __init__(self):
+            ET.XMLTreeBuilder.__init__(self)
+            self._parser.CommentHandler = self.handle_comments
+
+        def handle_comments(self, data):
+            self._target.start(ET.Comment, {})
+            self._target.data(data)
+            self._target.end(ET.Comment)
+
+    manifest = ET.parse(os.path.join(ws.src, pkg_name, "package.xml"), parser=FullParser())
+
+    def add_depend(name):
+        tags = [c.tag for c in manifest.getroot()._children]
+        try:
+            index = tags.index("export")
+        except ValueError:
+            try:
+                index = [i for i, x in enumerate(tags) if x == "depend"][-1] + 1
+            except IndexError:
+                index = -1
+        existing_depends = [e.text for e in manifest.findall("depend")]
+        if name not in existing_depends:
+            element = ET._Element("depend")
+            element.text = name
+            element.tail = "\n  "
+            manifest.getroot().insert(index, element)
+
+    add_depend("utils_ros")
+    if tf:
+        add_depend("tf2_ros")
+    if reconfigure:
+        add_depend("dynamic_reconfigure")
+    if diagnostics:
+        add_depend("diagnostic_updater")
+
+    # Check whether plugins are exported already
+    if not any(["nodelet_plugins.xml" in el.attrib["plugin"] for el in manifest.find("export").getchildren() if
+                el.attrib.has_key("plugin")]):
+        manifest.find("export").insert(-1, ET._Element("nodelet", attrib={'plugin': '${prefix}/nodelet_plugins.xml'}))
+    manifest.write(os.path.join(ws.src, pkg_name, "package.xml"))
+
+    # Test CMakeList for newest version
+    if click.confirm("\nUpdate CMakelist now?"):
+        subprocess.call("mrt maintenance update_cmakelists {}".format(pkg_name), shell=True)

@@ -11,6 +11,18 @@ import re
 import xml.etree.ElementTree as ET
 
 
+def convert_to_snake_case(name):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
+    s1 = re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+    s1 = re.sub('__', '_', s1)
+    return s1
+
+
+def convert_to_camel_case(name):
+    s1 = convert_to_snake_case(name)
+    return "".join(x.capitalize() if x else '_' for x in s1.split("_"))
+
+
 def is_ros_sourced():
     # Test whether ros is sourced
     return "ROS_ROOT" in os.environ

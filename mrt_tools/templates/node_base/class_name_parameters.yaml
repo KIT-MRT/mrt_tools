@@ -1,0 +1,15 @@
+# ROS-specific
+msg_queue_size: 5
+verbosity: debug
+
+# Your Params here
+publisher_msg_name: out_topic
+subscriber_msg_name: in_topic
+
+diag_pub_msg_name: diagnosed_topic //@diagnostics@
+diagnostic_updater_rate_tolerance: 1 //@diagnostics@
+diagnostic_updater_name: ${ClassName}Updater //@diagnostics@
+diagnostic_updater_hardware_id: ${ClassName} //@diagnostics@
+diagnostic_updater_rate: 10 //@diagnostics@
+ //@diagnostics@
+dummy: 0.4

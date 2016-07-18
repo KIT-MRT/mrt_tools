@@ -1,0 +1,9 @@
+<launch>
+
+  <arg name="config" default="$(find ${pkgname})/launch/params/${class_name}_parameters.yaml" />
+
+  <node pkg="${pkgname}" type="${class_name}" name="${class_name}" output="screen">
+    <rosparam command="load" file="$(arg config)"/>
+  </node>
+
+</launch>

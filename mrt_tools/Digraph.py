@@ -3,6 +3,8 @@ import click
 import pydot
 import os
 
+import sys
+
 
 class Digraph(object):
     def __init__(self, deps, no_leafs=False):
@@ -11,7 +13,9 @@ class Digraph(object):
         self.nodes = None
         self.no_leafs = no_leafs
         # add nodes and edges to the root node
+        sys.stdout.write("Creating graph")
         self.add_nodes(deps)
+        sys.stdout.write("Done\n")
 
     def create_node(self, name, isleaf=False):
         if isleaf:
@@ -39,6 +43,8 @@ class Digraph(object):
         :param deps: Dictionary of Dependencies
         :param parent: The parent node to this dep
         """
+        sys.stdout.write('.')
+        sys.stdout.flush()
         for k, v in deps.iteritems():
             if v:  # if the dict is not empty, then recurse
                 node = self.get_node(k, isleaf=False)

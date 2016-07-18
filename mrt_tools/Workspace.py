@@ -214,6 +214,7 @@ class Workspace(object):
 
     def test_for_changes(self, pkg_name=None, quiet=False, prompt="Are you sure you want to continue?"):
         """ Test workspace for any changes that are not yet pushed to the server
+        This will only work for git repos that are on a remote-tracking branch.
         :param quiet:
         :param pkg_name:
         :param prompt:

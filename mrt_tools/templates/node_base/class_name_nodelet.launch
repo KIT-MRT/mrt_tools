@@ -1,0 +1,17 @@
+<launch>
+
+    <arg name="config" default="$(find ${pkgname})/launch/params/${class_name}_parameters.yaml"/>
+    <arg name="nodelet_manager_name" default="nodelet_manager_${class_name}"/>
+    <arg name="start_nodelet_manager" default="true"/>
+
+    <!-- Nodelet manager (if enabled) -->
+    <node pkg="nodelet" type="nodelet" name="$(arg nodelet_manager_name)" args="manager" output="screen"
+          if="$(arg start_nodelet_manager)"/>
+
+    <!-- ${ClassName} -->
+    <node pkg="nodelet" type="nodelet" name="${class_name}"
+          args="load ${pkgname}/${ClassName}Nodelet $(arg nodelet_manager_name)" output="screen" required="true">
+        <rosparam command="load" file="$(arg config)"/>
+    </node>
+
+</launch>
