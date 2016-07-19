@@ -10,3 +10,4 @@ build/
 .coverage
 .idea
 .cache
+deploy/
