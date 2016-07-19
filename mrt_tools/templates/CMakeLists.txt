@@ -10,7 +10,7 @@
 @  |  @ #
 @  |  @ #Put a "x" at the position to enable this line
 @  |  @ #E.g a non-ros library has the following mask: @x |x @
-#pkg_version=1.3
+#pkg_version=1.4
 cmake_minimum_required(VERSION 2.8.3)
 project(${CMAKE_PACKAGE_NAME})
 
@@ -49,6 +49,7 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xx@
 @ x|xx@ # Generate dynamic reconfigure options
 @ x|xx@ file(GLOB CFG_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "cfg/*.cfg")
+@ x|xx@ file(GLOB SRV_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "srv/*.srv")
 @ x|xx@ if (CFG_FILES)
 @ x|xx@ 	generate_dynamic_reconfigure_options(${CFG_FILES})
 @ x|xx@ endif()
@@ -134,9 +135,12 @@ link_directories(
 @ x| x@ 		if (CFG_FILES)
 @ x| x@ 			add_dependencies(${EXEC_NAME} ${PROJECT_NAME}_gencfg)
 @ x| x@ 		endif()
-@ x| x@ 	  if (ROS_GENERATE_MESSAGES)
-@ x| x@ 	    add_dependencies(${EXEC_NAME} ${PROJECT_NAME}_generate_messages)
-@ x| x@ 	  endif()
+@ x| x@ 		if (SRV_FILES)
+@ x| x@ 			add_dependencies(${EXEC_NAME} ${PROJECT_NAME}_gencpp)
+@ x| x@ 		endif()
+@ x| x@ 	    if (ROS_GENERATE_MESSAGES)
+@ x| x@ 	      add_dependencies(${EXEC_NAME} ${PROJECT_NAME}_generate_messages)
+@ x| x@ 	    endif()
 @ x| x@
 @xx| x@ 		# Specify libraries to link a library or executable target against
 @xx| x@ 		target_link_libraries(${EXEC_NAME}
