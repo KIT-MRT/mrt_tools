@@ -172,7 +172,7 @@ def deps(ws):
 @click.pass_obj
 def draw(ws, pkg_name, this, repos_only):
     """ Visualize dependencies of catkin packages."""
-    pkg_list = ws.get_catkin_package_names
+    pkg_list = ws.get_catkin_package_names()
 
     if pkg_name or this:
         pkg_name = figure_out_pkg_name(ws, pkg_name, this)
