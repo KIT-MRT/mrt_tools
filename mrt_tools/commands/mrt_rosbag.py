@@ -26,8 +26,9 @@ def main():
               help=get_help_text("rosbag record --help"))
 @click.option('-O', '--output-name', 'output_name', type=click.STRING)
 @click.option('-o', '--output-prefix', 'prefix', type=click.STRING)
+@click.option('-r','--reuse', 'reuse', is_flag=True)
 @click.argument('args', nargs=-1, type=click.UNPROCESSED, autocompletion=topic_list)
-def record(output_name, prefix, args):
+def record(output_name, prefix, reuse, args):
     if not [arg for arg in args if not arg.startswith("-")] and "-a" not in args:
         click.echo("You must specify a topic name or else use the '-a' option.")
         return
@@ -37,11 +38,13 @@ def record(output_name, prefix, args):
         output_name = time.strftime("%Y-%m-%d-%H-%M-%S.bag", time.localtime())
         if prefix:
             output_name = prefix + "_" + output_name
+    if not output_name.endswith(".bag"):
+        output_name += ".bag"
     args += ("-O", output_name)
 
     # Collect metadata
     rmh = RosbagMetadataHandler()
-    rmh.collect_metadata()
+    rmh.collect_metadata(reuse_last=reuse)
 
     # Perform action
     process = subprocess.Popen(["rosbag", "record"] + list(args))

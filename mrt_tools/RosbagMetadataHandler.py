@@ -161,7 +161,7 @@ class RosbagMetadataHandler(object):
             click.echo("\nWrote the following metadata to {}:".format(bagfile))
             click.echo(self.__str__())
 
-    def collect_metadata(self, filename=METADATA_CACHE, clean_start=False):
+    def collect_metadata(self, filename=METADATA_CACHE, clean_start=False, reuse_last=False):
         """
         Creates new metadata stub from template and updates it from data found in filename.
         Afterwards it will prompt the user to confirm entries and to add additional ones.
@@ -188,19 +188,18 @@ class RosbagMetadataHandler(object):
 
             if last_data:
                 new_data = self.update_data(new_data, last_data)
-
-        new_data = self.query_user(new_data, "Please provide information about this rosbag.")
-
-        try:
-            click.echo("Add additional fields now or continue by pressing Ctrl+d")
-            while True:
-                k = unidecode(click.prompt('Field name', type=click.STRING))
-                v = unidecode(click.prompt(k, type=click.STRING))
-                if "Custom" not in new_data:
-                    new_data["Custom"] = OrderedDict()
-                new_data["Custom"][k] = v
-        except click.Abort:
-            click.echo("")
+        if not reuse_last:
+            new_data = self.query_user(new_data, "Please provide information about this rosbag.")
+            try:
+                click.echo("Add additional fields now or continue by pressing Ctrl+d")
+                while True:
+                    k = unidecode(click.prompt('Field name', type=click.STRING))
+                    v = unidecode(click.prompt(k, type=click.STRING))
+                    if "Custom" not in new_data:
+                        new_data["Custom"] = OrderedDict()
+                    new_data["Custom"][k] = v
+            except click.Abort:
+                click.echo("")
 
         self.data = new_data
         self.write_to_file(METADATA_CACHE, new_data)
