@@ -105,7 +105,7 @@ def update_url_in_package_xml():
                    "that might have been add to the old CMake file to the new file. NOTE: You need to have 'meld' "
                    "installed.")
 @click.argument("package", required=False)
-@click.option("--this", is_flag=True)
+@click.option("--this", is_flag=True, help="Use the package containing the current directory.")
 def update_cmakelists(package, this):
     """Update CMAKELISTS"""
     ws = Workspace()

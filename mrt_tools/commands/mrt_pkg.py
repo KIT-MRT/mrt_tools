@@ -167,7 +167,7 @@ def deps(ws):
                    "create dependency graphs for the whole workspace. Dependencys are checked by using catkin, "
                    "the resulting images are written to 'ws/pics/'")
 @click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
-@click.option("--this", is_flag=True)
+@click.option("--this", is_flag=True, help="Use the package containing the current directory.")
 @click.option("--repos-only", is_flag=True)
 @click.pass_obj
 def draw(ws, pkg_name, this, repos_only):
@@ -197,7 +197,7 @@ def draw(ws, pkg_name, this, repos_only):
 @deps.command(short_help="List dependencies of catkin packages.",
               help="This will list all dependencies of a named catkin package.")
 @click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
-@click.option("--this", is_flag=True)
+@click.option("--this", is_flag=True, help="Use the package containing the current directory.")
 @click.pass_obj
 def show(ws, pkg_name, this):
     """ Visualize dependencies of catkin packages."""
@@ -235,7 +235,7 @@ def show(ws, pkg_name, this):
               help="This will crawl all packages (in the MRT workspace, on the master branch, on the latest commit, "
                    "in gitlab) inorder to detect, who directly relies on this pkg.")
 @click.argument("pkg_name", type=click.STRING, required=False, autocompletion=suggestions)
-@click.option("--this", is_flag=True)
+@click.option("--this", is_flag=True, help="Use the package containing the current directory.")
 @click.option("-u", "--update", is_flag=True)
 @click.pass_obj
 def rlookup(ws, pkg_name, this, update):
@@ -297,11 +297,11 @@ def add_node(ws, node_name, tf, reconfigure, diagnostics):
     if not "_ros_" in pkg_name:
         click.echo("{} does not seem to be a ROS package.")
         sys.exit(1)
-    # ...and test for changes
-    ws.test_for_changes(pkg_name)
     if not os.path.exists(os.path.join(ws.src, pkg_name, ".git")):
         click.echo("\nSpecified package does not seem to be a git repo. I don't dare touching any files!")
         sys.exit(1)
+    # ...and test for changes
+    ws.test_for_changes(pkg_name)
 
     # Get name
     class_name = convert_to_camel_case(node_name)
