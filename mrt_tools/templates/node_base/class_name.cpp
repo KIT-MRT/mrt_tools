@@ -8,7 +8,7 @@ ${ClassName}::${ClassName}(ros::NodeHandle node_handle, ros::NodeHandle private_
           ,
           tfListener_{tfBuffer_} //@tf@
           ,
-          reconfig_srv_{private_node_handle} //@reconfigure@
+          reconfig_srv_{private_node_handle}
 {
 
     /**
@@ -18,10 +18,10 @@ ${ClassName}::${ClassName}(ros::NodeHandle node_handle, ros::NodeHandle private_
     params_.fromNodeHandle(private_node_handle);
     setupDiagnostics(); //@diagnostics@
 
-    /**                                                                                         //@reconfigure@
-     * Set up dynamic reconfiguration (before yaml file is parsed)                          //@reconfigure@
-     */ //@reconfigure@
-    reconfig_srv_.setCallback(boost::bind(&${ClassName}::reconfigureRequest, this, _1, _2)); //@reconfigure@
+    /**
+     * Set up dynamic reconfiguration
+     */
+    reconfig_srv_.setCallback(boost::bind(&${ClassName}::reconfigureRequest, this, _1, _2));
 
     /**
      * Publishers & subscriber
@@ -65,11 +65,11 @@ void ${ClassName}::subCallback(const std_msgs::Header::ConstPtr& msg) {
 }
 
 /** //@reconfigure@
-  * This callback is called whenever a change was made in the dynamic_reconfigure window //@reconfigure@
+  * This callback is called whenever a change was made in the dynamic_reconfigure window
 */                                                               //@reconfigure@
-void ${ClassName}::reconfigureRequest(${ClassName}Config& config, uint32_t level) { //@reconfigure@
-    params_.dummy = config.dummy;                                                 //@reconfigure@
-} //@reconfigure@
+void ${ClassName}::reconfigureRequest(${ClassName}Config& config, uint32_t level) {
+    params_.fromConfig(config);
+}
 
 /*           //@diagnostics@
  * Setup the Diagnostic Updater  //@diagnostics@

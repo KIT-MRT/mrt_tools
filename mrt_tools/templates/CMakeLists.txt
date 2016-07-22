@@ -20,6 +20,7 @@ project(${CMAKE_PACKAGE_NAME})
 find_package(mrt_cmake_modules REQUIRED)
 include(UseMrtStdCompilerFlags)
 include(UseMrtAutoTarget)
+@ x|xx@ include(MrtParamGenerator)
 
 include(GatherDeps)
 #remove libs, which cannot be find automatically
@@ -48,11 +49,11 @@ find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 @ x|xx@ endif()
 @ x|xx@
 @ x|xx@ # Generate dynamic reconfigure options
-@ x|xx@ file(GLOB CFG_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "cfg/*.cfg")
+@ x|xx@ file(GLOB CFG_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "cfg/*cfg")
 @ x|xx@ file(GLOB SRV_FILES RELATIVE "${CMAKE_CURRENT_LIST_DIR}" "srv/*.srv")
 @ x|xx@ if (CFG_FILES)
-@ x|xx@ 	generate_dynamic_reconfigure_options(${CFG_FILES})
-@ x|xx@ endif()
+@ x|xx@   generate_parameter_files()
+@ x|xx@ endif ()
 @ x|xx@
 @ x|xx@
 @xx|x @ ############################

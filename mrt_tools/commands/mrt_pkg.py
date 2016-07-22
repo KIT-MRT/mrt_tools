@@ -287,10 +287,9 @@ def rlookup(ws, pkg_name, this, update):
               help="")
 @click.argument("node_name", type=click.STRING, required=True)
 @click.option("--tf", is_flag=True, prompt="Do you need tf conversions?")
-@click.option("--reconfigure", is_flag=True, prompt="Do you need dynamic reconfigure?")
 @click.option("--diagnostics", is_flag=True, prompt="Do you need diagnostics?")
 @click.pass_obj
-def add_node(ws, node_name, tf, reconfigure, diagnostics):
+def add_node(ws, node_name, tf, diagnostics):
     # TODO use python template class
     # Get package name
     pkg_name = figure_out_pkg_name(ws, "", this=True)
@@ -323,8 +322,8 @@ def add_node(ws, node_name, tf, reconfigure, diagnostics):
 
         source_path = os.path.join(self_dir, "templates", "node_base", template_file)
         if append:
-            with open(target_path,'a') as f_out:
-                with open(source_path,'r') as f_in:
+            with open(target_path, 'a') as f_out:
+                with open(source_path, 'r') as f_in:
                     f_out.write(f_in.read())
         else:
             shutil.copyfile(source_path, target_path)
@@ -335,7 +334,6 @@ def add_node(ws, node_name, tf, reconfigure, diagnostics):
         command += "-e 's:${ClassName}:" + class_name + ":g' "
         command += "-e 's:${pkgname}:" + pkg_name + ":g' "
         command += "-e 's://@tf@::g' " if tf else "-e '/@tf@/d' "
-        command += "-e 's://@reconfigure@::g' " if reconfigure else "-e '/@reconfigure@/d' "
         command += "-e 's://@diagnostics@::g' " if diagnostics else "-e '/@diagnostics@/d' "
         subprocess.call(command + " " + target_path, shell=True)
 
@@ -352,17 +350,11 @@ def add_node(ws, node_name, tf, reconfigure, diagnostics):
                  copy_template_file("class_name_node.cpp", os.path.join("src", file_name, file_name + "_node.cpp")),
                  copy_template_file("class_name_nodelet.cpp",
                                     os.path.join("src", file_name, file_name + "_nodelet.cpp")),
-                 copy_template_file("class_name_parameters.cpp",
-                                    os.path.join("src", file_name, file_name + "_parameters.cpp")),
-                 copy_template_file("class_name_parameters.h",
-                                    os.path.join("src", file_name, file_name + "_parameters.h")),
                  copy_template_file("class_name_parameters.yaml", os.path.join("launch", "params", file_name +
                                                                                "_parameters.yaml")),
-                 copy_template_file("nodelet_plugins.xml", "nodelet_plugins.xml")]
-
-    if reconfigure:
-        new_files.append(copy_template_file("ClassName.cfg", os.path.join("cfg", class_name + ".cfg")))
-        os.chmod(new_files[-1], 33277)  # entspricht 775
+                 copy_template_file("nodelet_plugins.xml", "nodelet_plugins.xml"),
+                 copy_template_file("ClassName.mrtcfg", os.path.join("cfg", class_name + ".mrtcfg"))]
+    os.chmod(new_files[-1], 509)  # entspricht 775 (octal)
 
     # Add entries to package.xml
     class FullParser(ET.XMLTreeBuilder):
@@ -394,10 +386,9 @@ def add_node(ws, node_name, tf, reconfigure, diagnostics):
             manifest.getroot().insert(index, element)
 
     add_depend("utils_ros")
+    add_depend("dynamic_reconfigure")
     if tf:
         add_depend("tf2_ros")
-    if reconfigure:
-        add_depend("dynamic_reconfigure")
     if diagnostics:
         add_depend("diagnostic_updater")
 

@@ -2,12 +2,11 @@
 
 #include <diagnostic_updater/diagnostic_updater.h> //@diagnostics@
 #include <diagnostic_updater/publisher.h>          //@diagnostics@
-#include <dynamic_reconfigure/server.h>            //@reconfigure@
+#include <dynamic_reconfigure/server.h>
 #include <ros/ros.h>
 #include <tf2_ros/transform_broadcaster.h> //@tf@
 #include <tf2_ros/transform_listener.h>    //@tf@
-#include "${class_name}_parameters.h"
-#include "${pkgname}/${ClassName}Config.h" //@reconfigure@
+#include "${pkgname}/${ClassName}Parameters.h"
 
 namespace ${pkgname} {
 
@@ -21,7 +20,7 @@ private:
 
     ${ClassName}Parameters& params_;
 
-    dynamic_reconfigure::Server<${ClassName}Config> reconfig_srv_; // Dynamic reconfiguration service //@reconfigure@
+    dynamic_reconfigure::Server<${ClassName}Config> reconfig_srv_; // Dynamic reconfiguration service
 
     tf2_ros::Buffer tfBuffer_;                     //@tf@
     tf2_ros::TransformListener tfListener_;        //@tf@
@@ -38,7 +37,7 @@ private:
     void diagnoseError();                                                 //@diagnostics@
 
     void subCallback(const std_msgs::Header::ConstPtr& msg);
-    void reconfigureRequest(${ClassName}Config&, uint32_t); //@reconfigure@
+    void reconfigureRequest(${ClassName}Config&, uint32_t);
 };
 
 } // namespace ${pkgname}
