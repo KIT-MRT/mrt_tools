@@ -7,36 +7,35 @@ gen = ParameterGenerator()
 
 # Required arguments:
 #   - name (Variable name)
-#   - paramtype [str_t, bool_t, int_t, double_t]
+#   - paramtype ['std::string', 'int', 'bool', 'float','double', 'std::vector<...>', 'std::map<... , ...>']
 #   - description
 # Optional arguments:
-#   - default
-#   - min
-#   - max
+#   - default, min, max
 #   - configurable
 #   - global_scope
 # Attention:
 # - If no default value is given, you need to specify one in your launch file
-# - Global parameters can not be configurable
-# - Global parameters can not have a default value
+# - Global parameters, vectors and maps can not be configurable
+# - Global parameters, vectors and maps can not have a default, min or max value
 # - !!!IMPORTANT this file must be executable !!!
 
 
+
 # ROS-specific
-gen.add("msg_queue_size", paramtype=int_t, description="Queusize for publisher", default=5, min=1)
-gen.add("verbosity", paramtype=str_t, description="Set logger level for this node", default="info")
+gen.add("msg_queue_size", paramtype='int', description="Queusize for publisher", default=5, min=1)
+gen.add("verbosity", paramtype='std::string', description="Set logger level for this node", default="info")
 
 # Diagnostics //@diagnostics@
-gen.add("diag_pub_msg_name", paramtype=str_t, description="Topicname for diagnostic publisher", default="out_topic_diagnosed") //@diagnostics@
-gen.add("diagnostic_updater_name", paramtype=str_t, description="Name of diagnostic updater.", default="${ClassName}Updater") //@diagnostics@
-gen.add("diagnostic_updater_hardware_id", paramtype=str_t, description="Identifier for hardware.", default="${ClassName}") //@diagnostics@
-gen.add("diagnostic_updater_rate", paramtype=double_t, description="Expected updater frequency", default=1) //@diagnostics@
-gen.add("diagnostic_updater_rate_tolerance", paramtype=double_t, description="Tolerance with which bounds must be satisfied.", default=1) //@diagnostics@
+gen.add("diag_pub_msg_name", paramtype='std::string', description="Topicname for diagnostic publisher", default="out_topic_diagnosed") //@diagnostics@
+gen.add("diagnostic_updater_name", paramtype='std::string', description="Name of diagnostic updater.", default="${ClassName}Updater") //@diagnostics@
+gen.add("diagnostic_updater_hardware_id", paramtype='std::string', description="Identifier for hardware.", default="${ClassName}") //@diagnostics@
+gen.add("diagnostic_updater_rate", paramtype='double', description="Expected updater frequency", default=1) //@diagnostics@
+gen.add("diagnostic_updater_rate_tolerance", paramtype='double', description="Tolerance with which bounds must be satisfied.", default=1) //@diagnostics@
  //@diagnostics@
 # Your Params here
-gen.add("subscriber_msg_name", paramtype=str_t, description="Topicname for subscriber", default="in_topic")
-gen.add("publisher_msg_name", paramtype=str_t, description="Topicname for publisher", default="out_topic")
-gen.add("dummy", paramtype=double_t, description="My Dummy Parameter", default=0.1, min=0, max=1, configurable=True, global_scope=False)
+gen.add("subscriber_msg_name", paramtype='std::string', description="Topicname for subscriber", default="in_topic")
+gen.add("publisher_msg_name", paramtype='std::string', description="Topicname for publisher", default="out_topic")
+gen.add("dummy", paramtype='double', description="My Dummy Parameter", default=0.1, min=0, max=1, configurable=True, global_scope=False)
 
 
 

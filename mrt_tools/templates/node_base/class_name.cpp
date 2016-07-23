@@ -15,7 +15,7 @@ ${ClassName}::${ClassName}(ros::NodeHandle node_handle, ros::NodeHandle private_
      * Initialization
      */
     utils_ros::setLoggerLevel(private_node_handle);
-    params_.fromNodeHandle(private_node_handle);
+    params_.fromParamServer();
     setupDiagnostics(); //@diagnostics@
 
     /**

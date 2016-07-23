@@ -312,20 +312,23 @@ def add_node(ws, node_name, tf, diagnostics):
     # CREATE FILES
     def copy_template_file(template_file, rel_target_path, append=False):
         target_path = os.path.join(ws.src, pkg_name, rel_target_path)
-        print("Creating file {}".format(rel_target_path))
-        if os.path.exists(target_path):
-            click.secho("Target file '{}' exists already.".format(target_path))
-            sys.exit(1)
-
-        if not os.path.exists(os.path.dirname(target_path)) and not append:
+        if not os.path.exists(os.path.dirname(target_path)):
             os.makedirs(os.path.dirname(target_path))
 
+
         source_path = os.path.join(self_dir, "templates", "node_base", template_file)
-        if append:
-            with open(target_path, 'a') as f_out:
-                with open(source_path, 'r') as f_in:
-                    f_out.write(f_in.read())
+
+        if os.path.exists(target_path):
+            if append:
+                print("Appending to file {}".format(rel_target_path))
+                with open(target_path, 'a') as f_out:
+                    with open(source_path, 'r') as f_in:
+                        f_out.write(f_in.read())
+            else:
+                click.secho("Target file '{}' exists already.".format(target_path))
+                sys.exit(1)
         else:
+            print("Creating file {}".format(rel_target_path))
             shutil.copyfile(source_path, target_path)
 
         # Replace Strings with new names
@@ -352,7 +355,7 @@ def add_node(ws, node_name, tf, diagnostics):
                                     os.path.join("src", file_name, file_name + "_nodelet.cpp")),
                  copy_template_file("class_name_parameters.yaml", os.path.join("launch", "params", file_name +
                                                                                "_parameters.yaml")),
-                 copy_template_file("nodelet_plugins.xml", "nodelet_plugins.xml"),
+                 copy_template_file("nodelet_plugins.xml", "nodelet_plugins.xml",append=True),
                  copy_template_file("ClassName.mrtcfg", os.path.join("cfg", class_name + ".mrtcfg"))]
     os.chmod(new_files[-1], 509)  # entspricht 775 (octal)
 
