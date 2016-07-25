@@ -23,7 +23,7 @@ include(UseMrtAutoTarget)
 @ x|xx@ include(MrtParamGenerator)
 
 include(GatherDeps)
-#remove libs, which cannot be find automatically
+#remove libs, which cannot be found automatically
 #list(REMOVE_ITEM DEPENDEND_PACKAGES <package name 1> <package name 2> ...)
 find_package(AutoDeps REQUIRED COMPONENTS ${DEPENDEND_PACKAGES})
 

@@ -15,21 +15,21 @@ public:
     ${ClassName}(ros::NodeHandle, ros::NodeHandle);
 
 private:
-    ros::Publisher dummy_pub_;
-    ros::Subscriber dummy_sub_;
+    ros::Publisher dummyPub_;
+    ros::Subscriber dummySub_;
 
     ${ClassName}Parameters& params_;
 
-    dynamic_reconfigure::Server<${ClassName}Config> reconfig_srv_; // Dynamic reconfiguration service
+    dynamic_reconfigure::Server<${ClassName}Config> reconfigSrv_; // Dynamic reconfiguration service
 
     tf2_ros::Buffer tfBuffer_;                     //@tf@
     tf2_ros::TransformListener tfListener_;        //@tf@
-    tf2_ros::TransformBroadcaster tf_broadcaster_; //@tf@
+    tf2_ros::TransformBroadcaster tfBroadcaster_; //@tf@
 
     /// Diagnostics                                                                           //@diagnostics@
     diagnostic_updater::Updater updater_;                                                     //@diagnostics@
     // std::unique_ptr<diagnostic_updater::DiagnosedPublisher<std_msgs::Header>> diagnosed_pub_; //@diagnostics@
-    diagnostic_msgs::DiagnosticStatus diagnostic_status_;                                     //@diagnostics@
+    diagnostic_msgs::DiagnosticStatus diagnosticStatus_;                                     //@diagnostics@
 
     void setupDiagnostics();                                              //@diagnostics@
     void checkSensorStatus(diagnostic_updater::DiagnosticStatusWrapper&); //@diagnostics@

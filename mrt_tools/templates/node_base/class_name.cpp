@@ -5,10 +5,8 @@ namespace ${pkgname} {
 
 ${ClassName}::${ClassName}(ros::NodeHandle node_handle, ros::NodeHandle private_node_handle)
         : params_{${ClassName}Parameters::getInstance()} //
-          ,
-          tfListener_{tfBuffer_} //@tf@
-          ,
-          reconfig_srv_{private_node_handle}
+          , tfListener_{tfBuffer_} //@tf@
+          , reconfigSrv_{private_node_handle}
 {
 
     /**
@@ -21,7 +19,7 @@ ${ClassName}::${ClassName}(ros::NodeHandle node_handle, ros::NodeHandle private_
     /**
      * Set up dynamic reconfiguration
      */
-    reconfig_srv_.setCallback(boost::bind(&${ClassName}::reconfigureRequest, this, _1, _2));
+    reconfigSrv_.setCallback(boost::bind(&${ClassName}::reconfigureRequest, this, _1, _2));
 
     /**
      * Publishers & subscriber
@@ -37,9 +35,9 @@ ${ClassName}::${ClassName}(ros::NodeHandle node_handle, ros::NodeHandle private_
     //                                              params_.diagnostic_updater_rate_tolerance, 5), //@diagnostics@
     //     diagnostic_updater::TimeStampStatusParam());                                            //@diagnostics@
 
-    dummy_pub_ = private_node_handle.advertise<std_msgs::Header>(params_.publisher_msg_name, params_.msg_queue_size);
+    dummyPub_ = private_node_handle.advertise<std_msgs::Header>(params_.publisher_msg_name, params_.msg_queue_size);
     // Instantiate subscriber last, to assure all objects are initialised when first message is received.
-    dummy_sub_ = private_node_handle.subscribe(params_.subscriber_msg_name, params_.msg_queue_size,
+    dummySub_ = private_node_handle.subscribe(params_.subscriber_msg_name, params_.msg_queue_size,
                                                &${ClassName}::subCallback, this, ros::TransportHints().tcpNoDelay());
 
     utils_ros::showNodeInfo();
@@ -54,7 +52,7 @@ void ${ClassName}::subCallback(const std_msgs::Header::ConstPtr& msg) {
 
     // do your stuff here...
     std_msgs::Header new_msg = *msg;
-    dummy_pub_.publish(new_msg);
+    dummyPub_.publish(new_msg);
     // diagnosed_pub_->publish(new_msg);                                 //@diagnostics@
                                                                       //@diagnostics@
     diagnostic_status_.message = "Valid loop";                        //@diagnostics@
