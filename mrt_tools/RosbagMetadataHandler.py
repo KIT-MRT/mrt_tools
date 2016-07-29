@@ -147,7 +147,7 @@ class RosbagMetadataHandler(object):
         try:
             with rosbag.Bag(bagfile, 'a') as bag:
                 metadata_msg = std_msgs.msg.String(data=metadata)
-
+                # Put the new message in front of old messages
                 t = None
                 for _, _, t in bag.read_messages():
                     break

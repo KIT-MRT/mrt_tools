@@ -283,18 +283,19 @@ def rlookup(ws, pkg_name, this, update):
                 click.echo("\t- On branch '{}': {}".format(branch, typ))
 
 
-@main.command(short_help="Add a new executable to this package.",
-              help="")
+@main.command(short_help="Create a new ROS executable in this package.",
+              help="Will add all necessary files to get you started with a new ROS executable. This includes a Class "
+                   "to hold you code, a node wrapper, a nodelet wrapper, a parameter struct, launchfiles and all "
+                   "necessary changes to your package.xml.")
 @click.argument("node_name", type=click.STRING, required=True)
 @click.option("--tf", is_flag=True, prompt="Do you need tf conversions?")
 @click.option("--diagnostics", is_flag=True, prompt="Do you need diagnostics?")
 @click.pass_obj
-def add_node(ws, node_name, tf, diagnostics):
-    # TODO use python template class
+def create_executable(ws, node_name, tf, diagnostics):
     # Get package name
     pkg_name = figure_out_pkg_name(ws, "", this=True)
-    if not "_ros_" in pkg_name:
-        click.echo("{} does not seem to be a ROS package.")
+    if not "_ros_tool" in pkg_name:
+        click.echo("{} does not seem to be a ROS executable package.")
         sys.exit(1)
     if not os.path.exists(os.path.join(ws.src, pkg_name, ".git")):
         click.echo("\nSpecified package does not seem to be a git repo. I don't dare touching any files!")
@@ -314,7 +315,6 @@ def add_node(ws, node_name, tf, diagnostics):
         target_path = os.path.join(ws.src, pkg_name, rel_target_path)
         if not os.path.exists(os.path.dirname(target_path)):
             os.makedirs(os.path.dirname(target_path))
-
 
         source_path = os.path.join(self_dir, "templates", "node_base", template_file)
 
@@ -355,7 +355,7 @@ def add_node(ws, node_name, tf, diagnostics):
                                     os.path.join("src", file_name, file_name + "_nodelet.cpp")),
                  copy_template_file("class_name_parameters.yaml", os.path.join("launch", "params", file_name +
                                                                                "_parameters.yaml")),
-                 copy_template_file("nodelet_plugins.xml", "nodelet_plugins.xml",append=True),
+                 copy_template_file("nodelet_plugins.xml", "nodelet_plugins.xml", append=True),
                  copy_template_file("ClassName.mrtcfg", os.path.join("cfg", class_name + ".mrtcfg"))]
     os.chmod(new_files[-1], 509)  # entspricht 775 (octal)
 
