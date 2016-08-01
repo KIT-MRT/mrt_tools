@@ -24,7 +24,7 @@ ecdsa==0.13               # via paramiko
 enum34==1.1.3             # via gssapi
 future==0.15.2
 futures==3.0.5            # via trollius
-gssapi==1.2.0
+python-gssapi==0.6.4
 hashlib==20081119
 osrf-pycommon==0.1.2      # via catkin-tools
 paramiko==1.16.0
