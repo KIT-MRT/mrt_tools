@@ -1,4 +1,4 @@
-#include "${class_name}.h"
+#include "${class_name}.hpp"
 #include <utils_ros/ros_console.hpp>
 
 namespace ${pkgname} {

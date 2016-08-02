@@ -349,7 +349,7 @@ def create_executable(ws, node_name, tf, diagnostics):
     new_files = [copy_template_file("class_name_node.launch", os.path.join("launch", file_name + "_node.launch")),
                  copy_template_file("class_name_nodelet.launch", os.path.join("launch", file_name + "_nodelet.launch")),
                  copy_template_file("class_name.cpp", os.path.join("src", file_name, file_name + ".cpp")),
-                 copy_template_file("class_name.h", os.path.join("src", file_name, file_name + ".h")),
+                 copy_template_file("class_name.hpp", os.path.join("src", file_name, file_name + ".hpp")),
                  copy_template_file("class_name_node.cpp", os.path.join("src", file_name, file_name + "_node.cpp")),
                  copy_template_file("class_name_nodelet.cpp",
                                     os.path.join("src", file_name, file_name + "_nodelet.cpp")),
