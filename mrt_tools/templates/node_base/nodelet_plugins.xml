@@ -1,6 +1,6 @@
-<library path="lib/libsample_dummy_nodelet">
-<class name="${pkgname}/SampleDummyNodelet"
-       type="${pkgname}::SampleDummyNodelet" base_class_type="nodelet::Nodelet">
+<library path="lib/lib${class_name}_nodelet">
+<class name="${pkgname}/${ClassName}Nodelet"
+       type="${pkgname}::${ClassName}Nodelet" base_class_type="nodelet::Nodelet">
   <description></description>
 </class>
 </library>

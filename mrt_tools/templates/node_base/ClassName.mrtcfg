@@ -7,7 +7,7 @@ gen = ParameterGenerator()
 
 # Required arguments:
 #   - name (Variable name)
-#   - paramtype ['std::string', 'int', 'bool', 'float','double', 'std::vector<...>', 'std::map<... , ...>']
+#   - paramtype ['std::string', 'int', 'bool', 'float','double', 'std::vector<...>', 'std::map<std::string , ...>']
 #   - description
 # Optional arguments:
 #   - default, min, max

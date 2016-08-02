@@ -18,7 +18,7 @@ private:
     ros::Publisher dummyPub_;
     ros::Subscriber dummySub_;
 
-    ${ClassName}Parameters& params_;
+    ${ClassName}Parameters params_;
 
     dynamic_reconfigure::Server<${ClassName}Config> reconfigSrv_; // Dynamic reconfiguration service
 

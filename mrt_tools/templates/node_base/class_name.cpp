@@ -4,9 +4,8 @@
 namespace ${pkgname} {
 
 ${ClassName}::${ClassName}(ros::NodeHandle node_handle, ros::NodeHandle private_node_handle)
-        : params_{${ClassName}Parameters::getInstance()} //
+        : reconfigSrv_{private_node_handle}
           , tfListener_{tfBuffer_} //@tf@
-          , reconfigSrv_{private_node_handle}
 {
 
     /**
@@ -62,9 +61,9 @@ void ${ClassName}::subCallback(const std_msgs::Header::ConstPtr& msg) {
     updater_.update(); //@diagnostics@
 }
 
-/** //@reconfigure@
+/**
   * This callback is called whenever a change was made in the dynamic_reconfigure window
-*/                                                               //@reconfigure@
+*/
 void ${ClassName}::reconfigureRequest(${ClassName}Config& config, uint32_t level) {
     params_.fromConfig(config);
 }
