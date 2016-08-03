@@ -43,4 +43,4 @@ gen.add("dummy", paramtype='double', description="My Dummy Parameter", default=0
 
 # DO NOT TOUCH THIS LINE
 #Syntax : Package, Node, Config Name(The final name will be ${ClassName}Config)
-exit(gen.generate("${pkgname}", "${class_name}_node", "${ClassName}"))
+exit(gen.generate("${pkgname}", "${class_name}", "${ClassName}"))
