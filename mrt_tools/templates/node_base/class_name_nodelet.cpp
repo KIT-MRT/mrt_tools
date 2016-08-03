@@ -1,4 +1,4 @@
-#include "${class_name}.h"
+#include "${class_name}.hpp"
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
 

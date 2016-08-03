@@ -4,6 +4,7 @@
 #include <diagnostic_updater/publisher.h>          //@diagnostics@
 #include <dynamic_reconfigure/server.h>
 #include <ros/ros.h>
+#include <std_msgs/Header.h>
 #include <tf2_ros/transform_broadcaster.h> //@tf@
 #include <tf2_ros/transform_listener.h>    //@tf@
 #include "${pkgname}/${ClassName}Parameters.h"

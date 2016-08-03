@@ -1,4 +1,4 @@
-#include "${class_name}.h"
+#include "${class_name}.hpp"
 
 int main(int argc, char* argv[]) {
 

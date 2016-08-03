@@ -306,9 +306,16 @@ def create_executable(ws, node_name, tf, diagnostics):
     # Get name
     class_name = convert_to_camel_case(node_name)
     file_name = convert_to_snake_case(node_name)
+    print
     print("Using file prefix: {}".format(file_name))
     print("Using class name: {}".format(class_name))
     print
+    if file_name.endswith("_node"):
+        click.secho(
+            "Node name should not end with 'node', because it can be run as a nodelet aswell: {}.".format(file_name),
+            fg="red")
+        sys.exit()
+
 
     # CREATE FILES
     def copy_template_file(template_file, rel_target_path, append=False):
