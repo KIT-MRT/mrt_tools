@@ -13,6 +13,7 @@ gen = ParameterGenerator()
 #   - default, min, max
 #   - configurable
 #   - global_scope
+#   - constant (can not be set via rosparam)
 # Attention:
 # - If no default value is given, you need to specify one in your launch file
 # - Global parameters, vectors and maps can not be configurable
