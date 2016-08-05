@@ -54,8 +54,8 @@ void ${ClassName}::subCallback(const std_msgs::Header::ConstPtr& msg) {
     dummyPub_.publish(new_msg);
     // diagnosed_pub_->publish(new_msg);                                 //@diagnostics@
                                                                       //@diagnostics@
-    diagnostic_status_.message = "Valid loop";                        //@diagnostics@
-    diagnostic_status_.level = diagnostic_msgs::DiagnosticStatus::OK; //@diagnostics@
+    diagnosticStatus_.message = "Valid loop";                        //@diagnostics@
+    diagnosticStatus_.level = diagnostic_msgs::DiagnosticStatus::OK; //@diagnostics@
     // The updater will take care of publishing at a throttled rate   //@diagnostics@
     // When calling update, all updater callbacks (defined in setupDiagnostics) will be run //@diagnostics@
     updater_.update(); //@diagnostics@
@@ -73,9 +73,9 @@ void ${ClassName}::reconfigureRequest(${ClassName}Config& config, uint32_t level
  */           //@diagnostics@
 void ${ClassName}::setupDiagnostics() { //@diagnostics@
                                        // Give a unique hardware id //@diagnostics@
-    diagnostic_status_.hardware_id = params_.diagnostic_updater_hardware_id; //@diagnostics@
-    diagnostic_status_.message = "Starting...";                              //@diagnostics@
-    diagnostic_status_.level = diagnostic_msgs::DiagnosticStatus::STALE;     //@diagnostics@
+    diagnosticStatus_.hardware_id = params_.diagnostic_updater_hardware_id; //@diagnostics@
+    diagnosticStatus_.message = "Starting...";                              //@diagnostics@
+    diagnosticStatus_.level = diagnostic_msgs::DiagnosticStatus::STALE;     //@diagnostics@
     updater_.setHardwareID(params_.diagnostic_updater_hardware_id);          //@diagnostics@
     //@diagnostics@
     // Add further callbacks (or unittests) that should be called regularly //@diagnostics@
@@ -85,7 +85,7 @@ void ${ClassName}::setupDiagnostics() { //@diagnostics@
 } //@diagnostics@
 //@diagnostics@
 void ${ClassName}::checkSensorStatus(diagnostic_updater::DiagnosticStatusWrapper& status_wrapper) { //@diagnostics@
-    status_wrapper.summary(diagnostic_status_);                                                    //@diagnostics@
+    status_wrapper.summary(diagnosticStatus_);                                                    //@diagnostics@
 } //@diagnostics@
 
 } // namespace ${pkgname}
