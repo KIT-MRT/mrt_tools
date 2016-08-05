@@ -135,9 +135,6 @@ def update_cmakelists(package, this):
         ws.cd_src()
         check_and_update_cmakelists(package, current_version)
 
-    click.secho("The commit is not yet pushed, in case you didn't really test the changes yet... You "
-                "didn't, right? Ok, so go ahead and test them and then run 'mrt wstool update'", fg="yellow")
-
 
 @main.command(short_help="Rename project",
               help="This command renames a project. The CMakeLists.txt, package.xml and includes are adjusted "
