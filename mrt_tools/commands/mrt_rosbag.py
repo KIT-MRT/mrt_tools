@@ -1,5 +1,3 @@
-import rospy
-
 from mrt_tools.RosbagMetadataHandler import RosbagMetadataHandler
 from mrt_tools.utilities import get_help_text
 import subprocess
@@ -8,6 +6,7 @@ import click
 import os
 
 try:
+    import rospy
     topic_list = rospy.get_published_topics()
     topic_list = [pair[0][1:] for pair in topic_list]
 except:

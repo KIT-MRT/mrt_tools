@@ -388,7 +388,11 @@ def get_help_text(command):
     :return: Formatted help text
     """
     command_args = command.split()
-    help_text = subprocess.check_output(command_args)
+    try:
+        help_text = subprocess.check_output(command_args)
+    except OSError:
+        help_text = "*** ERROR in get_help_text() ... please contact the package maintainer. ***"
+
     # reformatted = "This is the help text for '{}':\n\n\b\n".format(command)
     reformatted = "\b\n"
     for line in help_text.splitlines(True):

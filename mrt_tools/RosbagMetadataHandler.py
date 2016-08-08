@@ -3,14 +3,17 @@ from mrt_tools.utilities import get_script_root
 from mrt_tools.settings import CONFIG_DIR
 from collections import OrderedDict
 from unidecode import unidecode
-import std_msgs
 import getpass
-import rosbag
-import rospy
 import click
 import yaml
 import time
 import os
+try:
+    import std_msgs
+    import rosbag
+    import rospy
+except ImportError:
+    click.secho("You do not seem to have ROS installed. Can not provide rosbag commands.", fg="red")
 
 METADATA_CACHE = os.path.join(CONFIG_DIR, "rosbag_metadata.yaml")
 METADATA_TOPIC = "/metadata"
