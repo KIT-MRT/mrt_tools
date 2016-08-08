@@ -123,9 +123,14 @@ def get_user_choice(items, extra=None, prompt="Please choose a number", default=
 
 def touch(filename, times=None):
     """create a file"""
-    # TODO catch error if directory does not exist
-    with open(filename, 'a'):
-        os.utime(filename, times)
+    if os.path.exists(filename):
+        with open(filename, 'a'):
+            os.utime(filename, times)
+    else:
+        if not os.path.exists(os.path.dirname(filename)):
+            os.makedirs(os.path.dirname(filename))
+        with open(filename, 'w'):
+            os.utime(filename, times)
 
 
 def update_apt_and_ros_packages():
