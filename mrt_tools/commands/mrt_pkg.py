@@ -294,8 +294,8 @@ def rlookup(ws, pkg_name, this, update):
 def create_executable(ws, node_name, tf, diagnostics):
     # Get package name
     pkg_name = figure_out_pkg_name(ws, "", this=True)
-    if not "_ros_tool" in pkg_name:
-        click.echo("{} does not seem to be a ROS executable package.")
+    if not "_ros_tool" in pkg_name and not "_tool_ros" in pkg_name:
+        click.echo("{} does not seem to be a ROS executable package.".format(pkg_name))
         sys.exit(1)
     if not os.path.exists(os.path.join(ws.src, pkg_name, ".git")):
         click.echo("\nSpecified package does not seem to be a git repo. I don't dare touching any files!")
