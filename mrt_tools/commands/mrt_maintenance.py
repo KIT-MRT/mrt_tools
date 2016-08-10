@@ -277,15 +277,38 @@ def update_repo_cache(quiet):
 
 
 @main.command(short_help="Change the default configuration of mrt tools.",
-              help="This command starts gedit to let you edit the configuration file. You can specify whether to use "
-                   "https or ssh, whether to save your private API token locally, and for how long to cache your git "
+              help="This command starts an editor to let you edit the configuration file. You can specify whether to "
+                   "use https or ssh, whether to save your private API token locally, and for how long to cache your git "
                    "credentials.")
 def settings():
     """
     Change the default configuration of mrt tools.
     """
     from mrt_tools.settings import CONFIG_FILE
-    subprocess.call("gedit {}".format(CONFIG_FILE), shell=True)
+
+    # Choose an appropriate editor
+    try:
+        # Test for x server
+        x_server_runing = os.environ['DISPLAY']
+        if x_server_runing is None:
+            raise KeyError
+        # If we use a GUI, try the default application or gedit
+        options = ["gedit", "xdg-open"]
+    except KeyError:
+        # if it is a shell, try the environment variable EDITOR to specify the default editor.
+        # Otherwise fallback to nano, or others.
+        options = ["xdg-open", "vi", "vim", "nano"]
+        try:
+            options.append(os.environ['EDITOR'])
+        except KeyError:
+            pass
+
+    open_exec = None
+    while open_exec is None and len(options) != 0:
+        editor = options.pop()
+        open_exec = which(editor)
+
+    subprocess.call("{} {}".format(editor, CONFIG_FILE), shell=True)
 
 
 @main.command(short_help="Update you local copy of all package dependencies.",
@@ -317,7 +340,7 @@ def update_cached_deps():
                     continue
 
                 file_name = os.path.join(user_settings['Cache']['CACHED_DEPS_WS'], repo['namespace']['name'],
-                                             repo['name'], branch['name'], 'package.xml')
+                                         repo['name'], branch['name'], 'package.xml')
                 if not os.path.exists(os.path.dirname(file_name)):
                     os.makedirs(os.path.dirname(file_name))
 

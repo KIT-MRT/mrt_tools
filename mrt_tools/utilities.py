@@ -402,5 +402,34 @@ def get_help_text(command):
     return reformatted
 
 
+def which(program):
+    """Custom version of the ``which`` built-in shell command. Taken from catkin_tools!
+
+    Searches the pathes in the ``PATH`` environment variable for a given
+    executable name. It returns the full path to the first instance of the
+    executable found or None if it was not found.
+
+    :param program: name of the executable to find
+    :type program: str
+    :returns: Full path to the first instance of the executable, or None
+    :rtype: str or None
+    """
+
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, _ = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            return program
+    else:
+        for path in os.environ.get('PATH', os.defpath).split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                return exe_file
+    return None
+
+
 self_dir = get_script_root()
 cache_repos()
