@@ -13,7 +13,7 @@ setup(
     description='A toolbelt full of mrt scripts',
     long_description=__doc__,
     packages=find_packages(exclude=['tests']),
-    package_data={"mrt_tools": ['templates/*.*']},
+    package_data={"mrt_tools": ['templates/*', 'templates/node_base/*']},
     include_package_data=True,
     zip_safe=False,
     platforms='any',
