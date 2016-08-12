@@ -34,7 +34,7 @@ ln -s /usr/lib/python2.7/dist-packages/gi $VIRTUAL_ENV/lib/python2.7/site-packag
 You will now be able to use the development version, whenever your virtualenv is activated.
 If you want to permanently use them, you can create a link to the executable and extend your path (the export command should go into your `.bashrc`):
 ```bash
-mkdirs ~/.local/bin
+mkdir -p  ~/.local/bin
 ln -s ~/.virtualenvs/mrt/bin/mrt ~/.local/bin/mrt
 export PATH=~/.local/bin:$PATH
 ```
