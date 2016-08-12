@@ -4,7 +4,7 @@ You cat setup the MRT tools in a virtual environment. This way, it won't conflic
 ## Requirements
 Install the `virtualenvwrapper` for easier handling of virtual environments and other deps
 ```bash
-sudo apt-get install virtualenvwrapper libffi-dev
+sudo apt-get install virtualenvwrapper libffi-dev libkrb5-dev
 source /usr/share/virtualenvwrapper/virtualenvwrapper.sh # Can be put into bashrc
 ```
 
