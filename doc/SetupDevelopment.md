@@ -11,24 +11,14 @@ source /usr/share/virtualenvwrapper/virtualenvwrapper.sh # Can be put into bashr
 ## Creating the virtualenv and installation
 First, create a new virtual environment
 ```bash
-mkvirtualenv mrt
+mkvirtualenv mrt --system-site-packages
 ```
 You will see a `(mrt)` at the beginning of your prompt, indicating that you are working in your virtualenv.
 You can deactivate it with `deactivate`. To work in this environment again use the command `workon mrt`.
 
-Now start by installing the required packages:
-```bash
-pip install -U -I -r requirements.txt
-```
-And setup the mrt_tools package as a link to the source code, so it is editable
+Setup the mrt_tools package
 ```bash
 python setup.py install
-```
-
-Finally, link some system packages into the virtualenv:
-```bash
-ln -s /usr/lib/python2.7/dist-packages/keyring $VIRTUAL_ENV/lib/python2.7/site-packages/
-ln -s /usr/lib/python2.7/dist-packages/gi $VIRTUAL_ENV/lib/python2.7/site-packages/
 ```
 
 You will now be able to use the development version, whenever your virtualenv is activated.
@@ -38,14 +28,12 @@ mkdir -p  ~/.local/bin
 ln -s ~/.virtualenvs/mrt/bin/mrt ~/.local/bin/mrt
 export PATH=~/.local/bin:$PATH
 ```
-
 ## Updating
 When you want to update your MRT tools, follow these steps in the build repo:
 ```bash
 git pull
 workon mrt
 pip uninstall mrt
-pip install -U -I -r requirements.txt
 python setup.py install
 ```
 

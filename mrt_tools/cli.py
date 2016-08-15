@@ -1,3 +1,4 @@
+from distutils.sysconfig import get_python_lib
 from mrt_tools.settings import user_settings
 import mrt_tools.commands
 import os
@@ -12,7 +13,7 @@ if os.getuid() == 0:
 
 # Activate virtualenv if found
 venv_activate_file = None
-current_dir = os.path.dirname(os.path.realpath(__file__))
+current_dir = get_python_lib()
 while current_dir != "/" and current_dir != "":
     file_path = os.path.join(current_dir, "bin", "activate_this.py")
     if os.path.isfile(file_path):
