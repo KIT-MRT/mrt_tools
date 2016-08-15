@@ -328,8 +328,17 @@ def update_cached_deps():
     click.echo("Downloading package.xml files")
     skipped_repos = []
     with click.progressbar(repo_list) as repos:
+        branches = []
         for repo in repos:
+            errcount = 0
             branches = git.server.getbranches(repo['id'])
+            while not branches and errcount < 5:
+                branches = git.server.getbranches(repo['id'])
+                errcount += 1
+            if errcount == 5:
+                skipped_repos.append(repo['name'])
+                continue
+
             for branch in branches:
 
                 # TODO Test checksum before downloading?
@@ -385,7 +394,7 @@ def remove():
     delete_credentials()
 
 
-@credentials.command(short_help="Provide credentials to be stored.")
+@credentials.command(short_help="Delete old and store new credentials.")
 def reset():
     click.confirm("Deleting userdata first. Continue?", abort=True)
     delete_credentials()
@@ -404,7 +413,7 @@ def reset():
 @credentials.command(short_help="Provide credentials to be stored.")
 @click.argument("username", required=True)
 @click.argument("password", required=True)
-def set(username, password):
+def save(username, password):
     credentialManager.store('username', username)
     credentialManager.store('password', password)
 
