@@ -98,17 +98,21 @@ CredentialManagers = OrderedDict()
 CredentialManagers['BaseCredentialManager'] = (BaseCredentialManager, "Does not save any credentials.")
 CredentialManagers['DummyCredentialManager'] = (
     DummyCredentialManager, "DEBUG ONLY! This will not ask for a password at all.")
+
 try:  # Test whether keyring is available
     import keyring
 
-    try:  # Test whether Gnome Keyring is available
-        keyring.set_keyring(keyring.backends.Gnome.Keyring())
-	keyring.set_password("test", "test","test")
-	keyring.get_password("test", "test")
-        CredentialManagers['GnomeCredentialManager'] = (GnomeCredentialManager, "Uses Ubuntu Default Gnome Keyring "
-                                                                                "protected with your user account")
-    except (AttributeError, keyring.errors.PasswordSetError, NameError):
-        pass
+    for i in range(5): # Sometimes, it just wont work right away, so we just try several times
+        try:  # Test whether Gnome Keyring is available
+            keyring.set_keyring(keyring.backends.Gnome.Keyring())
+            keyring.set_password("test", "test","test")
+            keyring.get_password("test", "test")
+            CredentialManagers['GnomeCredentialManager'] = (GnomeCredentialManager, "Uses Ubuntu Default Gnome Keyring "
+                                                                                    "protected with your user account")
+            break
+        except (AttributeError, keyring.errors.PasswordSetError, NameError):
+            click.secho("Could not import GnomeKeyring, trying again.", fg="yellow")
+            pass
     try:
         keyring.set_keyring(keyring.backends.file.PlaintextKeyring())
         CredentialManagers['FileCredentialManager'] = (FileCredentialManager, "Stores credentials in an encoded file "
