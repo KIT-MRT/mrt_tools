@@ -113,11 +113,16 @@ def update_cmakelists(package, this):
 
     # Read in newest CMakeLists.txt
     current_version = None
-    with open(self_dir + "/templates/CMakeLists.txt") as f:
-        for line in f:
-            if line.startswith("#pkg_version="):
-                current_version = line[:-1]
-                break
+
+    # download newest version:
+    click.echo("Downloading newest template from gitlab")
+    git = Git()
+    mrt_build_repo = git.find_repo("mrt_build")
+    new_cmakelists = git.server.getrawfile(mrt_build_repo['id'], "master", 'mrt_tools/templates/CMakeLists.txt')
+    for line in new_cmakelists.splitlines():
+        if line.startswith("#pkg_version="):
+            current_version = line[:-1]
+            break
     if not current_version:
         click.secho("current pkg_version could not be found.", fg='red')
         sys.exit(1)
