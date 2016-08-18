@@ -105,13 +105,10 @@ try:  # Test whether keyring is available
     for i in range(5): # Sometimes, it just wont work right away, so we just try several times
         try:  # Test whether Gnome Keyring is available
             keyring.set_keyring(keyring.backends.Gnome.Keyring())
-            keyring.set_password("test", "test","test")
-            keyring.get_password("test", "test")
             CredentialManagers['GnomeCredentialManager'] = (GnomeCredentialManager, "Uses Ubuntu Default Gnome Keyring "
                                                                                     "protected with your user account")
             break
         except (AttributeError, keyring.errors.PasswordSetError, NameError):
-            click.secho("Could not import GnomeKeyring, trying again.", fg="yellow")
             pass
     try:
         keyring.set_keyring(keyring.backends.file.PlaintextKeyring())
