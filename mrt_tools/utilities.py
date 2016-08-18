@@ -1,3 +1,5 @@
+import urllib2
+
 from mrt_tools.settings import user_settings
 from builtins import str
 import subprocess
@@ -353,14 +355,13 @@ def changed_base_yaml():
 
     # Read hashes
     try:
-        with open(user_settings['Other']['BASE_YAML_FILE'], 'rb') as f:
-            buf = f.read()
-            hasher.update(buf)
-            new_hash = hasher.hexdigest()
+        base_yaml = urllib2.urlopen(user_settings['Other']['BASE_YAML_URL']).read()
+        hasher.update(base_yaml)
+        new_hash = hasher.hexdigest()
     except IOError:
-        new_hash = ""
-        click.secho("{}: File not found. Have you installed mrt-cmake-modules?".format(
-            user_settings['Other']['BASE_YAML_FILE']), fg="red")
+        click.secho("Could not read base yaml file at {}. Not testing for changed rosdep db".format(
+            user_settings['Other']['BASE_YAML_URL']), fg="red")
+        return False
 
     try:
         with open(user_settings['Other']['BASE_YAML_HASH_FILE'], 'r') as f:

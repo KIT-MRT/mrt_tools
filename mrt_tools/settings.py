@@ -33,7 +33,7 @@ default_settings = {
     },
     'Other': {
         'ALLOW_ROOT': False,
-        'BASE_YAML_FILE': "/mrtsoftware/pkg/share/ros/base.yaml",
+        'BASE_YAML_URL': "https://raw.githubusercontent.com/KIT-MRT/mrt_cmake_modules/master/yaml/base.yaml",
         'BASE_YAML_HASH_FILE': os.path.join(CONFIG_DIR, "base_yaml_hash"),
     }
 }
