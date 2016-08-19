@@ -141,7 +141,7 @@ def update_cmakelists(package, this):
         check_and_update_cmakelists(package, current_version)
 
 
-@main.command(short_help="Rename project",
+@main.command(short_help="Rename project (experimental)",
               help="This command renames a project. The CMakeLists.txt, package.xml and includes are adjusted "
                    "accordingly within this project. "
                    "Additionally, all other files in the repo get regexed.")
@@ -316,7 +316,7 @@ def settings():
     subprocess.call("{} {}".format(editor, CONFIG_FILE), shell=True)
 
 
-@main.command(short_help="Update you local copy of all package dependencies.",
+@main.command(short_help="Update your local copy of all package dependencies.",
               help="This will download every package.xml file from Gitlab, that you have access to. These files will "
                    "be used for reverse dependency lookup.")
 def update_cached_deps():
@@ -367,7 +367,7 @@ def update_cached_deps():
         click.echo("- {}".format(repo))
 
 
-@main.group()
+@main.group(short_help="Manage your stored password and username")
 def credentials():
     pass
 
