@@ -397,6 +397,7 @@ def create_executable(ws, node_name, tf, diagnostics):
 
     add_depend("utils_ros")
     add_depend("dynamic_reconfigure")
+    add_depend("rosparam_handler")
     if tf:
         add_depend("tf2_ros")
     if diagnostics:
