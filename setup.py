@@ -57,7 +57,7 @@ setup(
                       'paramiko==1.16.0',
                       'pycrypto==2.6.1',
                       'python-dateutil==2.5.3',
-                      'pyyaml==3.11',
+                      'pyyaml==5.1',
                       'requests==2.9.1',
                       'rospkg==1.0.39',
                       'setuptools>=11.3',
