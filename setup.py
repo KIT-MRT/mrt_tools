@@ -58,7 +58,7 @@ setup(
                       'pycrypto==2.6.1',
                       'python-dateutil==2.5.3',
                       'pyyaml==3.11',
-                      'requests==2.9.1',
+                      'requests==2.20.0',
                       'rospkg==1.0.39',
                       'setuptools>=11.3',
                       'simplejson==3.8.2',
