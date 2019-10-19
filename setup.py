@@ -45,7 +45,7 @@ setup(
                       'ConfigParser==3.5.0',
                       'decorator==4.0.9',
                       'docutils==0.12',
-                      'ecdsa==0.13',
+                      'ecdsa==0.13.3',
                       'enum34==1.1.3',
                       'future==0.15.2',
                       'futures==3.0.5',
