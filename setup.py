@@ -54,7 +54,7 @@ setup(
                       'pyparsing',
                       'hashlib==20081119',
                       'osrf-pycommon==0.1.2',
-                      'paramiko==1.16.0',
+                      'paramiko==2.0.9',
                       'pycrypto==2.6.1',
                       'python-dateutil==2.5.3',
                       'pyyaml==3.11',
