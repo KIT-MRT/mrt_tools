@@ -32,7 +32,7 @@ setup(
                       'http://pypi.python.org/packages/source/p/pyparsing/pyparsing-1.5.7.tar.gz#md5=9be0fcdcc595199c646ab317c1d9a709',
                        ],
     install_requires=[# Python applications
-                      'pip==8.1.2',
+                      'pip==19.2',
                       #'catkin-tools==0.4.2',
                       'wstool==0.1.12',
                       'pydot==1.1.0',
